@@ -35,6 +35,8 @@ export const sceneSchema = z.object({
     presence:z.enum(['auto','home','away']).default('auto'),
     zone:z.enum(['lawn','mowing','transit','passage','forbidden','obstacle','ground']).optional(),
     headlight:z.object({enabled:z.boolean().default(false),estimate:z.boolean().default(true),luxThreshold:finite.nonnegative().max(10000).default(30),lumens:finite.min(0).max(5000).default(180),angle:finite.min(5).max(140).default(65),kelvin:finite.min(2000).max(9000).default(4500),position:vector.default([0,.2,-.35])}).optional(),
+    footprint:z.object({width:finite.min(.1).max(5),length:finite.min(.1).max(5)}).optional(),
+    classification:z.object({origin:z.enum(['automatic','manual']),status:z.enum(['proposed','approved','rejected']),analysisKey:z.string(),proposalId:z.string(),confidence:finite.min(0).max(1)}).optional(),
     trackingOffset:vector.default([0,0,0]),
     bindings: z.record(z.string(), z.string().max(200)).default({}),
   })).max(200),

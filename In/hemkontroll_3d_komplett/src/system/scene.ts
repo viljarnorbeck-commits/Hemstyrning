@@ -1,3 +1,5 @@
+import {cameraFloor,constrainGroundCamera} from './ground-model';
+import type {LearnedGraph,YardGrid} from '../../../../shared/yard-types';
 import {SurfaceInput,type Tap} from './surface-input';
 import{telemetryTime}from'./telemetry-time';
 import{robotLightState}from'./robot-light';
@@ -5,7 +7,7 @@ import{appearanceFor}from'./appearance';
 import{ObjectAssets}from'./object-assets';
 import{carVisible}from'./vehicle-state';
 import{geographicToLocal}from'./geography';
-import{groundSurface,traversableSegment,zonePoints,objectLocalPoint}from'./navigation';
+import{supportedGroundSegment,ZoneIndex,groundSurface,traversableSegment,zonePoints,objectLocalPoint}from'./navigation';
 import * as THREE from 'three';
 import{Sky}from'./sky';
 import{Surroundings}from'./terrain';
@@ -44,10 +46,19 @@ export class GardenScene {
   private sun = new THREE.DirectionalLight(0xffebc8, 2);
   private ambient = new THREE.HemisphereLight(0xdceaff, 0x73806b, 1);
   private precipitation = new Precipitation();
+  private routeOverlay=new THREE.Group();private replay?:{samples:{point:Vec3;t:number}[];started:number;marker:THREE.Mesh};
+  showLearnedRoutes(graph:LearnedGraph){this.showRouteHistory([]);if(graph.stale)return;for(const e of graph.edges){const geometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...e.from),new THREE.Vector3(...e.to)]);this.routeOverlay.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:e.changed?'#ffc65c':'#64c6ee'})));}this.scene.add(this.routeOverlay);}
+  showRouteHistory(samples:{point:Vec3;t:number;accepted?:boolean}[],play=false){disposeTree(this.routeOverlay);this.routeOverlay.clear();this.replay=undefined;if(!samples.length)return;for(let i=1;i<samples.length;i++){const a=samples[i-1],b=samples[i],uncertain=a.accepted===false||b.accepted===false||b.t-a.t>15000;const geometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a.point).add(new THREE.Vector3(0,.15,0)),new THREE.Vector3(...b.point).add(new THREE.Vector3(0,.15,0))]);const line=new THREE.Line(geometry,uncertain?new THREE.LineDashedMaterial({color:'#ffbf45',dashSize:.3,gapSize:.3}):new THREE.LineBasicMaterial({color:'#64c6ee'}));line.computeLineDistances();this.routeOverlay.add(line);}const reliable=samples.filter(s=>s.accepted!==false);if(play&&reliable.length){const marker=new THREE.Mesh(new THREE.SphereGeometry(.35,12,8),new THREE.MeshBasicMaterial({color:'#ffc65c'}));this.routeOverlay.add(marker);this.replay={samples:reliable,started:performance.now(),marker};}this.scene.add(this.routeOverlay);}
+  private updateReplay(){this.routeOverlay.visible=this.editing;this.yardOverlay.visible=this.yardOverlay.visible&&this.editing;if(!this.replay||!this.editing)return;const r=this.replay,time=r.samples[0].t+(performance.now()-r.started)*4;let i=r.samples.findIndex(s=>s.t>=time);if(i<0)i=r.samples.length-1;if(i>0){const a=r.samples[i-1],b=r.samples[i],f=Math.max(0,Math.min(1,(time-a.t)/Math.max(1,b.t-a.t))),safe=b.t-a.t<=15000&&this.safeMowerSegment({x:a.point[0],z:a.point[2]},{x:b.point[0],z:b.point[2]},.56);r.marker.position.fromArray(a.point);if(safe)r.marker.position.lerp(new THREE.Vector3(...b.point),f);const h=this.groundAt(r.marker.position.x,r.marker.position.z);if(h!==null)r.marker.position.y=h;r.marker.position.y+=.35;this.renderer.domElement.dataset.replayQuality=safe?'historical-interpolation':'uncertain-gap';}}
+
+  private learnedGraph?:LearnedGraph;private learningRefresh=0;
   private trackers = new Map<string,MowerTrackingService>();
   private tracking = new Map<string,ReturnType<MowerTrackingService['update']>>();
   private observer:ResizeObserver;
-  private groundRay = new THREE.Raycaster();
+  private zoneIndex?:ZoneIndex;private yard?:YardGrid;private yardModel?:THREE.Object3D;private yardSignature='';private yardRequest=0;private fallbackGround=0;private yardOverlay=new THREE.Group();
+  setYardAnalysis(grid:YardGrid|undefined){this.zoneIndex=undefined;this.yard=grid;disposeTree(this.yardOverlay);this.yardOverlay.clear();for(const p of grid?.proposals??[]){if(p.status==='rejected')continue;const geometry=new THREE.BufferGeometry().setFromPoints(p.points.map(v=>new THREE.Vector3(v[0],v[1]+.05,v[2])));geometry.setIndex([0,1,2,0,2,3]);this.yardOverlay.add(new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:p.kind==='ground'?'#40ce72':p.kind==='obstacle'?'#ee5555':'#ffcf45',transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false})));}this.scene.add(this.yardOverlay);}
+  showYardAnalysis(show:boolean){this.yardOverlay.visible=show&&this.editing;}
+  async loadYardAnalysis(){const revision=++this.yardRequest;try{const response=await fetch('/workspace-api/yard-analysis');if(response.ok){const data=await response.json(),model=this.config?.models[this.config.activeModel],signature=(m:typeof model)=>m?JSON.stringify([m.url,m.position,m.rotation,m.scale]):'';if(revision!==this.yardRequest||signature(model)!==signature(data.model))return;this.setYardAnalysis(data.result);this.yardOverlay.visible=false;}}catch{}}
   private selected?: string;
   private modelEditing = false;
   private raycaster = new THREE.Raycaster();
@@ -130,13 +141,14 @@ export class GardenScene {
     if(this.raycaster.intersectObject(this.objects,true)[0])return;
     const hit=this.raycaster.intersectObject(this.models.root,true)[0];if(!hit)return;
     const normal=hit.face?.normal.clone().transformDirection(hit.object.matrixWorld);if(!normal||normal.y<.3)return;
-    this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.focusGoal=hit.point.clone();this.surroundings.constrainFocus(this.focusGoal);
+    this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.focusGoal=hit.point.clone();this.focusGoal.y=cameraFloor(hit.point.x,hit.point.z,this.config?.objects??[],this.yard,this.fallbackGround);this.surroundings.constrainFocus(this.focusGoal);
   }
-  private constrainCamera(){if(this.skyView)return;const before=this.controls.target.clone();this.surroundings.constrainFocus(this.controls.target);this.camera.position.add(this.controls.target.clone().sub(before));const floor=this.groundAt(this.camera.position.x,this.camera.position.z);if(floor!==null&&this.camera.position.y<floor+.9){this.camera.position.y=floor+.9;this.camera.lookAt(this.controls.target);}}
+  private constrainCamera(){if(this.skyView)return;const model=this.models.root.children[0];if(model!==this.yardModel){this.yardModel=model;this.zoneIndex=undefined;this.yard=undefined;if(model){const box=new THREE.Box3().setFromObject(model);this.fallbackGround=box.isEmpty()?0:box.max.y+.6;void this.loadYardAnalysis();}}const before=this.controls.target.clone();this.surroundings.constrainFocus(this.controls.target);this.camera.position.add(this.controls.target.clone().sub(before));constrainGroundCamera(this.camera.position,this.controls.target,(x,z)=>cameraFloor(x,z,this.activeZones(x,z),this.yard,this.fallbackGround));this.camera.lookAt(this.controls.target);}
   private cameraStats(){const canvas=this.renderer.domElement;canvas.dataset.cameraPosition=JSON.stringify(this.camera.position.toArray());canvas.dataset.cameraTarget=JSON.stringify(this.controls.target.toArray());canvas.dataset.cameraDistance=String(this.camera.position.distanceTo(this.controls.target));canvas.dataset.navigationMode=this.navigationMode;canvas.dataset.following=this.followId??'';}
   private resize() { const { width, height } = this.renderer.domElement.getBoundingClientRect(); if(width<=0||height<=0)return; if(this.config?.quality==='auto'){this.models.detail=width>=900;this.renderer.setPixelRatio(Math.min(devicePixelRatio,width>=900?2:1.5));} this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); }
   setConfig(config: SceneConfig) {
-    this.config = config;this.renderer.toneMapping=config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;
+    this.zoneIndex=undefined;
+    const model=config.models[config.activeModel],signature=JSON.stringify([model.url,model.position,model.rotation,model.scale]);if(signature!==this.yardSignature){this.yardSignature=signature;this.yard=undefined;this.yardModel=undefined;this.yardRequest++;}this.config = config;this.renderer.toneMapping=config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;
     this.models.grading=config.appearance;
     this.moon.castShadow=config.quality==='high';
     const high=config.quality==='high'||config.quality==='auto'&&innerWidth>=900;
@@ -195,7 +207,7 @@ export class GardenScene {
     const now = performance.now();
     if(now-this.lastFrame<1000/30)return;
     const dt = Math.min((now - this.lastFrame) / 1000, 0.1); this.lastFrame = now;
-    if(this.diagnostic){this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.controls.update();this.constrainCamera();this.cameraStats();this.renderer.render(this.scene,this.camera);return;}
+    if(this.diagnostic){this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.routeOverlay.visible=this.yardOverlay.visible=false;this.controls.update();this.constrainCamera();this.cameraStats();this.renderer.render(this.scene,this.camera);return;}
     this.scene.fog??=new THREE.FogExp2('#8faeb6',.001);this.sky.root.visible=this.environment.visible=true;this.models.root.visible=this.objects.visible=!this.skyView;this.transform.getHelper().visible=this.editing&&!this.skyView;this.surfaceMarkers.visible=this.editing&&!this.skyView;
     this.daylight = damp(this.daylight, target.daylight, dt);
     const appearance=this.config?appearanceFor(this.config,target):{warmth:.035,saturation:1.08,contrast:1.04,exposure:1};if(this.models.grading){this.models.grading={...this.models.grading,warmth:damp(this.models.grading.warmth,appearance.warmth,dt),saturation:damp(this.models.grading.saturation,appearance.saturation,dt),contrast:damp(this.models.grading.contrast,appearance.contrast,dt)};}
@@ -224,6 +236,7 @@ export class GardenScene {
         if(mesh&&model&&model.userData.panelCount!==count){const layout=panelLayout(count),matrix=new THREE.Matrix4();for(let i=0;i<layout.length;i++){const panel=layout[i];matrix.makeScale(panel.width,1,panel.depth);matrix.setPosition(panel.x,.1,panel.z);mesh.setMatrixAt(i,matrix);}mesh.count=count;mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();model.userData.panelCount=count;}
       }
       if(item.type==='mower'){
+        if(performance.now()>this.learningRefresh){this.learningRefresh=performance.now()+60000;void fetch('/workspace-api/learning').then(r=>r.ok?r.json():null).then(d=>{if(d)this.learnedGraph=d.graph;}).catch(()=>{});}
         let tracker=this.trackers.get(item.id);if(!tracker){tracker=new MowerTrackingService();this.trackers.set(item.id,tracker);}
         const state=states.get(item.entityId),positionState=states.get(item.bindings?.position??item.entityId),a=positionState?.attributes;
         if(connected&&a){
@@ -231,10 +244,10 @@ export class GardenScene {
           if(!Number.isFinite(x)&&typeof a.latitude==='number'&&typeof a.longitude==='number'&&this.config){const local=geographicToLocal({latitude:a.latitude,longitude:a.longitude,altitude:Number(a.altitude??this.config.geography?.altitude??0)},{...this.config.location,altitude:this.config.geography?.altitude??0},this.config.location.northOffset);x=local[0];z=local[2];}
           x+=item.trackingOffset?.[0]??0;z+=item.trackingOffset?.[2]??0;
           const sampled=typeof a.position_sampled_at==='string'?a.position_sampled_at:positionState?.last_updated;
-          if(Number.isFinite(x)&&Number.isFinite(z)&&sampled)tracker.accept({x,z,t:Date.parse(sampled),accuracy:Number(a.accuracy_m??a.gps_accuracy??1),speed:typeof a.speed_mps==='number'?a.speed_mps:undefined,heading:typeof a.heading_deg==='number'?a.heading_deg:undefined},telemetryTime(state));
+          if(Number.isFinite(x)&&Number.isFinite(z)&&sampled)tracker.accept({x,z,t:Date.parse(sampled),timeBasis:typeof a.position_sampled_at==='string'?'sample':'entity',accuracy:typeof(a.accuracy_m??a.gps_accuracy)==='number'?Number(a.accuracy_m??a.gps_accuracy):undefined,speed:typeof a.speed_mps==='number'?a.speed_mps:undefined,heading:typeof a.heading_deg==='number'?a.heading_deg:undefined},telemetryTime(state));
         }
-        const info=tracker.update(telemetryTime(state),state?.state??'unknown',connected,dt,(from,to)=>traversableSegment(from,to,this.config?.objects??[]));this.tracking.set(item.id,info);
-        const model=this.renderObjects.get(item.id);if(info&&model&&!this.editing){model.position.x=info.x;model.position.z=info.z;const ground=this.groundAt(info.x,info.z);if(ground!==null)model.position.y=damp(model.position.y,ground+(item.trackingOffset?.[1]??0),dt,.18);const surface=groundSurface(info.x,info.z,this.config?.objects??[]),up=new THREE.Vector3(...(surface?.normal??[0,1,0]));const heading=info.heading??0,forward=new THREE.Vector3(Math.sin(heading),0,-Math.cos(heading));forward.addScaledVector(up,-forward.dot(up)).normalize();const right=new THREE.Vector3().crossVectors(forward,up).normalize(),back=forward.clone().negate();const rotation=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right,up,back));model.quaternion.slerp(rotation,1-Math.exp(-dt*4));}
+        tracker.graph=this.learnedGraph;const info=tracker.update(telemetryTime(state),state?.state??'unknown',connected,dt,(from,to)=>this.safeMowerSegment(from,to,Math.hypot(item.footprint?.width??.65,item.footprint?.length??.9)/2));this.tracking.set(item.id,info);
+        const model=this.renderObjects.get(item.id);if(info&&model&&!this.editing){model.position.x=info.x;model.position.z=info.z;const ground=this.groundAt(info.x,info.z);model.visible=ground!==null&&info.safePosition;if(ground!==null)model.position.y=ground+(item.trackingOffset?.[1]??0);const surface=groundSurface(info.x,info.z,this.activeZones(info.x,info.z)),up=new THREE.Vector3(...(surface?.normal??[0,1,0]));const heading=info.heading??0,forward=new THREE.Vector3(Math.sin(heading),0,-Math.cos(heading));forward.addScaledVector(up,-forward.dot(up)).normalize();const right=new THREE.Vector3().crossVectors(forward,up).normalize(),back=forward.clone().negate();const rotation=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right,up,back));model.quaternion.slerp(rotation,1-Math.exp(-dt*4));}
       }
       if(item.type==='mower')this.updateHeadlight(item,states,target,dt,connected);
       const lamp = this.lamps.get(item.id); if (!lamp) continue;
@@ -252,7 +265,7 @@ export class GardenScene {
     }
     if(this.followId){const followed=this.renderObjects.get(this.followId);if(followed){const offset=followed.position.clone().sub(this.controls.target).multiplyScalar(1-Math.exp(-dt*2));this.controls.target.add(offset);this.camera.position.add(offset);}}
     if(this.focusGoal){const delta=this.focusGoal.clone().sub(this.controls.target);if(delta.length()<.015){this.focusGoal=undefined;}else{delta.multiplyScalar(1-Math.exp(-dt*10));this.controls.target.add(delta);this.camera.position.add(delta);}}
-    this.controls.update();this.constrainCamera();this.cameraStats();
+    this.updateReplay();this.controls.update();this.constrainCamera();this.cameraStats();
     this.renderer.render(this.scene, this.camera);
   }
   setDiagnostics(profile:'mobile'|'detail'|'reference',neutral:boolean){this.diagnostic=neutral;this.models.reference=profile==='reference';this.models.detail=profile!=='mobile';this.models.setNeutral(neutral);this.transform.enabled=this.editing&&!neutral;this.transform.getHelper().visible=this.editing&&!neutral;if(!neutral&&this.config)this.renderer.toneMapping=this.config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:this.config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;const season=this.models.active??this.config?.activeModel;if(season&&this.config)void this.models.select(season,this.config.models[season]);}
@@ -265,8 +278,10 @@ export class GardenScene {
   lookAtSky(){this.focusGoal=undefined;const env=this.latestEnvironment;if(!env)return;this.skyView=true;this.followId=undefined;this.controls.maxPolarAngle=Math.PI;this.controls.enableDamping=false;this.controls.enabled=false;const direction=env.daylight>.5?new THREE.Vector3(...env.sunDirection):(env.moonAltitude??-1)>0?new THREE.Vector3(...(env.moonDirection??[0,1,0])):new THREE.Vector3(0,.5,-1).normalize();this.controls.target.copy(this.camera.position).addScaledVector(direction,120);this.controls.update();}
   follow(id:string){this.focusGoal=undefined;this.skyView=false;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.followId=id;const model=this.renderObjects.get(id);if(model){const delta=this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(22);this.controls.target.copy(model.position);this.camera.position.copy(model.position).add(delta);}}
   screenPosition(id:string){const object=this.renderObjects.get(id);if(!object||!object.visible||this.diagnostic||this.skyView)return null;const physical=object.getWorldPosition(new THREE.Vector3());physical.y+=object.userData.type==='car'?.75:object.userData.type==='mower'?.15:0;const point=physical.clone();point.y+=1.2;const distance=this.camera.position.distanceTo(point),occluded=(this.config?.appearance?.occlusion??true)&&isOccluded(this.camera,physical,[this.models.root,this.occlusionVolumes],this.markerRay);const p=point.project(this.camera);return{x:(p.x*.5+.5)*innerWidth,y:(-p.y*.5+.5)*innerHeight,z:p.z,occluded,distance};}
-  private groundAt(x:number,z:number){const surface=groundSurface(x,z,this.config?.objects??[]);if(surface)return surface.height;this.groundRay.firstHitOnly=true;this.groundRay.set(new THREE.Vector3(x,80,z),new THREE.Vector3(0,-1,0));const hit=this.groundRay.intersectObject(this.models.root,true)[0];return hit?.point.y??null;}
-  dispose(){this.input.dispose();this.assets.reset();this.renderer.setAnimationLoop(null);this.observer.disconnect();this.controls.dispose();this.transform.dispose();this.models.dispose();this.sky.dispose();disposeTree(this.sky.root);disposeTree(this.surroundings.root);disposeTree(this.occlusionVolumes);disposeTree(this.objects);disposeTree(this.environment);disposeTree(this.surfaceMarkers);this.renderer.dispose();}
+  private activeZones(x?:number,z?:number){this.zoneIndex??=new ZoneIndex((this.config?.objects??[]).filter(o=>!o.classification||o.classification.origin==='manual'||o.classification.analysisKey===this.yard?.key));return x===undefined||z===undefined?this.zoneIndex.all:this.zoneIndex.region(x,z);}
+  private safeMowerSegment(from:{x:number;z:number},to:{x:number;z:number},radius:number){this.activeZones();const zones=this.zoneIndex!.region(Math.min(from.x,to.x)-radius,Math.min(from.z,to.z)-radius,Math.max(from.x,to.x)+radius,Math.max(from.z,to.z)+radius);if(!supportedGroundSegment(from,to,zones))return false;return traversableSegment(from,to,zones,radius);}
+  private groundAt(x:number,z:number){return groundSurface(x,z,this.activeZones(x,z))?.height??null;}
+  dispose(){this.input.dispose();this.assets.reset();this.renderer.setAnimationLoop(null);this.observer.disconnect();this.controls.dispose();this.transform.dispose();this.models.dispose();this.sky.dispose();disposeTree(this.sky.root);disposeTree(this.surroundings.root);disposeTree(this.occlusionVolumes);disposeTree(this.objects);disposeTree(this.environment);disposeTree(this.surfaceMarkers);disposeTree(this.yardOverlay);disposeTree(this.routeOverlay);this.renderer.dispose();}
   reset() { this.focusGoal=undefined;this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.controls.enableZoom=this.controls.enablePan=true;this.camera.position.set(55, 32, 55); this.controls.target.set(0, 1, 0); }
 }
 function kelvinRGB(value: number): Vec3 {

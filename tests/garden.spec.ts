@@ -26,7 +26,7 @@ test('list and quick menu reach occluded devices, confirm actions, external stat
 
 test('separate simulator controls four season slots without moving scene objects',async({page,request})=>{
  const before=await request.get('/workspace-api/scene').then(r=>r.json()),initial=await request.get('/dev-api/settings').then(r=>r.json());
- try{await page.goto('/dev/simulator');await expect(page.getByRole('heading',{name:'Home Assistant-simulator'})).toBeVisible();await expect(page.locator('[data-scenario]')).toHaveCount(17);await page.locator('[data-scenario="blizzard"]').click();await expect(page.locator('[data-setting="snow"]')).toHaveValue('1');
+ try{await page.goto('/dev/simulator');await expect(page.getByRole('heading',{name:'Home Assistant-simulator'})).toBeVisible();await expect(page.locator('[data-scenario]')).toHaveCount(23);await page.locator('[data-scenario="blizzard"]').click();await expect(page.locator('[data-setting="snow"]')).toHaveValue('1');
  for(const season of ['summer','autumn','firstSnow','winter']){await page.locator('[data-setting="season"]').selectOption(season);await page.locator('#apply-settings').click();await expect(page.locator('#dev-message')).toHaveText('Simulatorn uppdaterad');const state=await request.get('/dev-api/states').then(r=>r.json());expect(state.find((s:any)=>s.entity_id==='weather.home').attributes.season_model).toBe(season);}expect((await request.get('/workspace-api/scene').then(r=>r.json())).objects).toEqual(before.objects);
  }finally{await request.put('/dev-api/settings',{data:initial.settings});}
 });

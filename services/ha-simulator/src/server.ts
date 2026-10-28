@@ -1,3 +1,6 @@
+import {MowerHistory} from './mower-history.js';
+import {mowerRecorder} from './mower-recorder.js';
+import {mowerHistoryApi} from './mower-history-api.js';
 import http from "node:http";
 import { calendarEvents } from "./calendar.js";
 import { Simulation, scenarios } from "./simulation.js";
@@ -35,11 +38,15 @@ export function createSimulator(options: SimulatorOptions) {
   const app = express();
   app.use(cors());
   const workspace = workspaceApi(options.dataDirectory ?? resolve(import.meta.dirname, '../../../data'));
+  const history=new MowerHistory(process.env.VITEST&&!options.dataDirectory?':memory:':resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),'luba.sqlite'));
+  const stopRecorder=mowerRecorder(history,store,workspace.load,options.live);
+  app.use('/workspace-api/learning',mowerHistoryApi(history,options.live?'real':'simulator',workspace.load));
   app.use('/workspace-api', workspace.router);
   app.use(express.json());
   app.use('/bridge/api', bridgeApi(store, workspace.load, delayMs, options.live));
   const dev = express.Router();
   dev.use((req,res,next)=>{ if(req.headers.origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.origin)){res.sendStatus(403);return;}next(); });
+  dev.use('/learning',mowerHistoryApi(history,'simulator',workspace.load));
   dev.get('/info',(_req,res)=>res.json({mode:'simulator'}));
   dev.get('/settings',(_req,res)=>res.json({settings:simulation.settings,scenario:simulation.scenario,scenarios}));
   dev.put('/settings',(req,res)=>{try{simulation.configure(req.body);res.json({saved:true});}catch{res.status(400).json({message:'Ogiltiga simulatorinställningar'});}});
@@ -119,6 +126,7 @@ export function createSimulator(options: SimulatorOptions) {
   const server = http.createServer(app);
   const webSockets = new WebSocketServer({ noServer: true });
   const sessions = new Map<WebSocket, ClientSession>();
+  server.on('close',()=>{workspace.close();stopRecorder();history.close();});
   server.on('listening',()=>{void workspace.load().then(scene=>{if(!server.listening)return;simulation.configure({...simulation.settings,latitude:scene.location.latitude,longitude:scene.location.longitude,mowerRoute:scene.geography.simulatorRoute??[]});simulation.start();}).catch(()=>{if(server.listening)simulation.start();});});
   server.on('close',()=>simulation.stop());
 

@@ -1,0 +1,10 @@
+import {it,expect} from 'vitest';
+import {cameraFloor,constrainGroundCamera,gridGround} from './ground-model';
+import {groundSurface,traversableSegment} from './navigation';
+import type {SceneObject} from './types';
+import type {YardGrid} from '../../../../shared/yard-types';
+const zone=(name:SceneObject['zone'],points:number[][])=>({zone:name,points,position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]} as SceneObject);
+const slope=zone('ground',[[0,0,0],[10,3,0],[10,3,10],[0,0,10]]);
+it('keeps position and focus above varying ground even when zoom/pan starts below it',()=>{for(let x=1;x<10;x++){const p={x,y:-20,z:4},t={x,y:-50,z:5};constrainGroundCamera(p,t,(a,b)=>cameraFloor(a,b,[slope],undefined,8));expect(p.y).toBeGreaterThanOrEqual(x*.3+.9-1e-9);expect(t.y).toBeGreaterThanOrEqual(x*.3+.15-1e-9);}});
+it('uses safe fallback at edges/holes, never a photographic roof raycast',()=>{expect(cameraFloor(30,30,[slope],undefined,8)).toBe(8);const grid={originX:0,originZ:0,cellSize:1,width:2,height:1,kind:[1,2],ground:[.5,null],fallbackHeight:2} as YardGrid;expect(gridGround(grid,.5,.5)).toBe(.5);expect(cameraFloor(1.5,.5,[],grid,20)).toBe(2);expect(cameraFloor(4,.5,[],grid,20)).toBe(2);expect(cameraFloor(1,1,[slope],grid,20)).toBeCloseTo(.3);});
+it('ignores proposals while preserving manual ground and checks the full robot footprint',()=>{const proposal={...slope,classification:{origin:'automatic',status:'proposed',analysisKey:'a',proposalId:'b',confidence:.6}} as SceneObject;expect(groundSurface(5,5,[proposal])).toBeNull();expect(groundSurface(5,5,[slope,proposal])?.height).toBeCloseTo(1.5);const rock=zone('obstacle',[[4,0,4],[4.1,0,4],[4.1,0,4.1],[4,0,4.1]]);expect(traversableSegment({x:2,z:3.6},{x:7,z:3.6},[slope,rock],.56)).toBe(false);expect(traversableSegment({x:2,z:2},{x:7,z:2},[slope,rock],.56)).toBe(true);});

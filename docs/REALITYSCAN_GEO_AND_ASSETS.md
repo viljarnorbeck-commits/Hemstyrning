@@ -180,3 +180,9 @@ inte ett löfte om mobil FPS. Stor kartkod laddas endast vid kartöppning, och
 referensmodell/panoraman laddas endast när de väljs. Vite rapporterar stora
 Three.js/Meshopt- och MapLibre-chunks. Produktionsautentisering och uppgradering
 av äldre Vitest-utvecklingsberoenden återstår som separata drift-/verktygsuppgifter.
+
+## Markanalys och beständig LUBA-positionering
+
+Separat markunderlag, kameraskydd, redigerargranskning, SQLite-historik och
+inlärda körstråk beskrivs i [LUBA_TERRAIN_AND_LEARNING.md](LUBA_TERRAIN_AND_LEARNING.md).
+Det ersätter tidigare takraycast för kamerans och robotens markhöjd.

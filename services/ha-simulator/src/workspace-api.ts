@@ -1,3 +1,4 @@
+import {yardApi} from './yard-api.js';
 import {resolveJamLink} from './music.js';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
@@ -30,6 +31,7 @@ export function workspaceApi(directory: string) {
     if (origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) { res.sendStatus(403); return; }
     next();
   });
+  const yard=yardApi(directory,load);router.use('/yard-analysis',yard.router);
   router.post('/music/jam/resolve',express.json({limit:'4kb'}),async(req,res)=>{try{res.json({url:await resolveJamLink(req.body?.url),verifiedSession:false});}catch(error){res.status(400).json({message:error instanceof Error?error.message:'Länken kunde inte verifieras'});}});
   router.get('/scene', async (_req, res) => { res.json(await load()); });
   router.put('/scene', express.json({ limit: '2mb' }), async (req, res) => {
@@ -75,5 +77,5 @@ export function workspaceApi(directory: string) {
     if (!/^[a-f0-9]{64}\.glb$/.test(req.params.file)) { res.sendStatus(404); return; }
     res.sendFile(resolve(directory, 'models', req.params.file), { headers: { 'Cache-Control': 'public,max-age=31536000,immutable' } });
   });
-  return { router, load };
+  return { router, load, close:yard.close };
 }

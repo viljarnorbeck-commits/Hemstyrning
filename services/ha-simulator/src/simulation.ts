@@ -14,7 +14,7 @@ export const simulationSchema=z.object({
   mowerInterval:n.min(0.5).max(30),mowerJitter:n.min(0).max(10),gpsFault:z.enum(['none','lost','jump','delayed','dropout']),cars:z.array(carSchema).min(1).max(8),
 }).superRefine((v,ctx)=>{if(new Set(v.cars.map(c=>c.id)).size!==v.cars.length)ctx.addIssue({code:'custom',message:'Bil-ID måste vara unika'});});
 export type SimulationSettings=z.infer<typeof simulationSchema>;
-export const scenarios=[['summer','Solig sommardag'],['sunset','Solnedgång'],['winter','Mörk vinterkväll med gårdsbelysning'],['rain','Kraftigt regn'],['snow','Kraftigt snöfall'],['blizzard','Snöstorm med hård vind'],['fog','Tät dimma'],['rapid','Snabba väderförändringar'],['car-arrives','Bil anländer och börjar laddas'],['car-climate','Bil startar klimatisering'],['mower-job','Gräsklippare · helt arbetspass'],['gps-loss','Gräsklippare · GPS-bortfall'],['solar','Varierande solproduktion'],['offline','Enheter tappar anslutningen'],['mower-slope','Gräsklippare · testsluttning'],['mower-driveway','Gräsklippare · passage över uppfart'],['mower-return','Gräsklippare · åter till laddstation']] as const;
+export const scenarios=[['summer','Solig sommardag'],['sunset','Solnedgång'],['winter','Mörk vinterkväll med gårdsbelysning'],['rain','Kraftigt regn'],['snow','Kraftigt snöfall'],['blizzard','Snöstorm med hård vind'],['fog','Tät dimma'],['rapid','Snabba väderförändringar'],['car-arrives','Bil anländer och börjar laddas'],['car-climate','Bil startar klimatisering'],['mower-job','Gräsklippare · helt arbetspass'],['gps-loss','Gräsklippare · GPS-bortfall'],['solar','Varierande solproduktion'],['offline','Enheter tappar anslutningen'],['mower-slope','Gräsklippare · testsluttning'],['mower-driveway','Gräsklippare · passage över uppfart'],['mower-return','Gräsklippare · åter till laddstation'],['mower-normal','LUBA A · normal körning'],['mower-repeat','LUBA B · upprepade körningar'],['mower-changed','LUBA C · förändrad rutt'],['mower-bad-gps','LUBA D · dålig GPS'],['mower-obstacles','LUBA E · hinder och sluttning'],['mower-restart','LUBA F · historik före omstart']] as const;
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
 /** NOAA solar geometry; mirrored contract tests against the frontend implementation. */
 export function solar(date:Date,latitude:number,longitude:number){
@@ -47,6 +47,8 @@ export class Simulation {
   if(id==='car-arrives'){const c=s.cars[0]!;Object.assign(c,{home:false,plugged:false,charging:false});this.store.set(`switch.${c.id}_charging`,'off');}
   if(id==='car-climate'){const c=s.cars[0]!;c.climate=false;this.store.set(`climate.${c.id}`,'off');}
   if(id==='mower-job'||id==='gps-loss'||id.startsWith('mower-')){this.jobProgress=0;this.store.set('lawn_mower.luba_3_awd','mowing',{progress:0,error:null});s.mowerJitter=2;}
+  if(id==='mower-obstacles')s.mowerRoute=[[-17,0,7],[-10,1.2,7],[-10,1.2,-5],[-2,0,-5],[-2,0,7]];
+  if(id==='mower-repeat'||id==='mower-changed'||id==='mower-restart')this.mowerTravel=0;
   if(id==='mower-slope')s.mowerRoute=[[-17,0,7],[-10,1.2,7],[-2,0,7],[-2,0,22],[-17,0,22]];
   if(id==='mower-driveway')s.mowerRoute=[[-17,0,7],[-10,0,7],[-10,0,-5],[-2,0,-5],[-2,0,7]];
   if(id==='mower-return'){this.mowerTravel=20;this.store.set('lawn_mower.luba_3_awd','returning');}
@@ -60,6 +62,8 @@ export class Simulation {
   if(this.scenario==='solar')s.cloud=(Math.sin(t/10)+1)*50;
   if(this.scenario==='car-arrives'&&t>=5){const c=s.cars[0]!;c.home=true;c.plugged=t>=8;if(t>=10)this.store.set(`switch.${c.id}_charging`,'on');}
   if(this.scenario==='car-climate'&&t>=3)this.store.set(`climate.${s.cars[0]!.id}`,'heat');
+  if(this.scenario==='mower-bad-gps'){const faults=['none','jump','delayed','dropout','lost'] as const;s.gpsFault=faults[Math.floor(t/15)%faults.length]!;}
+  if(this.scenario==='mower-changed'&&t>200)s.mowerRoute=[[-17,0,7],[-10,0,5],[-2,0,7],[-2,0,22],[-17,0,22]];
   if(this.scenario==='gps-loss')s.gpsFault=t>=8&&t<25?'lost':'none';
   if(this.scenario==='offline'){const lost=t>=5&&t<20;this.store.set('light.altan',lost?'unavailable':'off');s.luxMode=lost?'unavailable':'auto';}
  }
@@ -116,13 +120,13 @@ export class Simulation {
  }
  private updateMower(dt:number){
   const s=this.settings,m=this.store.get('lawn_mower.luba_3_awd');if(!m)return;let activity=m.state;
-  if(activity==='mowing'){this.mowerTravel+=dt*0.65;this.jobProgress=clamp(this.jobProgress+dt/1.8,0,100);if(this.jobProgress>=100)activity='returning';}
+  if(activity==='mowing'){this.mowerTravel+=dt*0.65;this.jobProgress=clamp(this.jobProgress+dt/1.8,0,100);if(this.jobProgress>=100&&!['mower-repeat','mower-changed','mower-restart'].includes(this.scenario))activity='returning';}
   if(activity==='returning'){this.mowerTravel=Math.max(0,this.mowerTravel-dt*1.2);if(this.mowerTravel===0)activity='docked';}
   const period=Math.max(0.5,s.mowerInterval+Math.sin(this.elapsed*0.7)*s.mowerJitter);
   if(this.mowerElapsed>=period){this.mowerElapsed=0;
    const d=this.mowerTravel%60,side=Math.floor(d/15),offset=d%15,x=side===0?-17+offset:side===1?-2:side===2?-2-offset:-17,z=side===0?7:side===1?7+offset:side===2?22:22-offset;
    let px=x,pz=z,py=0;if(s.mowerRoute.length>1){const route=[...s.mowerRoute,s.mowerRoute[0]!],lengths=route.slice(1).map((p,i)=>Math.hypot(p[0]-route[i]![0],p[2]-route[i]![2])),total=lengths.reduce((a,b)=>a+b,0);let travel=total>0?this.mowerTravel%total:0;for(let i=0;i<lengths.length;i++){const length=lengths[i]!;if(travel<=length&&length>0){const a=route[i]!,b=route[i+1]!,f=travel/length;px=a[0]+(b[0]-a[0])*f;py=a[1]+(b[1]-a[1])*f;pz=a[2]+(b[2]-a[2])*f;break;}travel-=length;}}
-   const attributes={local_y:py,local_x:px+(s.gpsFault==='jump'?150:Math.sin(this.elapsed)*0.05),local_z:pz,position_sampled_at:new Date(this.clock).toISOString(),accuracy_m:0.15,speed_mps:activity==='mowing'?0.65:0,heading_deg:[90,180,270,0][side]??0};
+   const attributes={job_id:`${this.scenario}:${Math.floor(this.mowerTravel/60)}`,local_y:py,local_x:px+(s.gpsFault==='jump'?150:Math.sin(this.elapsed)*0.05),local_z:pz,position_sampled_at:new Date(this.clock).toISOString(),accuracy_m:0.15,speed_mps:activity==='mowing'?0.65:0,heading_deg:[90,180,270,0][side]??0};
    if(s.gpsFault==='delayed')this.delayed.push({at:this.clock+10000,attributes});
    else if(s.gpsFault!=='lost'&&!(s.gpsFault==='dropout'&&Math.floor(this.elapsed/8)%2)){this.positionHistory.push({x:attributes.local_x,z:attributes.local_z,sampled_at:attributes.position_sampled_at});this.positionHistory=this.positionHistory.filter(p=>this.clock-Date.parse(p.sampled_at)<=180000);this.set(m.entity_id,activity,{...attributes,position_history:this.positionHistory});}
   }

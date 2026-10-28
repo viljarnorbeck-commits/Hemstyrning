@@ -1,10 +1,8 @@
 import type { Vec3 } from './types';
 export interface GeoPoint { latitude:number; longitude:number; altitude?:number }
-const rad=Math.PI/180, a=6378137,e2=6.69437999014e-3;
-function ecef(p:GeoPoint):Vec3 {const lat=p.latitude*rad,lon=p.longitude*rad,n=a/Math.sqrt(1-e2*Math.sin(lat)**2),h=p.altitude??0;return[(n+h)*Math.cos(lat)*Math.cos(lon),(n+h)*Math.cos(lat)*Math.sin(lon),(n*(1-e2)+h)*Math.sin(lat)];}
-/** WGS84 -> local metres: X east, Y up, Z south; optional clockwise north offset. */
-export function geographicToLocal(p:GeoPoint,origin:GeoPoint,northOffset=0):Vec3 {const q=ecef(p),o=ecef(origin),d=q.map((v,i)=>v-o[i]),lat=origin.latitude*rad,lon=origin.longitude*rad;const east=-Math.sin(lon)*d[0]+Math.cos(lon)*d[1],north=-Math.sin(lat)*Math.cos(lon)*d[0]-Math.sin(lat)*Math.sin(lon)*d[1]+Math.cos(lat)*d[2],up=Math.cos(lat)*Math.cos(lon)*d[0]+Math.cos(lat)*Math.sin(lon)*d[1]+Math.sin(lat)*d[2],r=northOffset*rad;return[east*Math.cos(r)+north*Math.sin(r),up,east*Math.sin(r)-north*Math.cos(r)];}
-export function localToGeographic(p:Vec3,origin:GeoPoint,northOffset=0):GeoPoint {const r=northOffset*rad,east=p[0]*Math.cos(r)+p[2]*Math.sin(r),north=p[0]*Math.sin(r)-p[2]*Math.cos(r),up=p[1],lat=origin.latitude*rad,lon=origin.longitude*rad,o=ecef(origin);const x=o[0]-Math.sin(lon)*east-Math.sin(lat)*Math.cos(lon)*north+Math.cos(lat)*Math.cos(lon)*up,y=o[1]+Math.cos(lon)*east-Math.sin(lat)*Math.sin(lon)*north+Math.cos(lat)*Math.sin(lon)*up,z=o[2]+Math.cos(lat)*north+Math.sin(lat)*up;const distance=Math.hypot(x,y);let latitude=Math.atan2(z,distance*(1-e2)),height=0;for(let i=0;i<8;i++){const n=a/Math.sqrt(1-e2*Math.sin(latitude)**2);height=distance/Math.cos(latitude)-n;latitude=Math.atan2(z,distance*(1-e2*n/(n+height)));}return{latitude:latitude/rad,longitude:Math.atan2(y,x)/rad,altitude:height};}
+import {geographicToLocal,localToGeographic} from '../../../../shared/geography.js';
+export {geographicToLocal,localToGeographic};
+const rad=Math.PI/180;
 export interface ControlPoint { world:Vec3; geo:GeoPoint }
 export function fitCalibration(points:ControlPoint[],origin:GeoPoint,northOffset=0){
  if(points.length<3)throw new Error('Minst tre referenspunkter krävs');

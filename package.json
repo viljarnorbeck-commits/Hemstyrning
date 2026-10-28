@@ -28,6 +28,6 @@
     "meshoptimizer": "^1.3.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13"
   }
 }
