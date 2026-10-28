@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+*.tsbuildinfo
+*:Zone.Identifier
+
+
+# Local scene configuration and imported models
+data/
+test-results/
+playwright-report/

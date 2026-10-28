@@ -1,0 +1,10 @@
+{
+  "lights": [
+    { "id": "infart", "entityId": "light.infart_vanster" },
+    { "id": "uppfart", "entityId": "light.infart_hoger" },
+    { "id": "garage", "entityId": "light.garage" },
+    { "id": "fasad", "entityId": "light.forad" },
+    { "id": "tradgard", "entityId": "light.gangstig" },
+    { "id": "altan", "entityId": "light.altan" }
+  ]
+}

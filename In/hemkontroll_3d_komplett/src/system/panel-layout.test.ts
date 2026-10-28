@@ -1,0 +1,2 @@
+import{it,expect}from'vitest';import{panelLayout}from'./panel-layout';
+it('changes panel count within the legacy footprint without multiplying the placed scale',()=>{for(const count of[0,1,24,60,200]){const panels=panelLayout(count);expect(panels).toHaveLength(count);for(const p of panels){expect(Math.abs(p.x)+p.width/2).toBeLessThanOrEqual(.6);expect(Math.abs(p.z)+p.depth/2).toBeLessThanOrEqual(1);}}});

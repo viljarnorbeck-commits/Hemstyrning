@@ -1,0 +1,15 @@
+{
+  "profile": "mobile",
+  "source": "Daniels.glb",
+  "sha256": "f6cfc3c0cbe8896a09cdb8f9ee456245e666083882a816d0ed8f55aba6e3e6fe",
+  "sourceTriangles": 5310780,
+  "previewTriangles": 637292,
+  "missingTextures": [
+    "Daniels_u0_v0_diffuse.png"
+  ],
+  "preserved": [
+    "COLOR_0",
+    "TEXCOORD_0"
+  ],
+  "notes": "Original scan retained. No texture downscaling or image recompression. Vertex colors contain captured lighting."
+}

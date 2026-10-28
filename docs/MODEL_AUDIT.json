@@ -1,0 +1,128 @@
+{
+  "models": [
+    {
+      "file": "/home/viljar/Hemstyrning/In/Daniels.glb",
+      "bytes": 157671028,
+      "sha256": "f6cfc3c0cbe8896a09cdb8f9ee456245e666083882a816d0ed8f55aba6e3e6fe",
+      "triangles": 5310780,
+      "primitives": 1,
+      "attributes": [
+        [
+          "POSITION",
+          "COLOR_0",
+          "TEXCOORD_0"
+        ]
+      ],
+      "textures": [
+        {
+          "uri": "Daniels_u0_v0_diffuse.png",
+          "available": false
+        }
+      ],
+      "textureCount": 1,
+      "materials": [
+        {
+          "name": "default_tex0",
+          "pbrMetallicRoughness": {
+            "metallicFactor": 0,
+            "baseColorTexture": {
+              "index": 0
+            }
+          }
+        }
+      ],
+      "extensions": [],
+      "uvPresent": true
+    },
+    {
+      "file": "/home/viljar/Hemstyrning/In/hemkontroll_3d_komplett/public/models/daniels.glb",
+      "bytes": 4369596,
+      "sha256": "e8fb4d7446d4503cca69e319ca0c999275584baac8b675de5511c2cf8dce16a5",
+      "triangles": 637292,
+      "primitives": 1,
+      "attributes": [
+        [
+          "POSITION",
+          "COLOR_0",
+          "TEXCOORD_0"
+        ]
+      ],
+      "textures": [],
+      "textureCount": 0,
+      "materials": [
+        {
+          "name": "default_tex0",
+          "pbrMetallicRoughness": {
+            "metallicFactor": 0
+          }
+        }
+      ],
+      "extensions": [
+        "EXT_meshopt_compression",
+        "KHR_mesh_quantization"
+      ],
+      "uvPresent": true
+    },
+    {
+      "file": "/home/viljar/Hemstyrning/In/hemkontroll_3d_komplett/public/models/daniels-detail.glb",
+      "bytes": 10863644,
+      "sha256": "6db3c04904a86deefdd030e3874d1686a987fc47d323def1d6248995e3e6eb94",
+      "triangles": 1858652,
+      "primitives": 1,
+      "attributes": [
+        [
+          "POSITION",
+          "COLOR_0",
+          "TEXCOORD_0"
+        ]
+      ],
+      "textures": [],
+      "textureCount": 0,
+      "materials": [
+        {
+          "name": "default_tex0",
+          "pbrMetallicRoughness": {
+            "metallicFactor": 0
+          }
+        }
+      ],
+      "extensions": [
+        "EXT_meshopt_compression",
+        "KHR_mesh_quantization"
+      ],
+      "uvPresent": true
+    },
+    {
+      "file": "/home/viljar/Hemstyrning/In/hemkontroll_3d_komplett/public/models/daniels-reference.glb",
+      "bytes": 157670772,
+      "sha256": "9b037ed4e6e82dfde8726c4c3c90d4b0ba8682e0def9f18477ea23c5f2e3848e",
+      "triangles": 5310780,
+      "primitives": 1,
+      "attributes": [
+        [
+          "POSITION",
+          "COLOR_0",
+          "TEXCOORD_0"
+        ]
+      ],
+      "textures": [],
+      "textureCount": 0,
+      "materials": [
+        {
+          "name": "default_tex0",
+          "pbrMetallicRoughness": {
+            "metallicFactor": 0
+          }
+        }
+      ],
+      "extensions": [],
+      "uvPresent": true
+    }
+  ],
+  "limits": [
+    "RealityScan project/export settings and pre-export triangle/texture counts are not supplied.",
+    "A single external texture reference does not establish whether an atlas was merged or downscaled.",
+    "Missing image resolution/compression cannot be recovered from the GLB.",
+    "Photographed lighting may already exist in vertex colors or textures; relighting cannot remove it."
+  ]
+}

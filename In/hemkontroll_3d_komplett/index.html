@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="sv">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101e25"><title>Hemkontroll · Gården i 3D</title></head>
+<body>
+<canvas id="garden" aria-label="Interaktiv 3D-modell av gården. Dra för att rotera, använd två fingrar för panorering och nyp för att zooma. I redigeraren kan objekt placeras på modellen."></canvas>
+<header><a class="brand" href="/">⌂ <span>HEMKONTROLL<small>GÅRDEN I 3D</small></span></a><span id="mode-badge" class="badge">LOKAL HA-SIMULATOR</span><span class="header-space"></span><span id="connection-status" role="status">Ansluter…</span><nav aria-label="Gårdskontroller"><button id="environment-button">Miljö</button><button id="list-button">Lista</button><button id="editor-button">Redigera</button></nav></header>
+<section class="scene-caption"><span class="eyebrow">DIN GÅRD · EN GEMENSAM VÄRLD</span><h1>Välkommen hem.</h1><p id="season-label">Fotograferad gårdsmodell</p><p id="model-status" role="status">Läser konfiguration…</p></section>
+<aside id="panel" hidden aria-label="Miljö och redigering"><button id="close-panel" aria-label="Stäng panel">×</button><div id="panel-body"></div></aside>
+<div class="footer"><div class="navigation-hint">Dra för att rotera · högerdra / två fingrar för panorering · scrolla för zoom</div><span id="data-status"></span><div class="footer-controls"><button id="reset-button">Återställ vy</button><button id="save-button">Spara</button><span id="save-status" role="status"></span></div></div>
+<div id="placement-hint" hidden role="status"></div><div id="toast" hidden role="status"></div><datalist id="entity-options"></datalist>
+<script type="module" src="/src/system/bootstrap.ts"></script>
+</body></html>

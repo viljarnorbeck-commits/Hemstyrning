@@ -1,0 +1,12 @@
+HEMKONTROLL – 3D-DEMO OCH PROJEKTUNDERLAG
+
+1. Packa upp hela ZIP-filen.
+2. Dubbelklicka på hemkontroll_3d_fungerande.html.
+   Den ska öppnas i en modern webbläsare (Edge, Chrome eller Firefox).
+3. Enhetslistan öppnas med knappen Lista. Klicka på bilar, paneler,
+   belysning eller LUBA 3 i 3D-modellen för att se funktionerna.
+4. All data är simulerad, inga enheter är anslutna.
+5. Läs PROJEKTPLAN_hemkontroll.md och AGENTS.md inför arbete med Codex.
+
+HTML-demonstrationen är en fristående fil utan externa bibliotek,
+så ingen server eller internetuppkoppling krävs för själva demon.

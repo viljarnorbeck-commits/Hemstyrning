@@ -1,0 +1,5 @@
+import type{EnvironmentFrame,SceneConfig}from'./types';
+export const lightProfiles={day:'Dagsljus',sunset:'Solnedgång',twilight:'Skymning',moonlight:'Månljus',overcast:'Mulet',rain:'Regn',snow:'Snö'};
+export interface Grade{warmth:number;saturation:number;contrast:number;exposure:number}
+export const neutralGrade:Grade={warmth:0,saturation:1,contrast:1,exposure:1};
+export function appearanceFor(config:SceneConfig,frame:EnvironmentFrame){const base=config.appearance,season=config.models[frame.season??config.activeModel].appearance,light=frame.elevation>10?'day':frame.elevation>=0?'sunset':frame.elevation> -8?'twilight':'moonlight',weather=frame.snow>.05?'snow':frame.rain>.05?'rain':(frame.cloud??0)>.65?'overcast':null;const grades=[season,base?.profiles?.[light],weather?base?.profiles?.[weather]:undefined];const result={warmth:base?.warmth??.035,saturation:base?.saturation??1.08,contrast:base?.contrast??1.04,exposure:base?.exposure??1};for(const g of grades)if(g){result.warmth+=g.warmth;result.saturation*=g.saturation;result.contrast*=g.contrast;result.exposure*=g.exposure;}return result;}

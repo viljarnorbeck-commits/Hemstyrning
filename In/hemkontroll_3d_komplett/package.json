@@ -1,0 +1,25 @@
+{
+  "name": "@hemkontroll/dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json && tsc --noEmit --allowJs --checkJs --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler src/*.js"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19",
+    "maplibre-gl": "^6.16.0",
+    "three": "^0.186.1",
+    "three-mesh-bvh": "^0.9.16"
+  }
+}

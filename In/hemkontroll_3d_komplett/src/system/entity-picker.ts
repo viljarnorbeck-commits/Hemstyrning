@@ -1,0 +1,15 @@
+import {escapeHtml} from './panels';
+import type {HassState, SceneObject} from './types';
+
+/** Uses the existing connection snapshot and live events, never a second HA client. */
+export function entityPicker(states: Map<string,HassState>, object: SceneObject, save: () => void) {
+  const dialog=document.createElement('dialog');
+  dialog.style.cssText='width:min(760px,90vw);max-height:85vh;overflow:auto;background:#17232b;color:white;border:1px solid #647987;border-radius:14px;padding:20px';
+  dialog.innerHTML='<h2>Koppla Home Assistant</h2><p>Välj huvudentitet eller en separat mätvärdes-/kommandokoppling.</p><label>Koppling <input id="binding-key" list="binding-fields" placeholder="Huvudentitet (tomt)"></label><datalist id="binding-fields"><option value="battery_level">Batteriprocent</option><option value="charging_power_kw">Laddeffekt</option><option value="range_km">Räckvidd</option><option value="climate">Klimatstyrning (kommando)</option><option value="climate_on">Klimatstatus</option><option value="charging">Laddstyrning</option><option value="plugged_in">Laddkabel</option><option value="location">Närvaro</option><option value="position">Robotposition</option><option value="progress">Arbetsframsteg</option><option value="production_kw">Solproduktion</option><option value="energy_today">Energi idag</option><option value="error">Felstatus</option></datalist><label>Sök <input id="entity-search" type="search" placeholder="Namn, entity ID, typ eller tillstånd"></label><div id="entity-results"></div><button id="entity-close">Stäng</button>';
+  const results=dialog.querySelector<HTMLElement>('#entity-results')!;
+  const render=()=>{const q=dialog.querySelector<HTMLInputElement>('#entity-search')!.value.toLowerCase();results.innerHTML=[...states.values()].filter(s=>`${s.entity_id} ${s.attributes.friendly_name??''} ${s.state}`.toLowerCase().includes(q)).map(s=>`<details><summary>${escapeHtml(s.attributes.friendly_name??s.entity_id)} · ${escapeHtml(s.entity_id.split('.')[0])} · ${escapeHtml(s.state)} ${['unknown','unavailable'].includes(s.state)?'⚠':''}</summary><p>${escapeHtml(s.entity_id)}</p><pre style="white-space:pre-wrap">${escapeHtml(JSON.stringify(s.attributes,null,2))}</pre><button data-entity="${escapeHtml(s.entity_id)}">Välj entitet</button></details>`).join('')||'<p>Inga matchande entiteter. Kontrollera anslutningen.</p>';};
+  dialog.querySelector('#entity-search')!.addEventListener('input',render);
+  results.addEventListener('click',event=>{const id=(event.target as HTMLElement).closest<HTMLElement>('[data-entity]')?.dataset.entity;if(!id)return;const key=dialog.querySelector<HTMLInputElement>('#binding-key')!.value.trim();if(!key&&object.type==='light'&&!id.startsWith('light.')){alert('En lampa måste använda en light-entitet.');return;}if(key){object.bindings={...object.bindings,[key]:id};}else object.entityId=id;save();dialog.close();});
+  dialog.querySelector('#entity-close')!.addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);render();dialog.showModal();
+}
