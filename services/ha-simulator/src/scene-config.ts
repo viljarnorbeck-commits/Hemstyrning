@@ -1,3 +1,4 @@
+import {canonicalJamUrl} from '../../../shared/ha-contract.js';
 import { z } from 'zod';
 
 const finite = z.number().finite();
@@ -21,6 +22,7 @@ export const sceneSchema = z.object({
   geography:z.object({simulatorRoute:z.array(vector).max(100).optional(),altitude:finite.default(0),points:z.array(z.object({world:vector,geo:z.object({latitude:finite.min(-90).max(90),longitude:finite.min(-180).max(180),altitude:finite.optional()})})).max(50).default([]),rms:finite.nonnegative().optional(),mapTiles:z.string().max(1000).default('https://tile.openstreetmap.org/{z}/{x}/{y}.png')}).default({altitude:0,points:[],mapTiles:'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}),
   panoramas:z.array(z.object({id:z.string().max(100),name:z.string().max(120),url:imageUrl,north:finite.default(0),capturedAt:z.string().max(60).default(''),exposure:finite.min(.1).max(4).default(1),saturation:finite.min(0).max(2).default(1),minElevation:finite.min(-90).max(90).default(-6),maxElevation:finite.min(-90).max(90).default(90),minCloud:finite.min(0).max(1).default(0),maxCloud:finite.min(0).max(1).default(1),containsSun:z.boolean().default(false),sunAzimuth:finite.default(180),sunElevation:finite.min(-90).max(90).default(20),maskRadius:finite.min(1).max(45).default(8),temporary:z.boolean().optional(),followSun:z.boolean().optional(),source:z.string().max(300).optional(),fadeAtNight:z.boolean().optional()})).max(20).default([]),
   sky:z.object({mode:z.enum(['procedural','automatic','manual']).default('procedural'),panoramaId:z.string().max(100).default(''),transitionSeconds:finite.min(1).max(120).default(12)}).default({mode:'procedural',panoramaId:'',transitionSeconds:12}),
+  music:z.object({entities:z.array(z.string().regex(/^media_player\.[a-z0-9_]+$/)).max(20).default([]),activeEntity:z.string().regex(/^(?:media_player\.[a-z0-9_]+)?$/).default(''),jamUrl:z.string().max(1000).refine(v=>v===''||canonicalJamUrl(v)!==null,'Endast en riktig Spotify Jam-inbjudningsadress tillåts').default(''),jamSavedAt:z.string().max(40).default('')}).default({entities:[],activeEntity:'',jamUrl:'',jamSavedAt:''}),
   quality: z.enum(['low', 'high', 'auto']),
   objects: z.array(z.object({
     id: z.string().min(1).max(100), type: z.enum(['light', 'car', 'parking', 'solar', 'mower', 'surface', 'vacuum', 'energy', 'dock', 'device', 'occluder']),
@@ -37,13 +39,14 @@ export const sceneSchema = z.object({
     bindings: z.record(z.string(), z.string().max(200)).default({}),
   })).max(200),
 }).superRefine((value, ctx) => {
+  if(value.music.activeEntity&&!value.music.entities.includes(value.music.activeEntity))ctx.addIssue({code:'custom',message:'Aktivt musikkonto måste vara konfigurerat'});
   const ids = value.objects.map(o => o.id);
   if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', message: 'Objekt-ID måste vara unika' });
 });
 
 export type SceneConfig = z.infer<typeof sceneSchema>;
 export function defaultScene(): SceneConfig {
-  const base = { url: '/models/daniels.glb', label: 'Daniels · geometri, texturfil saknas', verified: false, position: [-6.26027, 2.29754, -1.77485], rotation: [-90, 0, 0], scale: 1 };
+  const base = { url: '/models/daniels.glb', label: 'Daniels · originaltextur 8192 × 8192', verified: false, position: [-6.26027, 2.29754, -1.77485], rotation: [-90, 0, 0], scale: 1 };
   return sceneSchema.parse({
     version: 1, location: { latitude: 63.18, longitude: 14.64, northOffset: 0 },
     models: Object.fromEntries(['summer', 'autumn', 'firstSnow', 'winter'].map(key => [key, structuredClone(base)])), activeModel: 'summer',

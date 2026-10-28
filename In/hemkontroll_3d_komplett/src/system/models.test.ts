@@ -45,3 +45,15 @@ it('keeps a Z-up ground plane horizontal when calibrating north', () => {
 it('uses an unsimplified reference only when requested, and neutral diagnostics restore original materials',async()=>{
  const root=new THREE.Group(),original=new THREE.MeshStandardMaterial({color:'#bf9065',vertexColors:true}),mesh=new THREE.Mesh(new THREE.BoxGeometry(),original);root.add(mesh);const loader={loadAsync:vi.fn(async(_url:string)=>({scene:root}))},manager=new ModelManager(loader as never);manager.reference=true;await manager.select('autumn',{...calibration,url:'/models/daniels.glb'});expect(loader.loadAsync.mock.calls[0][0]).toBe('/models/daniels-reference.glb');manager.setNeutral(true);expect(mesh.material).toBeInstanceOf(THREE.MeshBasicMaterial);expect(mesh.material.color.getHex()).toBe(original.color.getHex());manager.setNeutral(false);expect(mesh.material).toBe(original);manager.dispose();
 });
+
+it('retains the photographic texture, sRGB and filters when entering and leaving neutral diagnostics',async()=>{
+ const texture=new THREE.DataTexture(new Uint8Array([180,120,60,255]),1,1);texture.colorSpace=THREE.SRGBColorSpace;
+ const material=new THREE.MeshStandardMaterial({map:texture,color:0xffffff,vertexColors:false});
+ const mesh=new THREE.Mesh(new THREE.BoxGeometry(),material),root=new THREE.Group();root.add(mesh);
+ const manager=new ModelManager({loadAsync:vi.fn(async()=>({scene:root}))} as never);manager.anisotropy=16;
+ await manager.select('summer',calibration);
+ expect(manager.diagnostics()).toEqual([{textureSize:[1,1],colorSpace:'srgb',vertexColors:false,anisotropy:16,minFilter:THREE.LinearMipmapLinearFilter,magFilter:THREE.LinearFilter}]);
+ manager.setNeutral(true);const neutral=mesh.material as unknown as THREE.MeshBasicMaterial;
+ expect(neutral.map).toBe(texture);expect(neutral.color.getHex()).toBe(0xffffff);expect(neutral.vertexColors).toBe(false);
+ manager.setNeutral(false);expect(mesh.material).toBe(material);expect(material.map).toBe(texture);manager.dispose();
+});

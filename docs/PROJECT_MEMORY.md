@@ -2,6 +2,30 @@
 
 Senast uppdaterad: 2026-10-28
 
+## Nytt huvudgränssnitt och Spotify – 2026-10-28
+
+- Senaste användarkrav ersätter äldre beslut om Lista som sidopanel. HomeControls har direkta vänsterkontroller, höger musik/kalender, statusrad och mobilens nedre nav. Lista är nu full dashboard med sektioner och historikdiagram. Samma Connection, objekt och editor används.
+- Listläget döljer canvasen och anropar renderer.setAnimationLoop(null); återgång återanvänder kameran. Även stor musikmodal pausar bakgrundens animation. Fullskärmsknappen använder API när möjligt, annars enbart ren UI; återgång finns kvar. Mobilporträtt och liggande hanteras separat med safe-area.
+- music-panel.ts/music-data.ts återanvänder HA media_player via /connection-api/media. Konto väljs visuellt i musikpanelen; music.entities/activeEntity/jamUrl/jamSavedAt sparas i samma schema och atomiska scenfil. Flera konton stöds. Inga entity_id:n hårdkodas i frontend. Lokal ignorerad scen har det upptäckta simulator-kontot valt; produktdefault väljer inget konto.
+- shared/ha-contract.js används av UI, backend och simulator för riktiga supported_features-flaggor och Jam-format. Klimat använder bilens explicita climate-bindning; endast simulator får läsa command_entities som reserv. Robotkommandon kräver faktiska HA-flaggor. Verkliga POST är fortfarande låsta tills HA_ALLOW_CONTROL=true; info levererar commandsEnabled och frontend blockerar också lokalt.
+- Media-tjänster är en strikt allowlist: spela/pausa, nästa/föregående, volume_set och select_source. Endast konfigurerade media_player och faktiskt stödda funktioner. Source måste finnas i source_list; volym 0–1. UI väntar på statebekräftelse och visar fel/fördröjning, ingen optimistisk uppspelningsstatus. Gruppbelysning väntar på alla konfigurerade state.
+- Omslag för riktig HA hämtas via begränsad backendproxy: HA media_player_proxy eller HTTPS till i.scdn.co/mosaic.scdn.co; inga redirects/godtyckliga värdar, max5MB, token enbart till HA. Simulatorns lokala SVG-omslag och demolåtar är uttryckligen märkta demo.
+- Spotify Jam skapas manuellt i Spotify, inte av vårt API. Full socialsession-inbjudan valideras; kortlänk resolve i workspace-API granskar högst4 redirects enbart hos betrodda Spotify-värdar. Låt/spellista/andra värdar avvisas. QR genereras lokalt, länk kan ersättas/raderas, sparad tid och ej verifierbar aktiv session visas. Simulator-demo kodar example.invalid och sparas aldrig som riktig Jam.
+- Befintlig StateStore och simulationstimer har utökats med media_player, faktiska HA-attribut, uppspelning/paus/position/källor/volym/låtbyten/fel. Separata simulatorgränssnittet har musikkontroller. /dev-api kan inte nå riktig utrustning. Inga riktiga HA-/Spotify-konton har testats utan token.
+- 99 enhets-/integrationstester (39 backend +60 frontend), typkontroll, produktionsbygge och originalens SHA/embedded-texturkontroll godkända. Produktionsberoenden har0 npm-audit-fynd; äldre testverktygsfynd kvarstår. Webbläsartester har verifierat separata bil-/robot-/ljuskommandon, Spotify, avkodad QR, pausad RAF/kamera/fullskärm samt mobilporträtt/landskap. Samlad slutlig Playwright-körning: samtliga19 flöden godkända (14,7 minuter), inklusive äldre editor, occlusion, kalender/reconnect, fyra årstider, faktiska texturer, direkt lampklick, import och kartparning.
+- Guide: docs/HOME_INTERFACE_AND_SPOTIFY.md. Faktisk HA-token/inventering, test mot riktiga Spotify-konton och måltelefoners hårdvaruprestanda återstår. Token, faktisk Jam-länk och lokal scen är fortsatt Git-ignorerade.
+
+## Originaltextur återställd – 2026-10-28 (ersätter äldre noteringar om saknad PNG)
+
+- Daniels_u0_v0_diffuse.png finns nu i In/: 8192×8192 RGBA8 PNG, sRGB utan ICC, 60 807 533 byte. SHA256 1fe2d7c6db733c4399915014e2b621b1b01cb741af2fcf7e3bd88b5639e79869. Original-GLB:s SHA är fortsatt f6cfc3c0cbe8896a09cdb8f9ee456245e666083882a816d0ed8f55aba6e3e6fe. Båda är orörda.
+- prepare-model bäddar in exakt original-PNG i referens/detalj/mobil, utan omkomprimering/nedskalning. Vit basfaktor och borttagen duplicerad fotografisk COLOR_0 enbart i genererade texturerade primitiver förhindrar mörk multiplikation. Andra importerade modeller påverkas inte. Saknad bild stoppar nu beredningen i stället för dold degradering.
+- Referens 5 310 780 tris och exakt position/index/UV; detalj 1 858 652, mobil 637 292. LOD-position/UV 16-bitars Meshopt. Filer cirka175/66/62 MiB inklusive PNG. npm run verify:model verifierar fulla referensarrayer, bildbytes och skyddade originalhashar. audit-model uppdaterar bildmetadata/hashes i docs/MODEL_AUDIT.json.
+- Befintlig modelljämförelse visar neutral originaltextur och faktisk texturupplösning/sRGB/vertexColors/filter/anisotropi/GPU-maxstorlek. Gamla bundled-modelltexter om saknad PNG korrigeras vid visning utan ändring av användarens sparade objekt/kalibrering.
+- Pixeltest av 4 003 spridda original-/referenstrianglar med full PNG gav exakt0 skillnad; full referens geometri/UV verifieras separat på CPU. Hela mobilmodellen har renderats i appen utan browser-/shaderfel och med korrekt8192²/sRGB. Två hela referensmodeller samtidigt var för stora för testwebbläsaren; detta är inte ett bevis på målmaskinens prestanda.
+- 8192² RGBA+mipmaps kräver cirka341 MiB per GPU-textur. Mobilens geometrinivå är bevarad men texturminnet oförminskat enligt kvalitetskravet; separat uppmätt lågminnesprofil återstår. Inga kosmetiska skärpefilter har lagts till.
+- Slutverifiering: 88 enhets-/integrationstester (34+54), typkontroll och produktionsbygge godkända. Tre Chromium-flöden verifierar neutral UV/PNG-pixeljämförelse (0 skillnad), full mobilmodell och full detaljmodell med8192²/sRGB och korrekt filtrering, utan JS-/shaderfel. localhost:5173=200 och localhost:8123/health=ok/simulation. PNG:s sRGB-chunk och gAMA0,45455 är verifierade.
+- Se docs/TEXTURE_RESTORATION.md. RealityScan-vy/projekt före export, tre årstidsmodeller, geometrifelsrensning och hårdvarutestning återstår. Inga riktiga HA-kommandon har skickats.
+
 ## Riktig Home Assistant – förberedd anslutning 2026-10-28
 
 - Ubuntu når 192.168.0.130:8123/api/ och får 401 utan token. Ingen riktig token har mottagits, inga riktiga entiteter inventerats och ingen verklig utrustning styrts.
@@ -184,7 +208,7 @@ Använd en separat och helst begränsad utvecklingsidentitet/token för fortsatt
 
 ## Nästa steg och kvarvarande underlag
 
-1. Tillför originaltexturen och separata årstidsmodeller; kalibrera mot samma inmätta punkter, meterskala och nord.
+1. Originaltexturen är återställd. Tillför separata årstidsmodeller; kalibrera mot samma inmätta punkter, meterskala och nord.
 2. Verifiera verkliga entiteter skrivskyddat när en separat token tillhandahålls. Koppla SMHI, lux, bilar, sol/energi och LUBA-fält per faktisk integration.
 3. Kalibrera sensorplacering, luxförstärkning och påverkan av gårdsbelysningen. Gårdens plats är kartbaserat satt till 57.172268/12.223273; inmätt kontroll och höjddatum återstår.
 4. Verifiera prestanda på verkliga mobiler och detaljmodell på hårdvaruaccelererad dator. Automatisk LOD är diskret modellväxling, inte streaming.

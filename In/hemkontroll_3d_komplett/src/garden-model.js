@@ -37,7 +37,7 @@ export function createGardenModel() {
     root.position.fromArray(offset);
     scene.add(root);
     ready = true;
-    status.textContent = 'Daniels · geometri (texturfil saknas)';
+    status.textContent = 'Daniels · originaltextur 8192 × 8192';
     status.dataset.state = 'ready';
   }, (progress) => {
     status.textContent = progress.total ? `Laddar gården · ${Math.round(progress.loaded / progress.total * 100)} %` : `Laddar gården · ${(progress.loaded / 1048576).toFixed(0)} MB`;

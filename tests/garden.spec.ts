@@ -15,13 +15,13 @@ test('list and quick menu reach occluded devices, confirm actions, external stat
  await fixture(page);const config=await request.get('/workspace-api/scene').then(r=>r.json());
  const light=config.objects.find((o:any)=>o.entityId==='light.altan'),car=config.objects.find((o:any)=>o.entityId==='sensor.car_two_battery'),solar=config.objects.find((o:any)=>o.type==='solar'),mower=config.objects.find((o:any)=>o.type==='mower');
  await page.goto('/');await expect(page.locator('#connection-status')).toHaveText('Ansluten');await expect(page.locator('#model-status')).toBeHidden();
- async function open(id:string){await page.getByRole('button',{name:/Lista/}).click();await page.locator(`#panel-body [data-object="${id}"]`).click();}
+ async function open(id:string){if(!(await page.locator('#home-dashboard').isVisible()))await page.locator('#list-button').click();await page.locator(`#home-dashboard [data-object="${id}"]`).click();}
  await open(car.id);await expect(page.locator('#panel-body')).toContainText('Laddström');await expect(page.locator('#panel-body')).toContainText('Kupétemperatur');
  try{await request.post('/dev-api/states/'+car.entityId,{data:{state:'83',attributes:{battery_level:83}}});await expect(page.locator('#panel-body')).toContainText('83 %');}finally{await request.delete('/dev-api/states/'+car.entityId);}
  await page.locator('#close-panel').click();await open(solar.id);await expect(page.locator('#panel-body')).toContainText('Växelriktare');await page.locator('#close-panel').click();await open(mower.id);await expect(page.locator('#panel-body')).toContainText('GPS-noggrannhet');await page.locator('#close-panel').click();
  await open(light.id);const old=await request.get('/connection-api/states').then(r=>r.json()).then(a=>a.find((s:any)=>s.entity_id===light.entityId).state);await page.locator('[data-command="light"]').click();await expect(page.locator('#panel-body .bigval')).toHaveText(old==='on'?'Släckt':'Tänt');await page.locator('[data-command="light"]').click();await expect(page.locator('#panel-body .bigval')).toHaveText(old==='on'?'Tänt':'Släckt');
  await request.post('/dev-api/disconnect',{data:{}});await expect(page.locator('#connection-status')).toHaveText('Ansluten',{timeout:15000});await page.locator('#close-panel').click();
- await page.setViewportSize({width:390,height:844});await page.locator('#quick-toggle').click();await expect(page.locator('#quick-body')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.setViewportSize({width:390,height:844});await page.locator('.mobile-home-nav [data-view="home"]').click();await expect(page.locator('#home-dashboard')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
 test('separate simulator controls four season slots without moving scene objects',async({page,request})=>{

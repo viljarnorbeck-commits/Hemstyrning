@@ -1,3 +1,4 @@
+import {mediaSupports,robotSupports,available} from '../../../shared/ha-contract.js';
 import express from 'express';
 import {calendarEvents} from './calendar.js';
 import { WebSocket } from 'ws';
@@ -18,7 +19,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     }
     next();
   });
-  router.get('/info', (_req, res) => res.json({ mode: live ? 'home-assistant' : 'simulator' }));
+  router.get('/info', (_req, res) => res.json({ mode: live ? 'home-assistant' : 'simulator', commandsEnabled: !live||live.commandsEnabled===true }));
   const read = async (path: string) => {
     if(!live){if(path==='states')return store.all();const scene=await load();return{latitude:scene.location.latitude,longitude:scene.location.longitude,time_zone:scene.location.timeZone};}
     const response = await fetch(`${live.url}/api/${path}`, { headers: { Authorization: `Bearer ${live.token}` }, signal: AbortSignal.timeout(10000) });
@@ -38,6 +39,35 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
   router.get('/services',async(_req,res)=>{
     if(!live){res.json([]);return;}
     try{res.json(await read('services'));}catch{res.status(503).json({message:'Tjänstekatalogen kunde inte hämtas'});}
+  });
+  router.post('/media',async(req,res)=>{
+    if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
+    const config=await load(),id=req.body?.entity_id,service=req.body?.action;
+    if(typeof id!=='string'||!config.music.entities.includes(id)||!/^media_player\.[a-z0-9_]+$/.test(id)||typeof service!=='string'){res.sendStatus(403);return;}
+    const states=await read('states') as {entity_id:string;state:string;attributes:Record<string,unknown>}[],state=states.find(s=>s.entity_id===id);
+    if(!mediaSupports(state,service)){res.status(400).json({message:'Spelaren saknar stöd för kommandot eller är otillgänglig'});return;}
+    const data:Record<string,unknown>={entity_id:id};
+    if(service==='volume_set'){const value=req.body.volume_level;if(typeof value!=='number'||!Number.isFinite(value)||value<0||value>1){res.sendStatus(400);return;}data.volume_level=value;}
+    if(service==='select_source'){const value=req.body.source;if(typeof value!=='string'||!Array.isArray(state?.attributes.source_list)||!state.attributes.source_list.includes(value)){res.sendStatus(400);return;}data.source=value;}
+    if(live){const response=await fetch(`${live.url}/api/services/media_player/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(10000)});if(!response.ok){res.status(502).json({message:'Home Assistant avvisade musikkommandot'});return;}}
+    else await callService(store,{domain:'media_player',service,serviceData:data},delay);
+    res.json({accepted:true});
+  });
+  router.get('/artwork',async(req,res)=>{
+    const config=await load(),id=String(req.query.entity_id??'');
+    if(!live||!config.music.entities.includes(id)){res.sendStatus(404);return;}
+    try{
+      const states=await read('states') as {entity_id:string;attributes:Record<string,unknown>}[],state=states.find(s=>s.entity_id===id),picture=state?.attributes.entity_picture;
+      if(typeof picture!=='string'){res.sendStatus(404);return;}
+      const url=new URL(picture,live.url),base=new URL(live.url),local=url.origin===base.origin&&url.pathname.startsWith('/api/media_player_proxy/'),spotify=url.protocol==='https:'&&!url.port&&['i.scdn.co','mosaic.scdn.co'].includes(url.hostname);
+      if(url.username||url.password||(!local&&!spotify)){res.sendStatus(403);return;}
+      const response=await fetch(url,{...(local?{headers:{Authorization:`Bearer ${live.token}`}}:{}),redirect:'error',signal:AbortSignal.timeout(8000)});
+      const type=response.headers.get('content-type')?.split(';')[0];
+      if(!response.ok||!['image/jpeg','image/png','image/webp'].includes(type??'')){res.sendStatus(404);return;}
+      const reader=response.body?.getReader();if(!reader){res.sendStatus(404);return;}const chunks:Uint8Array[]=[];let size=0;
+      while(true){const result=await reader.read();if(result.done)break;size+=result.value.length;if(size>5*1024*1024){await reader.cancel();res.sendStatus(413);return;}chunks.push(result.value);}
+      res.set({'Content-Type':type!,'Cache-Control':'private, max-age=60','X-Content-Type-Options':'nosniff'}).send(Buffer.concat(chunks));
+    }catch{res.sendStatus(502);}
   });
   router.get('/calendars/:id',async(req,res)=>{
     const config=await load(),id=req.params.id,start=String(req.query.start??''),end=String(req.query.end??'');
@@ -64,6 +94,9 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     const [kind,domain,service]=action;let entity=object.entityId;
     if(kind==='car'){const binding=domain==='climate'?'climate':'charging',attrs=store.get(object.entityId)?.attributes.command_entities as Record<string,string>|undefined;entity=object.bindings[binding]??(!live?attrs?.[binding]:'')??'';}
     if(!entity.startsWith(domain+'.')){res.sendStatus(403);return;}
+    const target=(await read('states') as {entity_id:string;state:string;attributes:Record<string,unknown>}[]).find(s=>s.entity_id===entity);
+    if(!available(target)||(kind!=='car'&&!robotSupports(target,String(req.body.action)))){res.status(400).json({message:'Enheten är otillgänglig eller saknar stöd'});return;}
+    if(kind==='car'&&domain==='climate'&&(Number(target?.attributes.supported_features??0)&(service==='turn_on'?256:128))===0){res.status(400).json({message:'Klimatentiteten saknar stöd'});return;}
     if(live){const response=await fetch(`${live.url}/api/services/${domain}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify({entity_id:entity}),signal:AbortSignal.timeout(10000)});if(!response.ok){res.sendStatus(502);return;}}
     else await callService(store,{domain,service,serviceData:{entity_id:entity}},delay);
     res.json({accepted:true});

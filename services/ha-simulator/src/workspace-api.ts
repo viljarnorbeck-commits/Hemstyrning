@@ -1,3 +1,4 @@
+import {resolveJamLink} from './music.js';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -29,6 +30,7 @@ export function workspaceApi(directory: string) {
     if (origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) { res.sendStatus(403); return; }
     next();
   });
+  router.post('/music/jam/resolve',express.json({limit:'4kb'}),async(req,res)=>{try{res.json({url:await resolveJamLink(req.body?.url),verifiedSession:false});}catch(error){res.status(400).json({message:error instanceof Error?error.message:'Länken kunde inte verifieras'});}});
   router.get('/scene', async (_req, res) => { res.json(await load()); });
   router.put('/scene', express.json({ limit: '2mb' }), async (req, res) => {
     const result = sceneSchema.safeParse(req.body);

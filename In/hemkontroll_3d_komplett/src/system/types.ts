@@ -12,7 +12,9 @@ export interface SceneObject {
   color: string; intensity: number; angle: number; range: number; roughness: number; metalness: number; points: Vec3[];
 }
 export interface ModelConfig { appearance?:import('./appearance').Grade; url: string; label: string; verified: boolean; position: Vec3; rotation: Vec3; scale: number }
+export interface MusicConfig {entities:string[];activeEntity:string;jamUrl:string;jamSavedAt:string}
 export interface SceneConfig {
+  music?:MusicConfig;
   geography?:{simulatorRoute?:Vec3[];altitude:number;points:import('./geography').ControlPoint[];rms?:number;mapTiles:string};
   panoramas?:Panorama[];sky?:{mode:'procedural'|'automatic'|'manual';panoramaId:string;transitionSeconds:number};
   version: 1; layoutVersion?: number; location: { timeZone?:string;latitude: number; longitude: number; northOffset: number };

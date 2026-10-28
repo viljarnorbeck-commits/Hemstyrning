@@ -4,12 +4,24 @@
   "sha256": "f6cfc3c0cbe8896a09cdb8f9ee456245e666083882a816d0ed8f55aba6e3e6fe",
   "sourceTriangles": 5310780,
   "previewTriangles": 5310780,
-  "missingTextures": [
-    "Daniels_u0_v0_diffuse.png"
+  "missingTextures": [],
+  "textures": [
+    {
+      "name": "Daniels_u0_v0_diffuse.png",
+      "sha256": "1fe2d7c6db733c4399915014e2b621b1b01cb741af2fcf7e3bd88b5639e79869",
+      "bytes": 60807533,
+      "width": 8192,
+      "height": 8192,
+      "format": "png",
+      "space": "srgb",
+      "bitsPerSample": 8,
+      "hasProfile": false
+    }
   ],
+  "removedVertexColorPrimitives": 1,
   "preserved": [
-    "COLOR_0",
-    "TEXCOORD_0"
+    "TEXCOORD_0",
+    "original PNG bytes"
   ],
-  "notes": "Original scan retained. No texture downscaling or image recompression. Vertex colors contain captured lighting."
+  "notes": "Original files untouched. Embedded lossless source PNG at full resolution. White baseColorFactor; duplicate photographic COLOR_0 removed only from textured derived primitives. Reference geometry/UV are not simplified or quantized. LOD UV quantization: 16 bits."
 }

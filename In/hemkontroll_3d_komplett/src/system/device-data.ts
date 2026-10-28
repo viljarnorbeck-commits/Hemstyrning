@@ -1,6 +1,6 @@
 import type { HassState, SceneObject } from './types';
 export function reading(object: SceneObject, states: Map<string,HassState>, key: string, fallback?: string): unknown {
-  const binding=object.bindings?.[key];
+  const binding=object.bindings?.[key]??(key==='climate_on'?object.bindings?.climate:undefined);
   if (binding) { const [id,attr]=binding.split('@'); const state=states.get(id); if(!state||['unknown','unavailable'].includes(state.state))return null;return normalize(attr?state.attributes[attr]:state.state,key,attr?undefined:state.attributes.unit_of_measurement); }
   const state=states.get(object.entityId);
   if(!state||['unknown','unavailable'].includes(state.state))return null;

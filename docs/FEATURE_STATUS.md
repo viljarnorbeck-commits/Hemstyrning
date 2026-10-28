@@ -1,3 +1,13 @@
+# Nytt huvudgränssnitt och Spotify – 2026-10-28
+
+3D-vyn har direkta kontrollknappar, Now Playing och kompakt kalender. Lista öppnar
+nu en full dashboard med stoppad 3D-animation och bevarad kamera. Ren fullskärm,
+mobilnavigering, HA-media_player-koppling och manuell Jam-länk/QR är implementerade.
+Simulatorn har samma media-kontrakt och egen musik-/felstyrning.
+Se [HOME_INTERFACE_AND_SPOTIFY.md](HOME_INTERFACE_AND_SPOTIFY.md) för konfiguration,
+säkerhet, verifiering och kvarstående gränser. Detta ersätter äldre layoutbeskrivningar.
+Riktig Spotify/HA måste fortfarande kopplas med lokal token; inga verkliga konton antas.
+
 # Städning och aktuell drift – 2026-10-28
 
 Den avbrutna himmelsetappen är genomgången. Tillfälliga fotografiska himlar och
@@ -5,7 +15,7 @@ NASA-månkarta ligger lokalt; egna 360-bilder använder samma importflöde.
 Raderade panoraman återställs inte automatiskt. Simulatorns omstart avvecklar
 WebSocket-klienter och timer. Aktuell kartinpassning och verifieringsresultat finns i
 [PROJECT_MEMORY.md](PROJECT_MEMORY.md) och [YARD_CALIBRATION.md](YARD_CALIBRATION.md).
-Originalmodellens saknade färgtextur och fotogrammetrins geometrifel kvarstår.
+Originaltexturen är nu återställd; fotogrammetrins geometrifel kvarstår. Se [TEXTURE_RESTORATION.md](TEXTURE_RESTORATION.md).
 
 # Senaste utökning
 
@@ -77,16 +87,15 @@ Analysen körs reproducerbart med `node scripts/audit-model.mjs`:
 |---|---|
 | Original | `In/Daniels.glb`, 157 671 028 byte, 5 310 780 trianglar |
 | Tillgängliga attribut | POSITION, COLOR_0 (vertexfärger), TEXCOORD_0 (UV) |
-| Extern textur | `Daniels_u0_v0_diffuse.png` saknas; dess upplösning/komprimering kan därför inte granskas |
+| Extern textur | 8192 × 8192 RGBA8 sRGB PNG, inbäddad byte-identiskt i alla nivåer |
 | Föregående förenkling | 371 674 trianglar (7 %), UV borttagen, vertexfärger multiplicerade med mörk materialfaktor |
-| Ny mobilmodell | 637 292 trianglar, cirka 4,2 MB, färger och UV bevarade |
-| Ny detaljmodell | 1 858 652 trianglar, cirka 11 MB, färger och UV bevarade |
+| Ny mobilmodell | 637 292 trianglar, cirka 62 MiB inklusive förlustfri PNG; UV bevarade |
+| Ny detaljmodell | 1 858 652 trianglar, cirka 66 MiB inklusive förlustfri PNG; UV bevarade |
 
-`npm run prepare:model` återskapar båda nivåerna från originalet. Bilder skalas inte
+`npm run prepare:model` återskapar alla tre nivåerna från originalet. Bilder skalas inte
 ned eller omkomprimeras av pipelinen. Ingen geometri eller bildinformation genereras
-för att fylla luckor. Materialets basfaktor är vit för att inte missfärga originalets
-vertexfärger. Vertexnormaler beräknas där de saknas. Om texturen tillförs bredvid
-originalet bäddas den in vid nästa bearbetning.
+för att fylla luckor. Materialets basfaktor är vit och dubblerade fotografiska vertexfärger tas bort ur
+genererade modeller. Vertexnormaler beräknas där de saknas. Originaltexturen är inbäddad.
 
 Texturer använder mipmaps, linjär förstoring och högsta stödda anisotropi. Renderingen
 använder sRGB/ACES, antialiasing och högre pixelkvot (upp till 1,5 mobil / 2 dator).
@@ -102,8 +111,8 @@ raycasts projicerar stänk på modellens ytor. Våta uppåtriktade ytor mörknar
 lägre råhet. Tät nederbörd påverkar ljus/sikt. Stänk är en begränsad visuell approximation,
 inte en full vätskesimulering; snö ackumuleras inte automatiskt till nytt modellerat snötäcke.
 
-Fotogrammetrin och vertexfärgerna kan innehålla fotograferat ljus och skuggor. Utan
-originalbilder/textur går det inte att skilja alla sådana fel från renderingsfel.
+Fotogrammetrins textur innehåller fotograferat ljus och skuggor som dynamiska
+ljus inte kan avlägsna. RealityScan-projektet före export är inte tillgängligt.
 Separata verifierade årstidsskanningar, korrekt meterskala/nord och inmätta
 objektpositioner återstår. Fyra modellplatser finns men refererar ännu till samma
 Daniels-skanning när separata filer saknas. SMHI-prognos används aldrig som säker

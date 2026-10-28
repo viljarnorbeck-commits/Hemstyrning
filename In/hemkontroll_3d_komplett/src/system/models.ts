@@ -97,11 +97,17 @@ export class ModelManager {
         if (this.cache.size <= 2) break;
         if (url !== config.url) { this.cache.delete(url); disposeTree(cached); }
       }
-      this.status = config.verified ? config.label : `${config.label} · referensmodell, årstid ej verifierad`;
+      const label=config.url.startsWith('/models/daniels')?config.label.replace('geometri, texturfil saknas','originaltextur 8192 × 8192'):config.label;
+      this.status = config.verified ? label : `${label} · referensmodell, årstid ej verifierad`;
     } catch (error) {
       this.status = 'Modellen kunde inte laddas. Föregående modell visas. Välj annan årstid eller ladda om sidan.';
       console.error(error);
     } finally { if (serial === this.serial) { this.loading = false; this.onStatus(); } }
+  }
+  diagnostics(){
+    const materials:{textureSize:number[];colorSpace:string;vertexColors:boolean;anisotropy:number;minFilter:number;magFilter:number}[]=[];
+    this.root.traverse(o=>{if(o instanceof THREE.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material]){const material=m as THREE.MeshStandardMaterial,map=material.map;if(map){const image=map.image as {width?:number;height?:number}|undefined;materials.push({textureSize:[image?.width??0,image?.height??0],colorSpace:map.colorSpace,vertexColors:material.vertexColors,anisotropy:map.anisotropy,minFilter:map.minFilter,magFilter:map.magFilter});}}});
+    return materials;
   }
   setWetness(value:number){
     this.wetness+=(value-this.wetness)*.015;

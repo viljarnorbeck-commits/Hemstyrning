@@ -2,6 +2,13 @@
 
 Hemstyrning är en interaktiv 3D-klient som drivs av en lokal [Home Assistant-simulator](services/ha-simulator/README.md). Dashboarden och simulatorn utvecklas och testas tillsammans utan riktiga enheter.
 
+## Gränssnitt och musik
+
+3D-vyn har direkta kontroller och Spotify. **Lista** öppnar en komplett dashboard
+och stoppar 3D-renderingen; fullskärmsknappen ger ren 3D. Mobilen har egen nedre
+navigering. Välj Spotify-entitet och Jam-inbjudan visuellt i musikinställningarna.
+Se [gränssnitt, Spotify och Jam](docs/HOME_INTERFACE_AND_SPOTIFY.md).
+
 ## Kom igång
 
 ```bash
@@ -44,13 +51,15 @@ och [användning/arkitektur](docs/ENVIRONMENT_AND_EDITOR.md).
 
 ```bash
 node scripts/audit-model.mjs
-npm run prepare:model  # återskapa mobil- och detaljnivå från bevarat original
+npm run prepare:model  # återskapa referens-, detalj- och mobilnivå med original-PNG
 npm run build --workspace @hemkontroll/dashboard
 npm run test:e2e       # kräver npm run dev och installerad Playwright Chromium
 ```
 
-Originalmodellen finns i `In/Daniels.glb`. Vertexfärger och UV bevaras; extern textur
-och tre separata årstidsskanningar saknas fortfarande. Inga detaljer fabriceras för
-att dölja brister i fotogrammetrin.
+Originalfilerna finns i `In/Daniels.glb` och `In/Daniels_u0_v0_diffuse.png` och ändras inte.
+Originaltexturen (8192 × 8192 PNG) bäddas in förlustfritt i alla tre GLB-nivåer.
+Fotografiska vertexfärger multipliceras inte med texturen. `npm run verify:model`
+kontrollerar bildbytes och referensens geometri/UV. Tre årstidsskanningar återstår.
+Se [texturåterställningen](docs/TEXTURE_RESTORATION.md) för resultat och minneskrav.
 
 Ny administration för oförenklad modelljämförelse, geografisk kalibrering, egna enhetsmodeller, markytor och himmelspanoraman: [handhavande och begränsningar](docs/REALITYSCAN_GEO_AND_ASSETS.md).

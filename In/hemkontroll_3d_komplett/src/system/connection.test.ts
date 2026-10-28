@@ -41,3 +41,19 @@ describe('shared HA connection',()=>{
     await vi.advanceTimersByTimeAsync(10001);await failed;expect(connection.states.get('light.test')!.state).toBe('off');connection.stop();vi.useRealTimers();
   });
 });
+
+it('waits for all configured lights and media state instead of assuming HTTP acceptance',async()=>{
+ const {connection,socket}=await connected();let finished=false;
+ const all=connection.allLights(true,['light.test']).then(()=>finished=true);await Promise.resolve();expect(finished).toBe(false);
+ socket.emit({type:'event',event:{event_type:'state_changed',data:{new_state:state('on')}}});await all;
+ const media={entity_id:'media_player.test',state:'paused',attributes:{media_title:'Låt A'},last_updated:new Date().toISOString()};connection.states.set(media.entity_id,media);finished=false;
+ const play=connection.media(media.entity_id,'media_play').then(()=>finished=true);await Promise.resolve();expect(finished).toBe(false);
+ socket.emit({type:'event',event:{event_type:'state_changed',data:{new_state:{...media,state:'playing'}}}});await play;expect(finished).toBe(true);connection.stop();
+});
+
+it('blocks all control paths locally when the real bridge is read-only',async()=>{
+ const {connection,fetchMock}=await connected();connection.commandsEnabled=false;fetchMock.mockClear();
+ await expect(connection.toggle('light.test','live')).rejects.toThrow('skrivskyddad');
+ await expect(connection.media('media_player.test','media_play')).rejects.toThrow('skrivskyddad');
+ await expect(connection.allLights(true,['light.test'])).rejects.toThrow('skrivskyddad');expect(fetchMock).not.toHaveBeenCalled();connection.stop();
+});

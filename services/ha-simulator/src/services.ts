@@ -1,3 +1,5 @@
+import {mediaSupports} from '../../../shared/ha-contract.js';
+import {setDemoTrack} from './music.js';
 import {calendarEvents} from './calendar.js';
 import type { StateStore } from './store.js';
 import type { ServiceCall } from './types.js';
@@ -8,6 +10,21 @@ export async function callService(store:StateStore,call:ServiceCall,delayMs:numb
  if(domain==='calendar'&&service==='get_events'){const from=String(call.serviceData.start_date_time??new Date().toISOString()),duration=call.serviceData.duration as Record<string,unknown>|undefined,to=String(call.serviceData.end_date_time??new Date(Date.parse(from)+Number(duration?.hours??24)*3600000).toISOString());return Object.fromEntries(ids.map(id=>[id,{events:calendarEvents(store,id,from,to).map(e=>({...e,start:e.start.dateTime??e.start.date,end:e.end.dateTime??e.end.date}))}]));}
  if(domain==='weather'&&service==='get_forecasts'){
   return Object.fromEntries(ids.map(id=>{const s=store.get(id);if(!s)throw new ServiceError('Entity not found',404);const now=Date.parse(String(s.attributes.simulated_datetime??new Date().toISOString()));return[id,{forecast:Array.from({length:24},(_,i)=>({datetime:new Date(now+(i+1)*3600000).toISOString(),condition:s.state,temperature:s.attributes.temperature,cloud_coverage:s.attributes.cloud_coverage,wind_speed:s.attributes.wind_speed,precipitation:Number(s.attributes.rain_intensity??0)*8}))}];}));
+ }
+ if(domain==='media_player'){
+  for(const id of ids){const state=store.get(id);if(!id.startsWith('media_player.')||!mediaSupports(state,service))throw new ServiceError('Spelaren saknar stöd eller är otillgänglig',503);
+   if(service==='volume_set'&&(typeof call.serviceData.volume_level!=='number'||!Number.isFinite(call.serviceData.volume_level)||call.serviceData.volume_level<0||call.serviceData.volume_level>1))throw new ServiceError('Volym måste vara 0–1');
+   if(service==='select_source'&&(!Array.isArray(state!.attributes.source_list)||!state!.attributes.source_list.includes(call.serviceData.source)))throw new ServiceError('Uppspelningsenheten finns inte');
+  }
+  await new Promise(resolve=>setTimeout(resolve,delayMs));
+  for(const id of ids){const state=store.get(id)!;if(!mediaSupports(state,service))throw new ServiceError('Spelaren blev otillgänglig',503);
+   const position=Number(state.attributes.media_position??0)+(state.state==='playing'?Math.max(0,(Date.now()-Date.parse(String(state.attributes.media_position_updated_at)))/1000):0);
+   if(service==='media_next_track'||service==='media_previous_track')setDemoTrack(store,id,Number(state.attributes.track_index??0)+(service==='media_next_track'?1:-1),state.state);
+   else if(service==='volume_set')store.set(id,state.state,{volume_level:call.serviceData.volume_level});
+   else if(service==='select_source')store.set(id,state.state,{source:call.serviceData.source});
+   else store.set(id,service==='media_play'?'playing':'paused',{media_position:Math.min(Number(state.attributes.media_duration??position),Number.isFinite(position)?position:0),media_position_updated_at:new Date().toISOString()});
+  }
+  return;
  }
  const allowed:Record<string,string[]>={light:['turn_on','turn_off','toggle'],climate:['turn_on','turn_off'],switch:['turn_on','turn_off'],lawn_mower:['start_mowing','pause','dock'],vacuum:['start','pause','return_to_base']};
  if(!allowed[domain]?.includes(service))throw new ServiceError(`Unsupported service ${domain}.${service}`);

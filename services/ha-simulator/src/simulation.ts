@@ -1,3 +1,4 @@
+import {advanceMedia} from './music.js';
 import {MoonPhase,Illumination,Equator,Horizon,Observer,Body} from 'astronomy-engine';
 import { z } from 'zod';
 import type { StateStore } from './store.js';
@@ -51,7 +52,7 @@ export class Simulation {
   if(id==='mower-return'){this.mowerTravel=20;this.store.set('lawn_mower.luba_3_awd','returning');}
   this.luxElapsed=999;this.publish(0);
  }
- tick(seconds:number){if(!this.settings.running)return;const dt=clamp(seconds,0,3600);this.elapsed+=dt;this.clock+=dt*1000;this.timeline();let remaining=dt*this.settings.timeScale;
+ tick(seconds:number){if(!this.settings.running)return;const dt=clamp(seconds,0,3600);advanceMedia(this.store,dt);this.elapsed+=dt;this.clock+=dt*1000;this.timeline();let remaining=dt*this.settings.timeScale;
   while(remaining>1e-6){const time=Date.parse(this.settings.date),midnight=Date.parse(this.settings.date.slice(0,10)+'T00:00:00Z')+86400000,seconds=Math.min(remaining,(midnight-time)/1000);this.settings.date=new Date(time+seconds*1000-(seconds*1000===midnight-time?1:0)).toISOString();this.publish(seconds/3600);remaining-=seconds;if(seconds*1000===midnight-time){this.settings.date=new Date(midnight).toISOString();this.publish(0);}}
   if(dt*this.settings.timeScale===0)this.publish(0);this.luxElapsed+=dt;this.mowerElapsed+=dt;this.updateMower(dt);}
  private timeline(){const s=this.settings,t=this.elapsed;
@@ -76,6 +77,7 @@ export class Simulation {
    const entity=`sensor.${c.id}_battery`,climate=`climate.${c.id}`,charging=`switch.${c.id}_charging`;
    if(!this.store.get(charging))this.set(charging,c.charging?'on':'off',{friendly_name:c.name+' laddning'});
    if(!this.store.get(climate))this.set(climate,c.climate?'heat':'off',{friendly_name:c.name+' klimat',temperature:21,current_temperature:16});
+   this.set(climate,this.store.get(climate)?.state??'off',{supported_features:384,hvac_modes:['off','heat'],friendly_name:c.name+' klimat'});
    c.charging=this.store.get(charging)!.state==='on'&&c.plugged&&c.home&&c.battery<c.limit;c.climate=['heat','cool','heat_cool','auto','fan_only','dry'].includes(this.store.get(climate)!.state);
    let power=c.charging?c.amps*c.voltage*c.phases/1000:0;
    if(hours>0){const energy=Math.min(power*hours,Math.max(0,(c.limit-c.battery)/100*c.capacity));power=energy/hours;c.battery=clamp(c.battery+energy/c.capacity*100,0,100);}

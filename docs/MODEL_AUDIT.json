@@ -16,7 +16,18 @@
       "textures": [
         {
           "uri": "Daniels_u0_v0_diffuse.png",
-          "available": false
+          "embedded": false,
+          "available": true,
+          "bytes": 60807533,
+          "sha256": "1fe2d7c6db733c4399915014e2b621b1b01cb741af2fcf7e3bd88b5639e79869",
+          "width": 8192,
+          "height": 8192,
+          "format": "png",
+          "channels": 4,
+          "space": "srgb",
+          "bitsPerSample": 8,
+          "hasProfile": false,
+          "hasAlpha": true
         }
       ],
       "textureCount": 1,
@@ -31,30 +42,64 @@
           }
         }
       ],
+      "samplers": [
+        {
+          "minFilter": 9729,
+          "magFilter": 9729,
+          "wrapS": 33071,
+          "wrapT": 33071
+        }
+      ],
       "extensions": [],
       "uvPresent": true
     },
     {
       "file": "/home/viljar/Hemstyrning/In/hemkontroll_3d_komplett/public/models/daniels.glb",
-      "bytes": 4369596,
-      "sha256": "e8fb4d7446d4503cca69e319ca0c999275584baac8b675de5511c2cf8dce16a5",
+      "bytes": 64090348,
+      "sha256": "cd095188d1d2e95bce7bf4b6a4df35c1098664399d31298cb85941e2b7be760f",
       "triangles": 637292,
       "primitives": 1,
       "attributes": [
         [
           "POSITION",
-          "COLOR_0",
           "TEXCOORD_0"
         ]
       ],
-      "textures": [],
-      "textureCount": 0,
+      "textures": [
+        {
+          "uri": "embedded",
+          "embedded": true,
+          "available": true,
+          "bytes": 60807533,
+          "sha256": "1fe2d7c6db733c4399915014e2b621b1b01cb741af2fcf7e3bd88b5639e79869",
+          "width": 8192,
+          "height": 8192,
+          "format": "png",
+          "channels": 4,
+          "space": "srgb",
+          "bitsPerSample": 8,
+          "hasProfile": false,
+          "hasAlpha": true
+        }
+      ],
+      "textureCount": 1,
       "materials": [
         {
           "name": "default_tex0",
           "pbrMetallicRoughness": {
-            "metallicFactor": 0
+            "metallicFactor": 0,
+            "baseColorTexture": {
+              "index": 0
+            }
           }
+        }
+      ],
+      "samplers": [
+        {
+          "magFilter": 9729,
+          "minFilter": 9987,
+          "wrapS": 33071,
+          "wrapT": 33071
         }
       ],
       "extensions": [
@@ -65,25 +110,51 @@
     },
     {
       "file": "/home/viljar/Hemstyrning/In/hemkontroll_3d_komplett/public/models/daniels-detail.glb",
-      "bytes": 10863644,
-      "sha256": "6db3c04904a86deefdd030e3874d1686a987fc47d323def1d6248995e3e6eb94",
+      "bytes": 68879204,
+      "sha256": "74d729ace04a9f42e7928cb5f9d716c44b51fa0a33dcbbb6d721e039b9719356",
       "triangles": 1858652,
       "primitives": 1,
       "attributes": [
         [
           "POSITION",
-          "COLOR_0",
           "TEXCOORD_0"
         ]
       ],
-      "textures": [],
-      "textureCount": 0,
+      "textures": [
+        {
+          "uri": "embedded",
+          "embedded": true,
+          "available": true,
+          "bytes": 60807533,
+          "sha256": "1fe2d7c6db733c4399915014e2b621b1b01cb741af2fcf7e3bd88b5639e79869",
+          "width": 8192,
+          "height": 8192,
+          "format": "png",
+          "channels": 4,
+          "space": "srgb",
+          "bitsPerSample": 8,
+          "hasProfile": false,
+          "hasAlpha": true
+        }
+      ],
+      "textureCount": 1,
       "materials": [
         {
           "name": "default_tex0",
           "pbrMetallicRoughness": {
-            "metallicFactor": 0
+            "metallicFactor": 0,
+            "baseColorTexture": {
+              "index": 0
+            }
           }
+        }
+      ],
+      "samplers": [
+        {
+          "magFilter": 9729,
+          "minFilter": 9987,
+          "wrapS": 33071,
+          "wrapT": 33071
         }
       ],
       "extensions": [
@@ -94,25 +165,51 @@
     },
     {
       "file": "/home/viljar/Hemstyrning/In/hemkontroll_3d_komplett/public/models/daniels-reference.glb",
-      "bytes": 157670772,
-      "sha256": "9b037ed4e6e82dfde8726c4c3c90d4b0ba8682e0def9f18477ea23c5f2e3848e",
+      "bytes": 183250832,
+      "sha256": "9bc86e9c7496e971a8da1178fb256d5d44227b7ec2868bcee9def6f6948cafbf",
       "triangles": 5310780,
       "primitives": 1,
       "attributes": [
         [
           "POSITION",
-          "COLOR_0",
           "TEXCOORD_0"
         ]
       ],
-      "textures": [],
-      "textureCount": 0,
+      "textures": [
+        {
+          "uri": "embedded",
+          "embedded": true,
+          "available": true,
+          "bytes": 60807533,
+          "sha256": "1fe2d7c6db733c4399915014e2b621b1b01cb741af2fcf7e3bd88b5639e79869",
+          "width": 8192,
+          "height": 8192,
+          "format": "png",
+          "channels": 4,
+          "space": "srgb",
+          "bitsPerSample": 8,
+          "hasProfile": false,
+          "hasAlpha": true
+        }
+      ],
+      "textureCount": 1,
       "materials": [
         {
           "name": "default_tex0",
           "pbrMetallicRoughness": {
-            "metallicFactor": 0
+            "metallicFactor": 0,
+            "baseColorTexture": {
+              "index": 0
+            }
           }
+        }
+      ],
+      "samplers": [
+        {
+          "magFilter": 9729,
+          "minFilter": 9987,
+          "wrapS": 33071,
+          "wrapT": 33071
         }
       ],
       "extensions": [],
@@ -121,8 +218,8 @@
   ],
   "limits": [
     "RealityScan project/export settings and pre-export triangle/texture counts are not supplied.",
-    "A single external texture reference does not establish whether an atlas was merged or downscaled.",
-    "Missing image resolution/compression cannot be recovered from the GLB.",
-    "Photographed lighting may already exist in vertex colors or textures; relighting cannot remove it."
+    "One 8192px atlas is supplied; whether it was merged/downscaled before export cannot be established.",
+    "Photographed lighting/shadows remain in the source texture and cannot be removed by relighting.",
+    "8192px RGBA with mipmaps needs about 341 MiB of GPU memory; devices may impose a lower texture limit."
   ]
 }

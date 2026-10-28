@@ -13,17 +13,16 @@ Starta med `npm run dev`. Hemkontroll ligger på `http://localhost:5173`, redige
   `f6cfc3c0cbe8896a09cdb8f9ee456245e666083882a816d0ed8f55aba6e3e6fe`.
 - Original och oförenklad referens: **5 310 780 trianglar**. Detaljmodell:
   **1 858 652**. Mobilmodell: **637 292**. Referensen förenklas eller kvantiseras inte.
-- Originalet har vertexfärger, UV och en referens till
-  **Daniels_u0_v0_diffuse.png**, men själva bilden saknas. Referensens borttagna
-  olösbara texturlänk är uttryckligen en reservvisning av kvarvarande vertexfärger.
-  Den är inte en återställd fulltexturerad RealityScan-modell.
-- Ingen texturatlas skapas, bild skalas ned eller textur omkomprimeras av
-  modellberedningen. De förenklade modellerna använder Meshopt med 16-bitars
-  positioner, 8-bitars färger och 14-bitars UV. Referensen behåller källdata.
-- RealityScan-projektet, exportinställningarna, trianglarna före export och
-  originaltexturerna saknas. Det går därför **inte** att fastställa om exporten
-  slog samman flera texturer eller reducerade deras upplösning. En texturreferens
-  bevisar inte att atlasen har nedskalats.
+- Originalets **Daniels_u0_v0_diffuse.png** är återfunnen: 8192 × 8192, RGBA8 PNG,
+  sRGB utan ICC-profil. Samma PNG-bytes bäddas in i alla tre GLB-nivåer.
+- Fototexturen används med vit basfaktor; duplicerade fotografiska COLOR_0 tas bort
+  enbart ur genererade texturerade primitiver. Originalfilerna ändras inte.
+- Ingen atlas skapas och bilden skalas inte ned eller omkomprimeras. Förenklade
+  modeller använder Meshopt med 16-bitars positioner/UV. Referensens positioner,
+  index och UV är exakt bevarade. `npm run verify:model` kontrollerar detta.
+- RealityScan-projekt/exportinställningar och data före export saknas fortfarande;
+  eventuell tidigare atlas-sammanslagning eller nedskalning kan inte avgöras.
+- Se [TEXTURE_RESTORATION.md](TEXTURE_RESTORATION.md) för filstorlekar och GPU-minne.
 
 Under **Modelljämförelse** kan samma kameravy växlas mellan nivåerna och ett neutralt,
 obelyst källfärgsläge. Det stänger av extra ljus, väta, färggradering, tonemapping,
@@ -162,7 +161,7 @@ endast befintlig höstskanning finns, övriga importer väntar på underlag.
 
 ## Kvar att verifiera på plats
 
-Full fotokvalitet med saknad originaltextur; inmätta kontrollpunkter och nord/meter;
+Verifiering mot RealityScan på hårdvaruaccelererad dator; inmätta kontrollpunkter och nord/meter;
 egna bil-/robotmodeller; riktiga panoramabilder; verkliga LUBA-positions-/lampattribut;
 ljusprofil mot nattfoton; tre årstidsskanningar; korrekt HA/SMHI-plats och faktisk
 prestanda på mobil/hårdvaruaccelererad dator. Ingen verklig installation eller

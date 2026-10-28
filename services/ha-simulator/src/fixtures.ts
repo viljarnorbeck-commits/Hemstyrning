@@ -1,3 +1,4 @@
+import {demoTracks,simulatedSpotifyId,simulatedFeatures} from './music.js';
 import type { HassState } from "./types.js";
 
 const now = new Date().toISOString();
@@ -28,7 +29,9 @@ const lightNames = [
 ] as const;
 
 export function createInitialStates(): HassState[] {
+  const track=demoTracks[0]!;
   return [
+    state(simulatedSpotifyId,'paused',{friendly_name:'Spotify · lokalt testkonto',app_id:'spotify',app_name:'Spotify',simulated:true,supported_features:simulatedFeatures,media_title:track.title,media_artist:track.artist,media_album_name:track.album,entity_picture:track.cover,media_duration:track.duration,media_position:32,media_position_updated_at:new Date().toISOString(),volume_level:.35,source:'Vardagsrum',source_list:['Vardagsrum','Kök','Mobil'],track_index:0}),
     ...lightNames.map(([entityId, friendlyName], index) =>
       state(entityId, index < 2 ? "on" : "off", {
         friendly_name: friendlyName,
@@ -79,7 +82,7 @@ export function createInitialStates(): HassState[] {
     state("vacuum.downstairs", "docked", {
       friendly_name: "Nedervåning",
       battery_level: 100,
-      supported_features: 2047,
+      supported_features: 8192|4|16,
     }),
     state("sensor.car_one_battery", "72", {
       friendly_name: "Bil 1 batteri",

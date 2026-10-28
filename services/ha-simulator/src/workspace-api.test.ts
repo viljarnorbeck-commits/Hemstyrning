@@ -58,7 +58,7 @@ describe('shared simulator/live command boundary',()=>{
     expect((await send('light.not_configured','live')).status).toBe(403);
     expect((await send('light.altan','live')).status).toBe(200);
     expect(simulator.store.get('light.altan')!.state).toBe('on');
-    expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'simulator'});
+    expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'simulator',commandsEnabled:true});
   });
   it('supports environment changes over the shared read-only WebSocket without exposing a token',async()=>{
     const ws=new WebSocket(base.replace('http:','ws:')+'/bridge/ws');
@@ -86,7 +86,7 @@ describe('real HA gateway contract using an isolated HA test double',()=>{
     simulator=createSimulator({token:'test',dataDirectory:directory,live:{url:'http://127.0.0.1:1',token:'not-a-real-token'}});
     await new Promise<void>(resolve=>simulator.server.listen(0,'127.0.0.1',resolve));
     base=`http://127.0.0.1:${(simulator.server.address() as AddressInfo).port}`;
-    for(const path of ['lighting','commands','services/light/turn_on']){
+    for(const path of ['lighting','commands','services/light/turn_on','media']){
       const response=await fetch(`${base}/bridge/api/${path}`,{method:'POST',headers:{...json,'X-Hemkontroll-Mode':'live'},body:JSON.stringify({on:true,entity_id:'light.altan'})});
       expect(response.status).toBe(403);
       expect(await response.text()).not.toContain('not-a-real-token');
@@ -104,7 +104,7 @@ describe('real HA gateway contract using an isolated HA test double',()=>{
     base=`http://127.0.0.1:${(simulator.server.address() as AddressInfo).port}`;
     let ws: WebSocket | undefined;
     try {
-      expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'home-assistant'});
+      expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'home-assistant',commandsEnabled:true});
       const send=(mode:string)=>fetch(`${base}/bridge/api/services/light/turn_on`,{method:'POST',headers:{...json,'X-Hemkontroll-Mode':mode},body:JSON.stringify({entity_id:'light.altan'})});
       expect((await send('simulation')).status).toBe(403);expect(remote.store.get('light.altan')!.state).toBe('off');
       expect((await send('live')).status).toBe(200);expect(remote.store.get('light.altan')!.state).toBe('on');

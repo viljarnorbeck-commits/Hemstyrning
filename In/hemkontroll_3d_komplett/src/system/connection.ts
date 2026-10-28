@@ -6,6 +6,7 @@ export class Connection extends EventTarget {
   states = new Map<string, HassState>();
   connected = false;
   source = 'simulator';
+  commandsEnabled=true;
   private socket?: WebSocket;
   private stopped = false;
   private retry?: ReturnType<typeof setTimeout>;
@@ -20,7 +21,7 @@ export class Connection extends EventTarget {
     try {
       const info = await fetch(this.base+'/info', { signal: AbortSignal.timeout(10000) }).then(check).then(r => r.json());
       if (serial !== this.serial || this.stopped) return;
-      this.source = info.mode;
+      this.source = info.mode;this.commandsEnabled=info.commandsEnabled!==false;
       const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}${this.socketPath}`);
       this.socket = ws;
       ws.onmessage = event => {
@@ -72,6 +73,7 @@ export class Connection extends EventTarget {
   async toggle(entityId: string, mode: 'live' | 'simulation') {
     // Guard at the transport boundary as well as in the panel and server.
     if (mode !== 'live') throw new Error('Simulering skickar inga styrkommandon');
+    if(!this.commandsEnabled)throw new Error('Anslutningen är skrivskyddad');
     const state = this.states.get(entityId)?.state;
     if (!this.connected || !['on', 'off'].includes(state ?? '')) throw new Error('Lampan saknar bekräftat tillgängligt tillstånd');
     if (this.pending.has(entityId)) throw new Error('Väntar redan på bekräftelse');
@@ -92,14 +94,28 @@ export class Connection extends EventTarget {
     await Promise.all([request, confirmed]);
   }
   async calendar(entityId:string,start:string,end:string){return fetch(`${this.base}/calendars/${encodeURIComponent(entityId)}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,{signal:AbortSignal.timeout(10000)}).then(check).then(r=>r.json());}
-  async allLights(on:boolean){
-    if(!this.connected)throw new Error('Frånkopplad');
-    await fetch(this.base+'/lighting',{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify({on}),signal:AbortSignal.timeout(10000)}).then(check);
-    // The UI keeps showing received state; do not optimistically flip the light models.
+  private async confirmRequest(path:string,body:unknown,matches:()=>boolean,timeout=15000){
+    if(!this.connected||!this.commandsEnabled)throw new Error('Styrning är frånkopplad eller skrivskyddad');
+    let cleanup=()=>{};
+    const confirmed=new Promise<void>((resolve,reject)=>{const change=()=>{if(matches()){cleanup();resolve();}},offline=()=>{if(!this.connected){cleanup();reject(new Error('Anslutningen bröts'));}};const timer=setTimeout(()=>{cleanup();reject(new Error('Ingen bekräftelse ännu. Home Assistant kan uppdatera fördröjt.'));},timeout);cleanup=()=>{clearTimeout(timer);this.removeEventListener('state',change);this.removeEventListener('connection',offline);};this.addEventListener('state',change);this.addEventListener('connection',offline);});
+    try{await Promise.all([confirmed,fetch(this.base+path,{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify(body),signal:AbortSignal.timeout(10000)}).then(check)]);}finally{cleanup();}
+  }
+  async allLights(on:boolean,ids:string[]){
+    await this.confirmRequest('/lighting',{on},()=>ids.every(id=>this.states.get(id)?.state===(on?'on':'off')));
+  }
+  async media(entityId:string,action:string,data:Record<string,unknown>={}){
+    const before=this.states.get(entityId),title=before?.attributes.media_content_id??before?.attributes.media_title;
+    await this.confirmRequest('/media',{entity_id:entityId,action,...data},()=>{
+      const current=this.states.get(entityId);if(!current)return false;
+      if(action==='media_play'||action==='media_pause')return current.state===(action==='media_play'?'playing':'paused');
+      if(action==='volume_set')return typeof current.attributes.volume_level==='number'&&Math.abs(current.attributes.volume_level-Number(data.volume_level))<.02;
+      if(action==='select_source')return current.attributes.source===data.source;
+      return (current.attributes.media_content_id??current.attributes.media_title)!==title;
+    },20000);
   }
   async history(entityId:string){const response=await fetch(`${this.base}/history?entity_id=${encodeURIComponent(entityId)}`).then(check);return response.json();}
   async command(object:import('./types').SceneObject,action:string){
-    if(!this.connected)throw new Error('Frånkopplad');
+    if(!this.connected||!this.commandsEnabled)throw new Error('Frånkopplad eller skrivskyddad');
     const matches=()=>{
       const state=this.states.get(object.entityId);
       if(action.startsWith('climate')){const entity=object.bindings?.climate,target=entity?this.states.get(entity):null;return target?(action==='climate_off'?target.state==='off':!['off','unknown','unavailable'].includes(target.state)):state?.attributes.climate_on===(action==='climate_on');}
