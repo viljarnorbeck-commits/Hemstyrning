@@ -1,3 +1,4 @@
+import {SurfaceInput,type Tap} from './surface-input';
 import{telemetryTime}from'./telemetry-time';
 import{robotLightState}from'./robot-light';
 import{appearanceFor}from'./appearance';
@@ -65,16 +66,20 @@ export class GardenScene {
   placement = false;
   editing = false;
   private dragging = false;
-  private pointerMoved=false;
-  private pointerDown = new THREE.Vector2();
+  private input:SurfaceInput;
+  private focusGoal?:THREE.Vector3;
+  private navigationMode:'rotate'|'pan'='rotate';
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.camera.position.set(55, 32, 55);
+    this.input=new SurfaceInput(canvas,tap=>this.tap(tap),tap=>this.focusAtScreen(tap.x,tap.y),()=>{this.followId=undefined;this.focusGoal=undefined;});
     this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.enableDamping = true;this.controls.addEventListener('start',()=>this.followId=undefined);
+    this.controls.enableDamping=true;this.controls.dampingFactor=.12;this.controls.rotateSpeed=.65;this.controls.panSpeed=.85;this.controls.zoomSpeed=.8;this.controls.screenSpacePanning=false;this.controls.zoomToCursor=true;this.controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;canvas.tabIndex=0;this.controls.listenToKeyEvents(canvas);
+    this.controls.addEventListener('start',()=>this.input.navigationStarted());
+    this.controls.addEventListener('change',()=>this.cameraStats());
     this.controls.target.set(0, 1, 0);
     this.controls.minDistance = 2; this.controls.maxDistance = 230;
     this.controls.maxPolarAngle = Math.PI * 0.49;
@@ -103,28 +108,33 @@ export class GardenScene {
       if (obj && this.selected) this.onTransform(this.selected, obj.position.toArray() as Vec3, [obj.rotation.x, obj.rotation.y, obj.rotation.z].map(THREE.MathUtils.radToDeg) as Vec3, obj.scale.toArray() as Vec3);
     });
     this.environment.add(this.precipitation.root);
-    canvas.addEventListener('pointerdown', e => {this.pointerDown.set(e.clientX,e.clientY);this.pointerMoved=!e.isPrimary||e.button!==0;});
-    canvas.addEventListener('pointermove',e=>{if(this.pointerDown.distanceTo(new THREE.Vector2(e.clientX,e.clientY))>6)this.pointerMoved=true;});
-    canvas.addEventListener('pointerup', e => {
-      if (this.pointerMoved ||this.dragging || this.transform.axis || this.pointerDown.distanceTo(new THREE.Vector2(e.clientX, e.clientY)) > 6) return;
-      const rect = canvas.getBoundingClientRect();
-      this.raycaster.setFromCamera(new THREE.Vector2((e.clientX - rect.left) / rect.width * 2 - 1, -(e.clientY - rect.top) / rect.height * 2 + 1), this.camera);
-      if (this.editing && this.placement) {
-        const hit = this.raycaster.intersectObject(this.models.root, true)[0];
-        if (hit) {
-          const normal = hit.face?.normal.clone().transformDirection(hit.object.matrixWorld) ?? new THREE.Vector3(0, 1, 0);
-          this.onPlace(hit.point.toArray() as Vec3, normal.toArray() as Vec3);
-        }
-      } else {
-        const hit = this.raycaster.intersectObjects([this.objects,this.occlusionVolumes], true)[0];
-        if (hit) { if(!this.editing&&(this.config?.appearance?.occlusion??true)&&isOccluded(this.camera,hit.point,[this.models.root,this.occlusionVolumes],this.markerRay))return; let obj: THREE.Object3D | null = hit.object; while (obj && !obj.userData.id) obj = obj.parent; if (obj) this.onSelect(obj.userData.id); }
-      }
-    });
     canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); document.getElementById('model-status')!.textContent = '3D avbröts. Ladda om sidan; sparad konfiguration finns kvar.'; });
     this.observer = new ResizeObserver(() => this.resize()); this.observer.observe(canvas);
     this.resize();
   }
-  private resize() { const { width, height } = this.renderer.domElement.getBoundingClientRect(); if(this.config?.quality==='auto'){this.models.detail=width>=900;this.renderer.setPixelRatio(Math.min(devicePixelRatio,width>=900?2:1.5));} this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); }
+  private tap(tap:Tap){
+    if(this.dragging||this.transform.axis||this.diagnostic)return;
+    if(tap.marker){this.onSelect(tap.marker);return;}
+    this.rayAt(tap.x,tap.y);
+    if(this.editing&&this.placement){const hit=this.raycaster.intersectObject(this.models.root,true)[0];if(hit){const normal=hit.face?.normal.clone().transformDirection(hit.object.matrixWorld)??new THREE.Vector3(0,1,0);this.onPlace(hit.point.toArray() as Vec3,normal.toArray() as Vec3);}return;}
+    const hit=this.raycaster.intersectObjects([this.objects,this.occlusionVolumes],true)[0];
+    if(hit){if(!this.editing&&(this.config?.appearance?.occlusion??true)&&isOccluded(this.camera,hit.point,[this.models.root,this.occlusionVolumes],this.markerRay))return;let obj:THREE.Object3D|null=hit.object;while(obj&&!obj.userData.id)obj=obj.parent;if(obj)this.onSelect(obj.userData.id);}
+  }
+  private rayAt(x:number,y:number){const rect=this.renderer.domElement.getBoundingClientRect();this.raycaster.setFromCamera(new THREE.Vector2((x-rect.left)/rect.width*2-1,-(y-rect.top)/rect.height*2+1),this.camera);}
+  forwardMarkerPointer(event:PointerEvent,id:string){this.input.forward(event,id);}
+  activateMarker(id:string){if(!this.input.gate.count)this.onSelect(id);}
+  setNavigationMode(mode:'rotate'|'pan'){this.navigationMode=mode;this.controls.touches.ONE=mode==='rotate'?THREE.TOUCH.ROTATE:THREE.TOUCH.PAN;this.cameraStats();}
+  private focusAtScreen(x:number,y:number){
+    if(this.editing||this.diagnostic)return;this.rayAt(x,y);
+    // Double taps over objects never become device actions or ground focusing.
+    if(this.raycaster.intersectObject(this.objects,true)[0])return;
+    const hit=this.raycaster.intersectObject(this.models.root,true)[0];if(!hit)return;
+    const normal=hit.face?.normal.clone().transformDirection(hit.object.matrixWorld);if(!normal||normal.y<.3)return;
+    this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.focusGoal=hit.point.clone();this.surroundings.constrainFocus(this.focusGoal);
+  }
+  private constrainCamera(){if(this.skyView)return;const before=this.controls.target.clone();this.surroundings.constrainFocus(this.controls.target);this.camera.position.add(this.controls.target.clone().sub(before));const floor=this.groundAt(this.camera.position.x,this.camera.position.z);if(floor!==null&&this.camera.position.y<floor+.9){this.camera.position.y=floor+.9;this.camera.lookAt(this.controls.target);}}
+  private cameraStats(){const canvas=this.renderer.domElement;canvas.dataset.cameraPosition=JSON.stringify(this.camera.position.toArray());canvas.dataset.cameraTarget=JSON.stringify(this.controls.target.toArray());canvas.dataset.cameraDistance=String(this.camera.position.distanceTo(this.controls.target));canvas.dataset.navigationMode=this.navigationMode;canvas.dataset.following=this.followId??'';}
+  private resize() { const { width, height } = this.renderer.domElement.getBoundingClientRect(); if(width<=0||height<=0)return; if(this.config?.quality==='auto'){this.models.detail=width>=900;this.renderer.setPixelRatio(Math.min(devicePixelRatio,width>=900?2:1.5));} this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); }
   setConfig(config: SceneConfig) {
     this.config = config;this.renderer.toneMapping=config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;
     this.models.grading=config.appearance;
@@ -185,7 +195,7 @@ export class GardenScene {
     const now = performance.now();
     if(now-this.lastFrame<1000/30)return;
     const dt = Math.min((now - this.lastFrame) / 1000, 0.1); this.lastFrame = now;
-    if(this.diagnostic){this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.controls.update();this.renderer.render(this.scene,this.camera);return;}
+    if(this.diagnostic){this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.controls.update();this.constrainCamera();this.cameraStats();this.renderer.render(this.scene,this.camera);return;}
     this.scene.fog??=new THREE.FogExp2('#8faeb6',.001);this.sky.root.visible=this.environment.visible=true;this.models.root.visible=this.objects.visible=!this.skyView;this.transform.getHelper().visible=this.editing&&!this.skyView;this.surfaceMarkers.visible=this.editing&&!this.skyView;
     this.daylight = damp(this.daylight, target.daylight, dt);
     const appearance=this.config?appearanceFor(this.config,target):{warmth:.035,saturation:1.08,contrast:1.04,exposure:1};if(this.models.grading){this.models.grading={...this.models.grading,warmth:damp(this.models.grading.warmth,appearance.warmth,dt),saturation:damp(this.models.grading.saturation,appearance.saturation,dt),contrast:damp(this.models.grading.contrast,appearance.contrast,dt)};}
@@ -241,8 +251,8 @@ export class GardenScene {
       if (bulb) { const m = bulb.material as THREE.MeshStandardMaterial; m.emissive.copy(lamp.color); m.emissiveIntensity = on ? 2 : 0; }
     }
     if(this.followId){const followed=this.renderObjects.get(this.followId);if(followed){const offset=followed.position.clone().sub(this.controls.target).multiplyScalar(1-Math.exp(-dt*2));this.controls.target.add(offset);this.camera.position.add(offset);}}
-    if(!this.skyView){const focus=this.controls.target.clone();this.surroundings.constrainFocus(this.controls.target);this.camera.position.add(this.controls.target.clone().sub(focus));}
-    this.controls.update();
+    if(this.focusGoal){const delta=this.focusGoal.clone().sub(this.controls.target);if(delta.length()<.015){this.focusGoal=undefined;}else{delta.multiplyScalar(1-Math.exp(-dt*10));this.controls.target.add(delta);this.camera.position.add(delta);}}
+    this.controls.update();this.constrainCamera();this.cameraStats();
     this.renderer.render(this.scene, this.camera);
   }
   setDiagnostics(profile:'mobile'|'detail'|'reference',neutral:boolean){this.diagnostic=neutral;this.models.reference=profile==='reference';this.models.detail=profile!=='mobile';this.models.setNeutral(neutral);this.transform.enabled=this.editing&&!neutral;this.transform.getHelper().visible=this.editing&&!neutral;if(!neutral&&this.config)this.renderer.toneMapping=this.config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:this.config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;const season=this.models.active??this.config?.activeModel;if(season&&this.config)void this.models.select(season,this.config.models[season]);}
@@ -252,12 +262,12 @@ export class GardenScene {
   headlightInfo(id:string){return this.renderObjects.get(id)?.userData.headlightStatus??'Ej konfigurerat';}
   previewSky(){this.lookAtSky();this.controls.enabled=true;this.controls.enableZoom=false;this.controls.enablePan=false;}
   trackingInfo(id:string){return this.tracking.get(id);}
-  lookAtSky(){const env=this.latestEnvironment;if(!env)return;this.skyView=true;this.followId=undefined;this.controls.maxPolarAngle=Math.PI;this.controls.enableDamping=false;this.controls.enabled=false;const direction=env.daylight>.5?new THREE.Vector3(...env.sunDirection):(env.moonAltitude??-1)>0?new THREE.Vector3(...(env.moonDirection??[0,1,0])):new THREE.Vector3(0,.5,-1).normalize();this.controls.target.copy(this.camera.position).addScaledVector(direction,120);this.controls.update();}
-  follow(id:string){this.skyView=false;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.followId=id;const model=this.renderObjects.get(id);if(model){const delta=this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(22);this.controls.target.copy(model.position);this.camera.position.copy(model.position).add(delta);}}
+  lookAtSky(){this.focusGoal=undefined;const env=this.latestEnvironment;if(!env)return;this.skyView=true;this.followId=undefined;this.controls.maxPolarAngle=Math.PI;this.controls.enableDamping=false;this.controls.enabled=false;const direction=env.daylight>.5?new THREE.Vector3(...env.sunDirection):(env.moonAltitude??-1)>0?new THREE.Vector3(...(env.moonDirection??[0,1,0])):new THREE.Vector3(0,.5,-1).normalize();this.controls.target.copy(this.camera.position).addScaledVector(direction,120);this.controls.update();}
+  follow(id:string){this.focusGoal=undefined;this.skyView=false;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.followId=id;const model=this.renderObjects.get(id);if(model){const delta=this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(22);this.controls.target.copy(model.position);this.camera.position.copy(model.position).add(delta);}}
   screenPosition(id:string){const object=this.renderObjects.get(id);if(!object||!object.visible||this.diagnostic||this.skyView)return null;const physical=object.getWorldPosition(new THREE.Vector3());physical.y+=object.userData.type==='car'?.75:object.userData.type==='mower'?.15:0;const point=physical.clone();point.y+=1.2;const distance=this.camera.position.distanceTo(point),occluded=(this.config?.appearance?.occlusion??true)&&isOccluded(this.camera,physical,[this.models.root,this.occlusionVolumes],this.markerRay);const p=point.project(this.camera);return{x:(p.x*.5+.5)*innerWidth,y:(-p.y*.5+.5)*innerHeight,z:p.z,occluded,distance};}
   private groundAt(x:number,z:number){const surface=groundSurface(x,z,this.config?.objects??[]);if(surface)return surface.height;this.groundRay.firstHitOnly=true;this.groundRay.set(new THREE.Vector3(x,80,z),new THREE.Vector3(0,-1,0));const hit=this.groundRay.intersectObject(this.models.root,true)[0];return hit?.point.y??null;}
-  dispose(){this.assets.reset();this.renderer.setAnimationLoop(null);this.observer.disconnect();this.controls.dispose();this.transform.dispose();this.models.dispose();this.sky.dispose();disposeTree(this.sky.root);disposeTree(this.surroundings.root);disposeTree(this.occlusionVolumes);disposeTree(this.objects);disposeTree(this.environment);disposeTree(this.surfaceMarkers);this.renderer.dispose();}
-  reset() { this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.controls.enableZoom=this.controls.enablePan=true;this.camera.position.set(55, 32, 55); this.controls.target.set(0, 1, 0); }
+  dispose(){this.input.dispose();this.assets.reset();this.renderer.setAnimationLoop(null);this.observer.disconnect();this.controls.dispose();this.transform.dispose();this.models.dispose();this.sky.dispose();disposeTree(this.sky.root);disposeTree(this.surroundings.root);disposeTree(this.occlusionVolumes);disposeTree(this.objects);disposeTree(this.environment);disposeTree(this.surfaceMarkers);this.renderer.dispose();}
+  reset() { this.focusGoal=undefined;this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.controls.enableZoom=this.controls.enablePan=true;this.camera.position.set(55, 32, 55); this.controls.target.set(0, 1, 0); }
 }
 function kelvinRGB(value: number): Vec3 {
   const temp = clamp(value, 1000, 12000) / 100;

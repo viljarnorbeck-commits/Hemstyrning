@@ -2,6 +2,18 @@
 
 Senast uppdaterad: 2026-10-28
 
+## Arbetsrutin och mobilnavigering – 2026-10-28
+
+- Bestående användarinstruktion: efter en lite större ändring ska minnet uppdateras och ändringarna alltid committas/pushas till befintlig origin/main efter verifiering. Lokala token, faktisk Jam-länk, scenfiler och testresultat ska fortsatt hållas utanför Git.
+- Statusraden har nu innehållsbredd, max850px och vänsterplacering. Mobil ≤950px visar temperatur/förbrukning/solel. Spotify och kalender ligger i en gemensam flexkolumn med12px mellanrum; ingen separat fast kalenderposition. Datum/fler händelser/full kalender finns; mobilens nedre nav har direkt Kalender.
+- Snabbkontrollernas scrollbar döljs i standardspecificerad CSS och WebKit-pseudoelement, utan overflow:hidden. Samma princip i mobila paneler. Storlek/innehåll bevaras; tabindex gör vänsterbehållaren nåbar för tangentbordsscrollning.
+- Rootproblemet var separata markör-/canvas-tryckbedömningar och markörer som stal OrbitControls-gester. surface-input.ts klassificerar nu hela sekvensen. Markör-pointerdown vidarebefordras till canvas, resten hanteras av befintlig OrbitControls/capture. Drag, multitouch, cancel och fingerantalsskiften får aldrig bli objektkommandon. Touch-single väntar330ms för att kunna avbryta vid dubbeltryck; mus/keyboard behålls.
+- OrbitControls: explicit ONE ROTATE/PAN, TWO DOLLY_PAN, markplanspan, dämpning och zoomToCursor. Diskret Rotera/Flytta-knapp för enhandsbruk. Dubbeltryck raycastar originalmodellens uppåtyta och flyttar fokus mjukt; även tak kan vara en sådan yta. Kamera begränsas efter controls.update och hålls minst0,9m över samplad yta. Manuell gest avbryter följning/fokusövergång. Dold canvas med0×0 ändrar inte projektionen.
+- Pekgester använder touch-action:none enbart på canvas/markörer; UI-scroll är kvar. Originalmodell, texturer, enhetskopplingar, HA-spärrar och simulator är oförändrade. Inga nya simulatorentiteter behövdes.
+- Slutverifierat:103 enhets-/integrationstester (39 backend +64 frontend), typkontroll, produktionsbygge och23 riktade Playwright-flöden i en sammanhängande körning (1,8 minuter). Även mobil touch-scroll med pausad RAF är verifierad. Native Chromium-multitouch verifierar rotation/pan/nyp/dubbeltryck/1→2→1/markörsäkerhet/följning/kamerafrigång. Viewports iPhone, Android, surfplatta, liggande och dator; faktisk Safari/telefonhårdvara återstår som manuell kontroll.
+- localhost:5173 och localhost:8123/health ska behållas igång. Original-GLB och PNG har fortfarande sina oförändrade SHA-256-värden; inga enhetskopplingar eller originalfiler ändrades.
+- Guide och fysisk testprocedur: docs/MOBILE_NAVIGATION.md. Äldre beskrivning av fasta Spotify-/kalenderpositioner ersätts av denna layout.
+
 ## Nytt huvudgränssnitt och Spotify – 2026-10-28
 
 - Senaste användarkrav ersätter äldre beslut om Lista som sidopanel. HomeControls har direkta vänsterkontroller, höger musik/kalender, statusrad och mobilens nedre nav. Lista är nu full dashboard med sektioner och historikdiagram. Samma Connection, objekt och editor används.

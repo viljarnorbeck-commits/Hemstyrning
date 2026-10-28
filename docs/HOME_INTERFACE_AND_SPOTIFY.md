@@ -4,6 +4,9 @@
 öppnar en separat, rullbar dashboard. Båda använder samma `Connection`, scenobjekt
 och Home Assistant-bindningar. Redigeraren `/editor` är kvar.
 
+Se även [kompakt layout och mobilgester](MOBILE_NAVIGATION.md) för den senaste
+layouten, Rotera/Flytta och fysisk telefonverifiering.
+
 ## Kontroller
 
 På dator visas statusraden överst, direkta kontroller till vänster och musik/kommande
