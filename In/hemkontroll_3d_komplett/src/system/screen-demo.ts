@@ -49,3 +49,5 @@ if (!local) {
  <p>Flikarna har egna skärmsessioner, men delar simulerade enhetstillstånd. Öppna nya flikar med länkarna här (använd inte Chromes <em>Duplicera flik</em>). För mobiltest: använd Chromes enhetsverktyg <code>F12</code> → <code>Ctrl+Shift+M</code>. Detta testar webbgränssnitt och skärmsynkronisering, inte prestanda hos en fysisk Google TV.</p></section>
  </main>`;
 }
+
+export {};

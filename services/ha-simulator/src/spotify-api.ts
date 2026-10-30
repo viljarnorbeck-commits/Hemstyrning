@@ -1,12 +1,13 @@
+import {allowedOrigin} from './access.js';
 import {randomBytes} from 'node:crypto';
 import {readFile,writeFile,rename,mkdir,chmod} from 'node:fs/promises';
 import {join} from 'node:path';
 import {Router,type Request,type Response} from 'express';
 
-type Tokens={access_token:string;refresh_token:string;expires_at:number};
+type Tokens={access_token:string;refresh_token:string;expires_at:number;scope?:string};
 type Pending={expires:number};
 type SpotifyDevice={id:string|null;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null};
-const scopes='user-read-playback-state user-read-currently-playing user-modify-playback-state playlist-read-private';
+const scopes='streaming user-read-email user-read-private user-read-playback-state user-read-currently-playing user-modify-playback-state playlist-read-private';
 const validAction=new Set(['play','pause','next','previous','volume','transfer','seek','queue','play_track','play_playlist']);
 function configured(){
  const id=process.env.SPOTIFY_CLIENT_ID?.trim()??'',secret=process.env.SPOTIFY_CLIENT_SECRET?.trim()??'';
@@ -22,7 +23,7 @@ function albumImage(item:any):string{
 }
 export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'controller'|'admin'|undefined,request:typeof fetch=fetch){
  const router=Router(),file=join(directory,'spotify-account.json'),pending=new Map<string,Pending>();
- let tokens:Tokens|null=null,loaded=false,saveQueue=Promise.resolve(),refreshing:Promise<string>|null=null;
+ let authEpoch=0;let tokens:Tokens|null=null,loaded=false,saveQueue=Promise.resolve(),refreshing:Promise<string>|null=null;
  let playbackCache:{until:number;data:any}|null=null,playbackPromise:Promise<any>|null=null;
  let devicesCache:{until:number;data:any}|null=null,devicesPromise:Promise<any>|null=null;
  let blockedUntil=0;
@@ -47,8 +48,9 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   await load();if(!tokens)throw new SpotifyError(409,'Anslut Spotify under musikinställningarna.');
   if(Date.now()<tokens.expires_at-60000)return tokens.access_token;
   if(refreshing)return refreshing;
-  refreshing=(async()=>{const previous=tokens!;const response=await exchange(new URLSearchParams({grant_type:'refresh_token',refresh_token:previous.refresh_token}));
-   tokens={access_token:response.access_token,refresh_token:typeof response.refresh_token==='string'?response.refresh_token:previous.refresh_token,expires_at:Date.now()+response.expires_in*1000};
+  refreshing=(async()=>{const previous=tokens!,epoch=authEpoch;const response=await exchange(new URLSearchParams({grant_type:'refresh_token',refresh_token:previous.refresh_token}));
+   if(epoch!==authEpoch||tokens!==previous)throw new SpotifyError(409,'Spotify-kontot har ändrats.');
+   tokens={access_token:response.access_token,refresh_token:typeof response.refresh_token==='string'?response.refresh_token:previous.refresh_token,expires_at:Date.now()+response.expires_in*1000,scope:typeof response.scope==='string'?response.scope:previous.scope};
    await store();return tokens.access_token;
   })();
   try{return await refreshing;}finally{refreshing=null;}
@@ -69,7 +71,17 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   if(write&&r==='viewer'){textStatus(res,403,'Denna skärm får inte styra musik.');return false;}
   return true;
  }
- router.get('/status',async(req,res)=>{if(!requireRole(req,res))return;await load();res.json({configured:!!configured(),connected:!!tokens,canControl:role(req)!=='viewer',canConfigure:role(req)==='admin',message:!configured()?'Ange SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET och SPOTIFY_REDIRECT_URI i serverns .env.':!tokens?'Anslut ditt Spotify-konto via musikpanelen.':'Ansluten till Spotify.'});});
+ router.get('/status',async(req,res)=>{if(!requireRole(req,res))return;await load();res.json({configured:!!configured(),connected:!!tokens,webPlaybackAuthorized:!!tokens?.scope?.split(' ').includes('streaming'),canControl:role(req)!=='viewer',canConfigure:role(req)==='admin',message:!configured()?'Ange SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET och SPOTIFY_REDIRECT_URI i serverns .env.':!tokens?'Anslut ditt Spotify-konto via musikpanelen.':'Ansluten till Spotify.'});});
+ // The official playback SDK requires a short-lived access token in browser memory.
+ // Client secret and refresh token never leave this server.
+ router.post('/sdk-token',async(req,res)=>{
+  res.set({'Cache-Control':'no-store, private','Pragma':'no-cache','Vary':'Cookie'});
+  if(!requireRole(req,res,true))return;
+  if(!allowedOrigin(req.headers.origin)||!req.is('application/json')){res.sendStatus(403);return;}
+  try{await load();if(!tokens?.scope?.split(' ').includes('streaming')){textStatus(res,409,'Anslut Spotify igen och godkänn webbläsaruppspelning.');return;}
+   const accessTokenValue=await accessToken();res.json({accessToken:accessTokenValue,expiresAt:tokens!.expires_at});
+  }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,'Spotify-inloggningen behöver förnyas.');}
+ });
  router.get('/connect',(req,res)=>{if(role(req)!=='admin'){textStatus(res,403,'Administratör krävs för att ansluta Spotify.');return;}
   const cfg=configured();if(!cfg){textStatus(res,409,'Konfigurera Spotify-uppgifterna i serverns .env först.');return;}
   const state=randomBytes(32).toString('hex');pending.set(state,{expires:Date.now()+300000});if(pending.size>40)for(const [k,v] of pending)if(v.expires<Date.now()||pending.size>40)pending.delete(k);
@@ -80,14 +92,15 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   const cfg=configured(),state=typeof req.query.state==='string'?req.query.state:'',record=pending.get(state);
   pending.delete(state);
   if(!cfg||!record||record.expires<Date.now()||typeof req.query.code!=='string'||!!req.query.error){textStatus(res,400,'Ogiltigt eller utgånget Spotify-inloggningsförsök.');return;}
-  try{const data=await exchange(new URLSearchParams({grant_type:'authorization_code',code:req.query.code,redirect_uri:cfg.redirect}));
-   tokens={access_token:data.access_token,refresh_token:data.refresh_token,expires_at:Date.now()+data.expires_in*1000};
+  const epoch=authEpoch;try{const data=await exchange(new URLSearchParams({grant_type:'authorization_code',code:req.query.code,redirect_uri:cfg.redirect}));
+   if(epoch!==authEpoch)throw new Error('Kontot har kopplats bort');authEpoch++;
+   tokens={access_token:data.access_token,refresh_token:data.refresh_token,expires_at:Date.now()+data.expires_in*1000,scope:typeof data.scope==='string'?data.scope:undefined};
    if(typeof tokens.refresh_token!=='string')throw new Error('Spotify skickade ingen förnyelsetoken');
    await store();playbackCache=null;devicesCache=null;
    res.redirect(new URL('/?spotify=connected',cfg.redirect).href);
   }catch{ textStatus(res,502,'Spotify kunde inte anslutas. Kontrollera appinställningarna och försök igen.');}
  });
- router.post('/disconnect',async(req,res)=>{if(role(req)!=='admin'){textStatus(res,403,'Administratör krävs.');return;}await load();tokens=null;playbackCache=null;devicesCache=null;try{const {unlink}=await import('node:fs/promises');await unlink(file);}catch{}res.json({connected:false});});
+ router.post('/disconnect',async(req,res)=>{if(role(req)!=='admin'){textStatus(res,403,'Administratör krävs.');return;}await load();authEpoch++;pending.clear();tokens=null;playbackCache=null;devicesCache=null;await saveQueue.catch(()=>{});try{const {unlink}=await import('node:fs/promises');await unlink(file);}catch{}res.json({connected:false});});
  router.get('/playback',async(req,res)=>{if(!requireRole(req,res))return;await load();if(!tokens){res.json({connected:false,playing:false,track:null,device:null});return;}
   try{
    if(playbackCache&&Date.now()<playbackCache.until){res.json(playbackCache.data);return;}
@@ -131,24 +144,15 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
     case 'previous':await spotify('/me/player/previous'+query,'POST');break;
     case 'volume':{const n=req.body?.volume;if(!Number.isInteger(n)||n<0||n>100){textStatus(res,400,'Volymen måste vara mellan 0 och 100.');return;}await spotify('/me/player/volume?volume_percent='+n+(deviceId?'&device_id='+encodeURIComponent(deviceId):''),'PUT');break;}
     case 'seek':{const n=req.body?.positionMs;if(!Number.isInteger(n)||n<0||n>86400000){textStatus(res,400,'Ogiltig position.');return;}await spotify('/me/player/seek?position_ms='+n+(deviceId?'&device_id='+encodeURIComponent(deviceId):''),'PUT');break;}
-    case 'transfer':{if(!deviceId){textStatus(res,400,'Välj en uppspelningsenhet.');return;}await spotify('/me/player','PUT',{device_ids:[deviceId],play:false});break;}
+    case 'transfer':{if(!deviceId){textStatus(res,400,'Välj en uppspelningsenhet.');return;}await spotify('/me/player','PUT',{device_ids:[deviceId],play:req.body?.play===true});break;}
     case 'queue':
     case 'play_track':
     case 'play_playlist':{
      const uri=req.body?.uri;
      const type=a==='play_playlist'?'playlist':'track';
-     if(typeof uri!=='string'||!new RegExp('^spotify:'+type+':[a-zA-Z0-9]{1,100}
-   }
-   playbackCache=null;devicesCache=null;res.json({accepted:true});
-  }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify-kommandot misslyckades.');}
- });
- return router;
-}
-class SpotifyError extends Error{constructor(public status:number,message:string){super(message);}}
-).test(uri)){textStatus(res,400,'Ogiltig Spotify-URI.');return;}
-     if(a==='queue')await spotify('/me/player/queue?uri='+encodeURIComponent(uri)+ (deviceId?'&device_id='+encodeURIComponent(deviceId):''),'POST');
-     else if(a==='play_track')await spotify('/me/player/play'+query,'PUT',{uris:[uri]});
-     else await spotify('/me/player/play'+query,'PUT',{context_uri:uri});
+     if(typeof uri!=='string'||!new RegExp('^spotify:'+type+':[a-zA-Z0-9]{1,100}$').test(uri)){textStatus(res,400,'Ogiltig Spotify-adress.');return;}
+     if(a==='queue')await spotify('/me/player/queue?uri='+encodeURIComponent(uri)+(deviceId?'&device_id='+encodeURIComponent(deviceId):''),'POST');
+     else await spotify('/me/player/play'+(deviceId?'?device_id='+encodeURIComponent(deviceId):''),'PUT',type==='playlist'?{context_uri:uri}:{uris:[uri]});
      break;
     }
    }

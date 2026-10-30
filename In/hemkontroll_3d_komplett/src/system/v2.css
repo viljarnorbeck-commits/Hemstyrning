@@ -209,3 +209,4 @@ button,input,select,textarea{border-radius:5px}input,select,textarea{background:
  .spotify-direct .spotify-hits article{flex-wrap:wrap}
  .spotify-direct .spotify-hits article div{flex-basis:100%}
 }
+.spotify-connect{border:1px solid #bb9aff55;background:#111726;border-radius:8px;padding:16px;margin:18px 0}.spotify-connect ul{list-style:none;padding:0;margin:12px 0;display:grid;gap:8px}.spotify-connect li>button{display:grid;grid-template-columns:26px 1fr 22px;align-items:center;gap:10px;width:100%;padding:13px;text-align:left;background:#1b2435;border:1px solid #53617766}.spotify-connect li>button[aria-pressed=true]{background:#25384a;border-color:#88e86b;color:#c5ffad}.spotify-connect strong,.spotify-connect small{display:block}.spotify-connect small{font-size:11px;color:#b4bfd2;margin-top:5px}.spotify-connect .browser-speaker-status{font-size:12px;line-height:1.6;color:#cbb3ff}.spotify-connect li>button:disabled{opacity:.55}

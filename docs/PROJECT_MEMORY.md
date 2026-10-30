@@ -2,6 +2,15 @@
 
 Senast uppdaterad: 2026-10-30
 
+## Spotify Connect i webbläsaren – 2026-10-30
+
+- User-approved: registrera fliken automatiskt utan att ta över musik; ingen permanent Spela här-knapp. Spotify Connect-enheter visas nu som en lista med namn/typ, Spotify-bekräftad aktiv markering, begränsningar och den här webbläsaren. Enhetsval bevarar paus/spelstatus. Listan hämtar bara enheter som Spotify rapporterar, med befintlig servercache.
+- Ny BrowserSpeaker använder officiell Web Playback SDK. SDK-ready krävs före lokal rad; not_ready tar bort den. Ett nytt ID hämtas efter reload, aldrig sparat i local/sessionStorage. Bounded retry/backoff, felstatus, Premium-/webbläsarkrav och Tillåt ljud enbart vid autoplayspärr. Ingen automatisk transfer/play vid uppstart. Samma musikkomponent på Hem och /control.
+- OAuth begär nu streaming/user-read-email/user-read-private. Sparade tokens bevarar scope vid refresh, inloggning finns kvar efter serveromstart. Äldre inloggning behöver en ny användargodkänd OAuth-runda, med knapp Godkänn webbläsaruppspelning. SDK-token är ett avsiktligt undantag från tidigare backend-only-access-token-beskrivning: kortlivad access-token lämnas endast via roll-/origin-/JSON-skyddad POST /spotify-api/sdk-token, no-store, till SDK:ns minne. Refresh-token, Client Secret och HA-token lämnar aldrig backend. Vanliga status-/API-svar innehåller inte tokens.
+- Kontobortkoppling kan inte återupplivas av en redan pågående refresh. SDK stängs när komponenten lämnas/kontot kopplas bort. Direkta Spotify-kommandon påverkar Spotify även om HA är simulator; tester mockar Spotify SDK och API och skickar ingen verklig musikstyrning.
+- Verifiering 2026-10-30: 57 simulator/backend +77 dashboardtester passerar, åtta Spotify-/musik-Playwrightflöden passerar, typecheck och dashboard-/simulatorbygge passerar. `/health` ger `mode: simulation`; dashboard ger 200. Lokal Spotify-status rapporterar `webPlaybackAuthorized: true`. Ingen fysisk DRM-ljudström testades.
+- Befintliga byggfel som blockerade start/test rättade: avbruten Spotify-URI-regex/duplicerat kodslut, modulmarkering i screen-demo samt överescapad QR-testregex. Ingen funktionalitet i demovyn ändrad. Se docs/SPOTIFY_DIRECT.md.
+
 ## Spotify direkt utan Home Assistant – 2026-10-30
 
 - Den aktiva musikpanelen `src/system/music-panel.ts` använder inte längre HA `media_player`, utan nya backendroutern `services/ha-simulator/src/spotify-api.ts` på `/spotify-api`. Samma widget finns på Hem och på separat `/control`; Lista visar direkt Spotify-status. Tidigare HA-mediabrygga ligger kvar som bakåtkompatibel serverkod, men används inte av nya musikgränssnittet.
@@ -9,7 +18,7 @@ Senast uppdaterad: 2026-10-30
 - Funktioner: aktuell låt, omslag, uppspelning, volym, Spotify Connect-enheter, sökning på låtar (max8), egen spellistelista (max20), lägg i kö, spela låt/spellista samt manuell Jam-QR. Ingen musikaudioström i Hemstyrning, ingen automatisk Jam-skapning. Direkta kommandon påverkar Spotify-kontot även om HA-bryggan har simulatorinställning.
 - Servercache för flera flikar (5s uppspelning, 15s enheter), begränsningshantering via 429 Retry-After, spärrade/okända kommandon och godkända Spotify URI-format. `SPOTIFY_REDIRECT_URI` lokalt ska vara `http://127.0.0.1:5173/spotify-api/callback`, inte `localhost`; för LAN HTTPS.
 - `docs/SPOTIFY_DIRECT.md` och `.env.example` beskriver konfiguration; isolerat backend-test med falsk Spotify-tjänst och uppdaterade browsermusiktester har lagts till.
-- **Ej körd här:** arbetsmiljön kunde inte starta lokal kommandoterminal; därför har typecheck, npm test, produktionsbygge och real Spotify-/fysisk appar-verifiering inte kunnat genomföras. Ingen verklig client secret, Premium-inloggning eller token finns i repot. Den nya koden är committad direkt i GitHub men behöver verifieras lokalt före produktionsanvändning.
+- Historisk notering: den tidigare Spotify-etappen saknade lokal testmiljö och hade ännu inte verifierats. Detta har nu ersatts av verifieringen ovan. Ingen verklig client secret eller token finns i repot. Lokal API-status har verifierats; fysisk DRM-ljuduppspelning återstår.
 
 
 ## Kontrollpanelens starka färgkort – 2026-10-30

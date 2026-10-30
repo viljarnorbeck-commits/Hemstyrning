@@ -47,3 +47,39 @@ it('uses direct Spotify OAuth, persists refresh credentials privately and keeps 
   expect(JSON.stringify(before)).not.toContain('fake-refresh');
  }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));await rm(directory,{force:true,recursive:true});}
 });
+
+it('restores login after restart, refreshes SDK access privately and restricts token delivery',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'hem-sdk-token-'));
+ const {writeFile,stat}=await import('node:fs/promises');
+ await writeFile(join(directory,'spotify-account.json'),JSON.stringify({access_token:'expired',refresh_token:'private-refresh',expires_at:0,scope:'streaming user-read-email user-read-private'}),{mode:0o600});
+ let refreshes=0;const calls:any[]=[];
+ const request=vi.fn(async(_url:unknown,init?:RequestInit)=>{if(String(_url).includes('/api/token')){refreshes++;return new Response(JSON.stringify({access_token:'sdk-ephemeral',expires_in:3600}),{headers:{'content-type':'application/json'}});}calls.push(JSON.parse(String(init?.body??'{}')));return new Response(null,{status:204});}) as typeof fetch;
+ vi.stubEnv('SPOTIFY_CLIENT_ID','test');vi.stubEnv('SPOTIFY_CLIENT_SECRET','test-secret');vi.stubEnv('SPOTIFY_REDIRECT_URI','http://127.0.0.1:5173/spotify-api/callback');
+ let server:ReturnType<ReturnType<typeof express>['listen']>,base='';
+ const start=async()=>{const app=express();app.use(express.json());app.use('/spotify-api',spotifyApi(directory,req=>req.headers['x-role'] as 'viewer'|'controller'|'admin'|undefined,request));server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));base='http://127.0.0.1:'+(server.address() as AddressInfo).port+'/spotify-api';};
+ const stop=()=>new Promise<void>(r=>server.close(()=>r()));
+ const headers={'content-type':'application/json','x-role':'controller'};
+ try{await start();
+  expect((await fetch(base+'/sdk-token',{method:'POST',headers:{...headers,'x-role':'viewer'},body:'{}'})).status).toBe(403);
+  expect((await fetch(base+'/sdk-token',{method:'POST',headers:{'content-type':'application/json'},body:'{}'})).status).toBe(401);
+  expect((await fetch(base+'/sdk-token',{method:'POST',headers:{...headers,origin:'https://attacker.invalid'},body:'{}'})).status).toBe(403);
+  const result=await fetch(base+'/sdk-token',{method:'POST',headers,body:'{}'});expect(result.status).toBe(200);expect(result.headers.get('cache-control')).toContain('no-store');expect(await result.json()).toMatchObject({accessToken:'sdk-ephemeral'});expect(refreshes).toBe(1);
+  const status=await fetch(base+'/status',{headers:{'x-role':'viewer'}}).then(r=>r.json());expect(status).toMatchObject({connected:true,webPlaybackAuthorized:true});expect(JSON.stringify(status)).not.toMatch(/sdk-ephemeral|private-refresh/);
+  expect((await stat(join(directory,'spotify-account.json'))).mode&0o777).toBe(0o600);
+  await stop();await start();expect((await fetch(base+'/status',{headers}).then(r=>r.json())).connected).toBe(true);
+  expect((await fetch(base+'/sdk-token',{method:'POST',headers,body:'{}'})).status).toBe(200);expect(refreshes).toBe(1);
+  expect((await fetch(base+'/command',{method:'POST',headers,body:JSON.stringify({action:'transfer',deviceId:'browser-new',play:true})})).status).toBe(200);expect(calls.at(-1)).toMatchObject({device_ids:['browser-new'],play:true});
+  expect((await fetch(base+'/disconnect',{method:'POST',headers:{...headers,'x-role':'admin'},body:'{}'})).status).toBe(200);expect((await fetch(base+'/sdk-token',{method:'POST',headers,body:'{}'})).status).toBe(409);
+ }finally{await stop();await rm(directory,{recursive:true,force:true});}
+});
+
+it('does not resurrect disconnected credentials when a refresh is already in flight',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'hem-sdk-logout-'));const {writeFile}=await import('node:fs/promises');
+ await writeFile(join(directory,'spotify-account.json'),JSON.stringify({access_token:'expired',refresh_token:'refresh',expires_at:0,scope:'streaming'}));
+ vi.stubEnv('SPOTIFY_CLIENT_ID','test');vi.stubEnv('SPOTIFY_CLIENT_SECRET','secret');vi.stubEnv('SPOTIFY_REDIRECT_URI','http://127.0.0.1:5173/spotify-api/callback');
+ let begin!:()=>void,release!:()=>void;const started=new Promise<void>(r=>begin=r),finish=new Promise<void>(r=>release=r);
+ const request=(async()=>{begin();await finish;return new Response(JSON.stringify({access_token:'must-not-resurrect',expires_in:3600}));}) as typeof fetch;
+ const app=express();app.use(express.json());app.use('/spotify-api',spotifyApi(directory,()=> 'admin',request));const server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));const base='http://127.0.0.1:'+(server.address() as AddressInfo).port+'/spotify-api',headers={'content-type':'application/json'};
+ try{const pending=fetch(base+'/sdk-token',{method:'POST',headers,body:'{}'});await started;await fetch(base+'/disconnect',{method:'POST',headers,body:'{}'});release();expect((await pending).status).toBe(409);expect((await fetch(base+'/status').then(r=>r.json())).connected).toBe(false);await expect(readFile(join(directory,'spotify-account.json'))).rejects.toThrow();}
+ finally{release();await new Promise<void>(r=>server.close(()=>r()));await rm(directory,{recursive:true,force:true});}
+});

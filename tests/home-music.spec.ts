@@ -39,8 +39,8 @@ test('direct Spotify playback uses only the Spotify server API, with Connect dev
  await expect(modal).toContainText('SPOTIFY WEB API');
  await modal.getByRole('button',{name:'Spela musik',exact:true}).click();await expect(modal.locator('.playback-state')).toHaveText('Spelar');
  await modal.getByRole('button',{name:'Nästa låt'}).click();await expect(modal).toContainText('Kväll vid havet');
- await modal.locator('#spotify-volume').fill('63');await modal.locator('#spotify-volume').dispatchEvent('change');await expect.poll(()=>volume).toBe(63);
- await modal.locator('#spotify-device').selectOption('another-device');await expect.poll(()=>commands).toContain('transfer');
+ await modal.locator('#spotify-volume').fill('63');await modal.locator('#spotify-volume').dispatchEvent('change');await expect.poll(()=>volume).toBe(63);await page.waitForTimeout(650);await expect(modal.getByRole('button',{name:'Nästa låt'})).toBeEnabled();
+ const speaker=modal.locator('[data-spotify-device="another-device"]');await expect(speaker).toBeEnabled();await speaker.click();await expect.poll(()=>commands).toContain('transfer');
  expect(commands).toContain('play');expect(commands).toContain('next');expect(commands).toContain('volume');
 });
 
@@ -54,7 +54,7 @@ test('Jam preserves manual Spotify invitation QR and rejects track links',async(
  await modal.locator('#jam-url').fill('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');
  await modal.getByRole('button',{name:'Spara Jam-länk'}).click();
  await modal.locator('summary').click();
- await modal.getByRole('button',{name:'Visa Jam QR-kod'}).click();await expect(modal.locator('.jam-qr img')).toHaveAttribute('src',/^data:image\\/png;base64,/);
+ await modal.getByRole('button',{name:'Visa Jam QR-kod'}).click();await expect(modal.locator('.jam-qr img')).toHaveAttribute('src',/^data:image\/png;base64,/);
  const png=Buffer.from((await modal.locator('.jam-qr img').getAttribute('src'))!.split(',')[1],'base64'),decoded=await sharp(png).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  expect(jsQR(new Uint8ClampedArray(decoded.data),decoded.info.width,decoded.info.height)?.data).toBe('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');
  await modal.locator('summary').click();await modal.getByRole('button',{name:'Ta bort Jam-länk'}).click();await expect(modal).toContainText('Ingen Jam-länk sparad');
