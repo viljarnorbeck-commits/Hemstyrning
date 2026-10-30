@@ -69,7 +69,7 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   if(write&&r==='viewer'){textStatus(res,403,'Denna skärm får inte styra musik.');return false;}
   return true;
  }
- router.get('/status',async(req,res)=>{if(!requireRole(req,res))return;await load();res.json({configured:!!configured(),connected:!!tokens,canControl:role(req)!=='viewer',message:!configured()?'Ange SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET och SPOTIFY_REDIRECT_URI i serverns .env.':!tokens?'Anslut ditt Spotify-konto via musikpanelen.':'Ansluten till Spotify.'});});
+ router.get('/status',async(req,res)=>{if(!requireRole(req,res))return;await load();res.json({configured:!!configured(),connected:!!tokens,canControl:role(req)!=='viewer',canConfigure:role(req)==='admin',message:!configured()?'Ange SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET och SPOTIFY_REDIRECT_URI i serverns .env.':!tokens?'Anslut ditt Spotify-konto via musikpanelen.':'Ansluten till Spotify.'});});
  router.get('/connect',(req,res)=>{if(role(req)!=='admin'){textStatus(res,403,'Administratör krävs för att ansluta Spotify.');return;}
   const cfg=configured();if(!cfg){textStatus(res,409,'Konfigurera Spotify-uppgifterna i serverns .env först.');return;}
   const state=randomBytes(32).toString('hex');pending.set(state,{expires:Date.now()+300000});if(pending.size>40)for(const [k,v] of pending)if(v.expires<Date.now()||pending.size>40)pending.delete(k);
@@ -87,7 +87,7 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
    res.redirect(new URL('/?spotify=connected',cfg.redirect).href);
   }catch{ textStatus(res,502,'Spotify kunde inte anslutas. Kontrollera appinställningarna och försök igen.');}
  });
- router.post('/disconnect',async(req,res)=>{if(role(req)!=='admin'){textStatus(res,403,'Administratör krävs.');return;}tokens=null;playbackCache=null;devicesCache=null;await load();try{const {unlink}=await import('node:fs/promises');await unlink(file);}catch{}res.json({connected:false});});
+ router.post('/disconnect',async(req,res)=>{if(role(req)!=='admin'){textStatus(res,403,'Administratör krävs.');return;}await load();tokens=null;playbackCache=null;devicesCache=null;try{const {unlink}=await import('node:fs/promises');await unlink(file);}catch{}res.json({connected:false});});
  router.get('/playback',async(req,res)=>{if(!requireRole(req,res))return;await load();if(!tokens){res.json({connected:false,playing:false,track:null,device:null});return;}
   try{
    if(playbackCache&&Date.now()<playbackCache.until){res.json(playbackCache.data);return;}
