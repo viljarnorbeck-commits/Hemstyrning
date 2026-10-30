@@ -28,25 +28,36 @@ test('desktop direct controls confirm each car, all lights and robot commands in
  await page.screenshot({path:'/tmp/hemkontroll-controls-desktop.png'});
 });
 
-test('Spotify now playing, sources, volume, missing music, unsupported and unavailable states',async({page,request})=>{
- await open(page);await expect(page.locator('.music-widget')).toContainText('Ljus över gården');await page.locator('.music-open').click();const modal=page.locator('dialog.music-panel');
- await expect(modal).toContainText('Pausad');await modal.getByRole('button',{name:'Spela musik',exact:true}).click();await expect(modal.locator('.playback-state')).toHaveText('Spelar');
- await modal.locator('#music-source').selectOption('Kök');await expect(modal.locator('#music-source')).toHaveValue('Kök');await expect(modal.locator('#music-volume')).toBeEnabled();
- await modal.locator('#music-volume').fill('63');await modal.locator('#music-volume').dispatchEvent('change');await expect.poll(async()=>Number((await request.get('/dev-api/states').then(r=>r.json())).find((s:any)=>s.entity_id===player).attributes.volume_level),{timeout:15000}).toBeCloseTo(.63,2);
- await expect(modal.getByRole('button',{name:'Nästa låt'})).toBeEnabled();await modal.getByRole('button',{name:'Nästa låt'}).click();await expect(modal).toContainText('Kväll vid havet');await modal.getByRole('button',{name:'Föregående låt'}).click();await expect(modal).toContainText('Ljus över gården');
- await request.post('/dev-api/states/'+player,{data:{state:'idle',attributes:{media_title:null,media_artist:null,media_album_name:null,entity_picture:null,media_position:null,media_duration:null}}});await expect(modal).toContainText('Ingen musik spelas');
- await request.post('/dev-api/states/'+player,{data:{state:'paused',attributes:{supported_features:0}}});await expect(modal.getByRole('button',{name:'Spela musik'})).toBeDisabled();
- await request.post('/dev-api/states/'+player,{data:{state:'unavailable'}});await expect(modal).toContainText('Otillgänglig');await expect(modal.locator('#music-source')).toBeDisabled();await expect(modal.locator('#music-volume')).toBeDisabled();
+test('direct Spotify playback uses only the Spotify server API, with Connect devices and volume',async({page})=>{
+ let playing=false,volume=30,title='Ljus över gården',commands:string[]=[];
+ await page.route('**/spotify-api/status',route=>route.fulfill({json:{configured:true,connected:true,canControl:true,canConfigure:true,message:'Ansluten'}}));
+ await page.route('**/spotify-api/playback',route=>route.fulfill({json:{connected:true,playing,progressMs:32000,track:{name:title,artist:'Testartist',album:'Testalbum',cover:'https://i.scdn.co/image/test',durationMs:214000,url:null},device:{id:'test-device',name:'Vardagsrum',volume_percent:volume}}}));
+ await page.route('**/spotify-api/devices',route=>route.fulfill({json:{devices:[{id:'test-device',name:'Vardagsrum',type:'speaker',is_active:true,is_restricted:false,supports_volume:true,volume_percent:volume},{id:'another-device',name:'Kök',type:'speaker',is_active:false,is_restricted:false,supports_volume:true,volume_percent:70}]}}));
+ await page.route('**/spotify-api/command',async route=>{const body=route.request().postDataJSON();commands.push(body.action);if(body.action==='play')playing=true;if(body.action==='pause')playing=false;if(body.action==='volume')volume=body.volume;if(body.action==='next')title='Kväll vid havet';if(body.action==='previous')title='Ljus över gården';await route.fulfill({json:{accepted:true}});});
+ await open(page);await expect(page.locator('.music-widget')).toContainText('Ljus över gården');
+ await page.locator('.music-open').click();const modal=page.locator('dialog.music-panel');
+ await expect(modal).toContainText('Spotify Web API');
+ await modal.getByRole('button',{name:'Spela musik',exact:true}).click();await expect(modal.locator('.playback-state')).toHaveText('Spelar');
+ await modal.getByRole('button',{name:'Nästa låt'}).click();await expect(modal).toContainText('Kväll vid havet');
+ await modal.locator('#spotify-volume').fill('63');await modal.locator('#spotify-volume').dispatchEvent('change');await expect.poll(()=>volume).toBe(63);
+ await modal.locator('#spotify-device').selectOption('another-device');await expect.poll(()=>commands).toContain('transfer');
+ expect(commands).toContain('play');expect(commands).toContain('next');expect(commands).toContain('volume');
 });
 
-test('Jam uses a saved invitation, rejects track URLs, removes links and labels demo QR',async({page})=>{
- await open(page);await page.locator('.music-open').click();const modal=page.locator('dialog.music-panel');await expect(modal).toContainText('Ingen Jam-inbjudningslänk');
- await modal.getByRole('button',{name:'Visa Jam QR-kod'}).click();await expect(page.locator('#toast')).toContainText('Ingen giltig Jam');
- await modal.locator('summary').click();await modal.locator('#jam-url').fill('https://open.spotify.com/track/1234567890');await modal.getByRole('button',{name:'Spara musikinställningar'}).click();await expect(page.locator('#toast')).toContainText('inte en låt');
- await modal.locator('#jam-url').fill('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');await modal.getByRole('button',{name:'Spara musikinställningar'}).click();await expect(modal).toContainText('Sessionens status kan inte verifieras');await modal.getByRole('button',{name:'Visa Jam QR-kod'}).click();await expect(modal.locator('.jam-qr img')).toHaveAttribute('src',/^data:image\/png;base64,/);
- const png=Buffer.from((await modal.locator('.jam-qr img').getAttribute('src'))!.split(',')[1],'base64'),decoded=await sharp(png).ensureAlpha().raw().toBuffer({resolveWithObject:true});expect(jsQR(new Uint8ClampedArray(decoded.data),decoded.info.width,decoded.info.height)?.data).toBe('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');
- await modal.getByRole('button',{name:'Demonstrera QR',exact:false}).click();await expect(modal.locator('figcaption')).toContainText('Ingen riktig Spotify Jam');
- await modal.locator('summary').click();await modal.getByRole('button',{name:'Ta bort Jam-länk'}).click();await expect(modal).toContainText('Ingen Jam-inbjudningslänk');
+test('Jam preserves manual Spotify invitation QR and rejects track links',async({page})=>{
+ await page.route('**/spotify-api/status',route=>route.fulfill({json:{configured:false,connected:false,canControl:false,canConfigure:true,message:'Spotify ej konfigurerat'}}));
+ await open(page);await page.locator('.music-open').click();const modal=page.locator('dialog.music-panel');
+ await expect(modal).toContainText('Ingen Jam-länk sparad');
+ await modal.locator('summary').click();
+ await modal.locator('#jam-url').fill('https://open.spotify.com/track/1234567890');
+ await modal.getByRole('button',{name:'Spara Jam-länk'}).click();await expect(page.locator('#toast')).toContainText('inte en låt');
+ await modal.locator('#jam-url').fill('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');
+ await modal.getByRole('button',{name:'Spara Jam-länk'}).click();
+ await modal.locator('summary').click();
+ await modal.getByRole('button',{name:'Visa Jam QR-kod'}).click();await expect(modal.locator('.jam-qr img')).toHaveAttribute('src',/^data:image\\/png;base64,/);
+ const png=Buffer.from((await modal.locator('.jam-qr img').getAttribute('src'))!.split(',')[1],'base64'),decoded=await sharp(png).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ expect(jsQR(new Uint8ClampedArray(decoded.data),decoded.info.width,decoded.info.height)?.data).toBe('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');
+ await modal.locator('summary').click();await modal.getByRole('button',{name:'Ta bort Jam-länk'}).click();await expect(modal).toContainText('Ingen Jam-länk sparad');
 });
 
 test('list mode stops the animation loop, preserves camera and clean fullscreen restores UI',async({page})=>{
