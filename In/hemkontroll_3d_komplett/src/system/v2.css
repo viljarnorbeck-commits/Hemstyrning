@@ -158,3 +158,34 @@ button,input,select,textarea{border-radius:5px}input,select,textarea{background:
 @media(prefers-reduced-motion:reduce){
  .control-page .device-control{transition:none}
 }
+
+/* Direct Spotify: shared player on Home and the separate tablet panel. */
+.control-page .control-right{grid-template-rows:minmax(240px,1fr) minmax(200px,.85fr) minmax(230px,1fr)}
+.control-page #control-music{
+ display:flex;flex-direction:column;padding:13px;
+ border:2px solid #bc6cff88;border-radius:13px;
+ background:#171126;min-width:0;overflow:auto;
+}
+.control-page #control-music .music-widget{
+ display:flex;flex-direction:column;gap:6px;
+ flex:1;min-height:0;margin:0;padding:10px;
+ border-radius:9px;background:#221533;border:0;
+}
+.control-page #control-music .music-open{display:flex;align-items:center;gap:14px;min-width:0}
+.control-page #control-music .music-cover{width:78px;height:78px;flex-shrink:0}
+.control-page #control-music .track-copy{margin:0;min-width:0}
+.control-page #control-music .track-copy strong{font-size:18px;font-weight:750}
+.control-page #control-music .music-inline-controls{display:flex;gap:12px;margin-top:8px}
+.control-page #control-music .music-inline-controls button{font-size:22px;min-height:44px;min-width:44px}
+.control-page #control-music .jam-open{display:block;font-size:12px;min-height:34px;color:#e1cbff}
+.spotify-direct{background:#111722;border:2px solid #9a6ee6;border-radius:12px;color:#f3f7ff}
+.spotify-direct .music-progress progress{accent-color:#bc6cff}
+.spotify-direct .music-buttons button{background:#2e2250;color:white}
+.spotify-direct .music-now h3{font-weight:800}
+.spotify-direct [data-spotify="connect"]{background:#a3ff47;color:#071018;border-color:#a3ff47}
+.spotify-direct .music-settings{background:#151e2c;border-radius:9px;padding:16px}
+@media(max-width:950px){
+ .control-page .control-right{display:block}
+ .control-page #control-music{margin-bottom:18px;min-height:200px}
+ .control-page #control-music .music-cover{width:55px;height:55px}
+}
