@@ -1,5 +1,8 @@
 # Hemkontroll: två vyer och Spotify
 
+> **Uppdatering 2026-10-30:** Den tidigare Spotify-lösningen via Home Assistants `media_player` har ersatts i Hemstyrnings användargränssnitt med en direkt Spotify Web API-integration. Avsnitten nedan om HA-musik och gamla music-panel-tester dokumenterar den tidigare lösningen och gäller inte den nya musikpanelen. Aktuell installations- och användarguide: [Spotify direkt](SPOTIFY_DIRECT.md). Home Assistants övriga enhetsfunktioner är oförändrade.
+
+
 3D-världen använder fortsatt originalets texturerade RealityScan-modell. **Lista**
 öppnar en separat, rullbar dashboard. Båda använder samma `Connection`, scenobjekt
 och Home Assistant-bindningar. Redigeraren `/editor` är kvar.
