@@ -6,8 +6,8 @@ import {Router,type Request,type Response} from 'express';
 type Tokens={access_token:string;refresh_token:string;expires_at:number};
 type Pending={expires:number};
 type SpotifyDevice={id:string|null;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null};
-const scopes='user-read-playback-state user-read-currently-playing user-modify-playback-state';
-const validAction=new Set(['play','pause','next','previous','volume','transfer','seek']);
+const scopes='user-read-playback-state user-read-currently-playing user-modify-playback-state playlist-read-private';
+const validAction=new Set(['play','pause','next','previous','volume','transfer','seek','queue','play_track','play_playlist']);
 function configured(){
  const id=process.env.SPOTIFY_CLIENT_ID?.trim()??'',secret=process.env.SPOTIFY_CLIENT_SECRET?.trim()??'';
  const redirect=process.env.SPOTIFY_REDIRECT_URI?.trim()??'';
@@ -105,6 +105,19 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
    res.json(await devicesPromise);
   }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify är tillfälligt otillgängligt.');}
  });
+ router.get('/playlists',async(req,res)=>{if(!requireRole(req,res))return;
+  try{const data=await spotify('/me/playlists?limit=20');const playlists=(Array.isArray(data?.items)?data.items:[]).filter((p:any)=>typeof p?.uri==='string'&&/^spotify:playlist:[a-zA-Z0-9]+$/.test(p.uri)).map((p:any)=>({uri:p.uri,name:String(p.name??''),owner:String(p.owner?.display_name??''),image:albumImage({album:{images:p.images}})}));
+   res.json({playlists});
+  }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Kan inte läsa spellistor.');}
+ });
+ router.get('/search',async(req,res)=>{if(!requireRole(req,res))return;
+  const q=typeof req.query.q==='string'?req.query.q.trim():'';
+  if(q.length<2||q.length>100){textStatus(res,400,'Sökningen måste vara 2–100 tecken.');return;}
+  try{const data=await spotify('/search?type=track&limit=8&q='+encodeURIComponent(q));
+   const tracks=(Array.isArray(data?.tracks?.items)?data.tracks.items:[]).filter((item:any)=>typeof item?.uri==='string'&&/^spotify:track:[a-zA-Z0-9]+$/.test(item.uri)).map((item:any)=>({uri:item.uri,name:String(item.name??''),artist:Array.isArray(item.artists)?item.artists.map((a:any)=>String(a.name??'')).join(', '):'',cover:albumImage(item)}));
+   res.json({tracks});
+  }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify-sökningen misslyckades.');}
+ });
  router.post('/command',async(req,res)=>{
   if(!requireRole(req,res,true))return;const a=req.body?.action;
   if(typeof a!=='string'||!validAction.has(a)){textStatus(res,400,'Otillåtet Spotify-kommando.');return;}
@@ -119,6 +132,25 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
     case 'volume':{const n=req.body?.volume;if(!Number.isInteger(n)||n<0||n>100){textStatus(res,400,'Volymen måste vara mellan 0 och 100.');return;}await spotify('/me/player/volume?volume_percent='+n+(deviceId?'&device_id='+encodeURIComponent(deviceId):''),'PUT');break;}
     case 'seek':{const n=req.body?.positionMs;if(!Number.isInteger(n)||n<0||n>86400000){textStatus(res,400,'Ogiltig position.');return;}await spotify('/me/player/seek?position_ms='+n+(deviceId?'&device_id='+encodeURIComponent(deviceId):''),'PUT');break;}
     case 'transfer':{if(!deviceId){textStatus(res,400,'Välj en uppspelningsenhet.');return;}await spotify('/me/player','PUT',{device_ids:[deviceId],play:false});break;}
+    case 'queue':
+    case 'play_track':
+    case 'play_playlist':{
+     const uri=req.body?.uri;
+     const type=a==='play_playlist'?'playlist':'track';
+     if(typeof uri!=='string'||!new RegExp('^spotify:'+type+':[a-zA-Z0-9]{1,100}
+   }
+   playbackCache=null;devicesCache=null;res.json({accepted:true});
+  }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify-kommandot misslyckades.');}
+ });
+ return router;
+}
+class SpotifyError extends Error{constructor(public status:number,message:string){super(message);}}
+).test(uri)){textStatus(res,400,'Ogiltig Spotify-URI.');return;}
+     if(a==='queue')await spotify('/me/player/queue?uri='+encodeURIComponent(uri)+ (deviceId?'&device_id='+encodeURIComponent(deviceId):''),'POST');
+     else if(a==='play_track')await spotify('/me/player/play'+query,'PUT',{uris:[uri]});
+     else await spotify('/me/player/play'+query,'PUT',{context_uri:uri});
+     break;
+    }
    }
    playbackCache=null;devicesCache=null;res.json({accepted:true});
   }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify-kommandot misslyckades.');}
