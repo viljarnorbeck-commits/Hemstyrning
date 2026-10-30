@@ -17,6 +17,16 @@ PWA-installation och bara verkligt byggda paket.
 - Nativeappar använder en central **betrodd HTTPS-server**, inte utvecklingsservern
   öppet på LAN. Se guiden för viewer/controller/admin och privat CA.
 
+## Spotify direkt – utan Home Assistant
+
+Musikpanelen på Hem och kontrollpanelen `/control` använder nu Spotifys Web API
+genom backend. Albumomslag, uppspelningsstyrning, enhetsval, volym, sökning,
+spellistor och manuell Jam-QR ingår. Koppla kontot med eget Spotify Client ID,
+Client Secret och registrerad redirect-URI. Premium och egen Spotify-utvecklarapp
+krävs. Inga Spotify-tokens skickas till klienterna.
+
+**Kom igång:** [Direkt Spotify, kontokoppling och säkerhet](docs/SPOTIFY_DIRECT.md).
+
 ## Gränssnitt och musik
 
 3D-vyn har direkta kontroller och Spotify. **Lista** öppnar en komplett dashboard
