@@ -37,3 +37,50 @@ button,input,select,textarea{border-radius:5px}input,select,textarea{background:
 .sim-grid>article,.simulator-page>section{background:var(--surface);border:1px solid #53617766;border-radius:7px}.sim-header{background:transparent!important}.simulator-page h1{color:#f4f7ff}.simulator-page .eyebrow{color:var(--amber)}.simulator-page button{background:#182536;border-color:#53617788;color:#d4e6ff}
 .cable-points fieldset{border:1px solid #53617766;padding:12px;margin:12px 0;border-radius:5px}.cable-points legend{color:#b7d4ef;font-size:12px}.cable-points .triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.cable-points input{width:100%;min-width:0}.cable-points button{font-size:11px;min-height:32px}
 @media(min-width:951px){.energy-view .hero-subjects,.energy-view .home-quick-controls{display:none}.energy-view .energy-network-legend{left:34px;top:365px;bottom:auto;width:245px;box-sizing:border-box;max-height:calc(100dvh - 500px);padding:14px}.energy-view .energy-network-legend h3{font-size:12px;line-height:1.5}.energy-view .energy-network-legend article{grid-template-columns:5px 1fr auto;font-size:11px;gap:6px}.energy-view:not(.hem-start) .energy-network-legend{top:155px;max-height:calc(100dvh - 290px)}}
+
+/* Physical, animated on/off switches in the standalone control panel.
+   The track stays mounted across live status updates so the thumb slides. */
+.control-page .slide-switch{
+  --switch-track-off:#354356;
+  --switch-track-on:#9bff4d;
+  display:inline-flex;align-items:center;justify-content:flex-end;
+  gap:9px;flex-shrink:0;min-width:116px;padding:8px 10px;
+  border:1px solid #60758b80;border-radius:9px;
+  background:#1a2635;color:#e1ebf5;cursor:pointer;
+  transition:background-color .2s ease,border-color .2s ease;
+}
+.control-page .slide-switch .slide-switch-track{
+  position:relative;display:block;flex:none;
+  width:52px;height:28px;border-radius:999px;
+  background:var(--switch-track-off);border:1px solid #7284987a;
+  transition:background-color .22s ease,border-color .22s ease;
+}
+.control-page .slide-switch .slide-switch-thumb{
+  position:absolute;top:3px;left:3px;width:20px;height:20px;
+  border-radius:50%;background:#eff5fa;
+  box-shadow:0 1px 4px #0008;
+  transform:translateX(0);
+  transition:transform .23s cubic-bezier(.2,.8,.25,1),background-color .23s ease;
+}
+.control-page .slide-switch .slide-switch-state{
+  min-width:26px;font-size:12px;font-weight:800;text-align:center;
+  letter-spacing:.05em;font-variant-numeric:tabular-nums;
+}
+.control-page .slide-switch.active{
+  background:#243a2b;color:#dcffc1;border-color:#9bff4d80;
+}
+.control-page .slide-switch.active .slide-switch-track{
+  background:var(--switch-track-on);border-color:var(--switch-track-on);
+}
+.control-page .slide-switch.active .slide-switch-thumb{
+  transform:translateX(24px);background:#0b2118;
+}
+.control-page .slide-switch:disabled{
+  opacity:.5;cursor:not-allowed;
+}
+.control-page .slide-switch:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){
+  .control-page .slide-switch,
+  .control-page .slide-switch .slide-switch-track,
+  .control-page .slide-switch .slide-switch-thumb{transition:none}
+}
