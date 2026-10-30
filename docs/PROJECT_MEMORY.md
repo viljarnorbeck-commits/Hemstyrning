@@ -2,6 +2,16 @@
 
 Senast uppdaterad: 2026-10-30
 
+## Spotify direkt utan Home Assistant – 2026-10-30
+
+- Den aktiva musikpanelen `src/system/music-panel.ts` använder inte längre HA `media_player`, utan nya backendroutern `services/ha-simulator/src/spotify-api.ts` på `/spotify-api`. Samma widget finns på Hem och på separat `/control`; Lista visar direkt Spotify-status. Tidigare HA-mediabrygga ligger kvar som bakåtkompatibel serverkod, men används inte av nya musikgränssnittet.
+- Kontot kopplas via Spotify Authorization Code Flow på backend. Client ID, Client Secret och exakt Redirect URI läses från ignorerad `.env`, refresh-/access-tokens sparas `data/spotify-account.json` med rättighet 0600, aldrig i frontend. OAuth-callbacken validerar femminuters engångs-`state` utan Strict-sessioncookie eftersom navigering kommer från Spotify. Start/avkoppling kräver admin, statusläsning viewer+, kommandon controller+. Spotify Web API anropas endast till fasta officiella adresser.
+- Funktioner: aktuell låt, omslag, uppspelning, volym, Spotify Connect-enheter, sökning på låtar (max8), egen spellistelista (max20), lägg i kö, spela låt/spellista samt manuell Jam-QR. Ingen musikaudioström i Hemstyrning, ingen automatisk Jam-skapning. Direkta kommandon påverkar Spotify-kontot även om HA-bryggan har simulatorinställning.
+- Servercache för flera flikar (5s uppspelning, 15s enheter), begränsningshantering via 429 Retry-After, spärrade/okända kommandon och godkända Spotify URI-format. `SPOTIFY_REDIRECT_URI` lokalt ska vara `http://127.0.0.1:5173/spotify-api/callback`, inte `localhost`; för LAN HTTPS.
+- `docs/SPOTIFY_DIRECT.md` och `.env.example` beskriver konfiguration; isolerat backend-test med falsk Spotify-tjänst och uppdaterade browsermusiktester har lagts till.
+- **Ej körd här:** arbetsmiljön kunde inte starta lokal kommandoterminal; därför har typecheck, npm test, produktionsbygge och real Spotify-/fysisk appar-verifiering inte kunnat genomföras. Ingen verklig client secret, Premium-inloggning eller token finns i repot. Den nya koden är committad direkt i GitHub men behöver verifieras lokalt före produktionsanvändning.
+
+
 ## Kontrollpanelens starka färgkort – 2026-10-30
 
 - Kontrollpanelen på `/control` har nu betydligt högre, solida enhetsrutor (minst110px) med starka kategoriaccentfärger för lampor, bilar, sol och övriga objekt. Enheternas namn och tillstånd har större text; de tidigare skjutbrytarna finns kvar.
