@@ -1,6 +1,7 @@
 import{readFile,stat}from'node:fs/promises';
 import {createAccess} from './access.js';
 import {screenHub} from './screens.js';
+import {spotifyApi} from './spotify-api.js';
 import {allowedOrigin} from './access.js';
 import {MowerHistory} from './mower-history.js';
 import {mowerRecorder} from './mower-recorder.js';
@@ -47,6 +48,7 @@ export function createSimulator(options: SimulatorOptions) {
   const stopRecorder=mowerRecorder(history,store,workspace.load,options.live);
   app.use('/workspace-api/learning',mowerHistoryApi(history,options.live?'real':'simulator',workspace.load));
   app.use('/workspace-api', workspace.router);
+  app.use('/spotify-api',spotifyApi(options.dataDirectory ?? resolve(import.meta.dirname,'../../../data'),request=>access.role(request)));
   app.use(express.json());
   app.use(['/bridge/api','/connection-api'], bridgeApi(store, workspace.load, delayMs, options.live));
   const dev = express.Router();
