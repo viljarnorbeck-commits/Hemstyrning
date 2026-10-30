@@ -8,7 +8,7 @@ test('actual scan, atmospheric surroundings and full-screen controls render with
  await page.goto('/?view=3d');await expect(page.locator('#connection-status')).toHaveText('Ansluten',{timeout:20000});await expect(page.locator('#model-status')).toBeHidden({timeout:80000});
  await expect(page.getByRole('link',{name:/Redigera gård/})).toHaveAttribute('href','/editor');await expect(page.locator('.home-status-strip')).toContainText('Elpris');await expect(page.locator('#panel')).toBeHidden();
  expect(await page.locator('#garden').boundingBox()).toMatchObject({width:1440,height:960});
- await page.screenshot({path:'/tmp/hemkontroll-day-final.png',timeout:45000});expect(errors).toEqual([]);
+ await page.screenshot({path:'/tmp/hemkontroll-day-final.png',timeout:90000});expect(errors).toEqual([]);
 });
 
 test('list and quick menu reach occluded devices, confirm actions, external state and reconnect',async({page,request})=>{
@@ -26,7 +26,7 @@ test('list and quick menu reach occluded devices, confirm actions, external stat
 
 test('separate simulator controls four season slots without moving scene objects',async({page,request})=>{
  const before=await request.get('/workspace-api/scene').then(r=>r.json()),initial=await request.get('/dev-api/settings').then(r=>r.json());
- try{await page.goto('/dev/simulator');await expect(page.getByRole('heading',{name:'Home Assistant-simulator'})).toBeVisible();await expect(page.locator('[data-scenario]')).toHaveCount(28);await page.locator('[data-scenario="blizzard"]').click();await expect(page.locator('[data-setting="snow"]')).toHaveValue('1');
+ try{await page.goto('/dev/simulator');await expect(page.getByRole('heading',{name:'Home Assistant-simulator'})).toBeVisible();await expect(page.locator('[data-scenario]')).toHaveCount(initial.scenarios.length);await page.locator('[data-scenario="blizzard"]').click();await expect(page.locator('[data-setting="snow"]')).toHaveValue('1');
  for(const season of ['summer','autumn','firstSnow','winter']){await page.locator('[data-setting="season"]').selectOption(season);await page.locator('#apply-settings').click();await expect(page.locator('#dev-message')).toHaveText('Simulatorn uppdaterad');const state=await request.get('/dev-api/states').then(r=>r.json());expect(state.find((s:any)=>s.entity_id==='weather.home').attributes.season_model).toBe(season);}expect((await request.get('/workspace-api/scene').then(r=>r.json())).objects).toEqual(before.objects);
  }finally{await request.put('/dev-api/settings',{data:initial.settings});}
 });

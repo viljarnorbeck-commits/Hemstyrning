@@ -145,3 +145,10 @@ it('persists separate assets, panoramas and ENU control points, and rejects non-
  expect((await fetch(`${base}/workspace-api/scene`,{method:'PUT',headers:json,body:JSON.stringify(config)})).status).toBe(200);await stop();await start();expect(await fetch(`${base}/workspace-api/scene`).then(r=>r.json())).toEqual(config);expect(Buffer.from(new Uint8Array(await fetch(base+panorama.url).then(r=>r.arrayBuffer()) as ArrayBuffer))).toEqual(image);
  const wrong=await sharp({create:{width:512,height:512,channels:3,background:'white'}}).png().toBuffer();expect((await fetch(`${base}/workspace-api/panoramas`,{method:'POST',headers:{'Content-Type':'image/png'},body:wrong})).status).toBe(400);
 });
+it('stores private generated start images and persists photo/energy settings across restart',async()=>{
+ const sharp=(await import('sharp')).default;const png=await sharp({create:{width:800,height:600,channels:4,background:'#182231'}}).png().toBuffer();
+ const image=await fetch(base+'/workspace-api/start-images',{method:'POST',headers:{'Content-Type':'image/png'},body:png});expect(image.status).toBe(201);const data=await image.json();expect((await fetch(base+data.url)).status).toBe(200);
+ expect((await fetch(base+'/workspace-api/start-images',{method:'POST',headers:{'Content-Type':'image/png'},body:'bad'})).status).toBe(400);
+ const c=defaultScene();c.startView={position:[30,20,30],target:[0,0,0],zoom:1,fov:48};c.startMode='photo';c.startPhoto={url:data.url,signature:'test-visual-fingerprint',createdAt:new Date().toISOString(),width:800,height:600,view:c.startView};c.energyRoutes=[{id:'grid',name:'Nät till hus',points:[[0,-.5,0],[10,-.5,0]],sensor:'sensor.house_power',unit:'kW',color:'#ffb23f',kind:'grid',confirmed:false}];
+ expect((await fetch(base+'/workspace-api/scene',{method:'PUT',headers:json,body:JSON.stringify(c)})).status).toBe(200);await stop();await start();const saved=await fetch(base+'/workspace-api/scene').then(r=>r.json());expect(saved.startPhoto).toEqual(c.startPhoto);expect(saved.energyRoutes).toEqual(c.energyRoutes);expect((await fetch(base+data.url)).status).toBe(200);
+});

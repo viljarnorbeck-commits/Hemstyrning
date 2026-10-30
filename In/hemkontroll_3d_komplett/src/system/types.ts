@@ -1,7 +1,7 @@
 export type Vec3 = [number, number, number];
 export type Season = 'summer' | 'autumn' | 'firstSnow' | 'winter';
 export const seasons: Record<Season, string> = { summer: 'Sommar', autumn: 'Höst', firstSnow: 'Höst · första snön', winter: 'Vinter' };
-export type ObjectKind = 'light' | 'car' | 'parking' | 'solar' | 'mower' | 'surface' | 'vacuum' | 'energy' | 'dock' | 'device' | 'occluder';
+export type ObjectKind = 'light' | 'car' | 'parking' | 'solar' | 'mower' | 'surface' | 'vacuum' | 'energy' | 'dock' | 'device' | 'occluder' | 'building';
 export interface ObjectAsset {url:string;rotation:Vec3;origin:Vec3;scale:number;groundOffset:number}
 export interface Panorama {temporary?:boolean;followSun?:boolean;source?:string;fadeAtNight?:boolean;id:string;name:string;url:string;north:number;capturedAt:string;exposure:number;saturation:number;minElevation:number;maxElevation:number;minCloud:number;maxCloud:number;containsSun:boolean;sunAzimuth:number;sunElevation:number;maskRadius:number}
 export interface SceneObject {
@@ -15,7 +15,10 @@ export interface ModelConfig { appearance?:import('./appearance').Grade; url: st
 export interface MusicConfig {entities:string[];activeEntity:string;jamUrl:string;jamSavedAt:string}
 export interface Preset{id:string;name:string;icon:string;color:string;description:string;entityId:string;canStop:boolean;hidden:boolean}
 export interface CameraView{position:Vec3;target:Vec3;zoom:number;fov:number}
+export interface EnergyRoute {id:string;name:string;points:Vec3[];sensor:string;unit:'W'|'kW';color:string;kind:'grid'|'solar'|'charging'|'other';confirmed:boolean}
+export interface StartPhoto {url:string;signature:string;createdAt:string;width:number;height:number;view:CameraView}
 export interface SceneConfig {
+ startMode?:'live'|'photo';startPhoto?:StartPhoto;energyRoutes?:EnergyRoute[];
  startView?:CameraView;labels?:boolean;presets?:Preset[];
   music?:MusicConfig;
   geography?:{simulatorRoute?:Vec3[];altitude:number;points:import('./geography').ControlPoint[];rms?:number;mapTiles:string};

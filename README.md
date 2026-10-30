@@ -78,3 +78,5 @@ kontrollerar bildbytes och referensens geometri/UV. Tre årstidsskanningar åter
 Se [texturåterställningen](docs/TEXTURE_RESTORATION.md) för resultat och minneskrav.
 
 Ny administration för oförenklad modelljämförelse, geografisk kalibrering, egna enhetsmodeller, markytor och himmelspanoraman: [handhavande och begränsningar](docs/REALITYSCAN_GEO_AND_ASSETS.md).
+
+Fotografisk startvy, energiröntgen och nya redigeringsflöden: [guide](docs/PHOTOGRAPHIC_3D_AND_ENERGY.md).

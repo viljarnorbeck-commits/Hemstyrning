@@ -1,3 +1,4 @@
+import {workspaceContent,workspaceNavigation,handleWorkspace} from './editor-workspace';
 import {entityPicker} from './entity-picker';
 import{AdvancedEditor}from'./advanced-editor';
 import * as THREE from 'three';
@@ -17,7 +18,7 @@ let administration:AdvancedEditor;
 let mode: 'live' | 'simulation' = 'live';
 let preview: Preview = { date: new Date().toISOString().slice(0, 16), cloud: 45, lux: 1000, brightness: 1, weather: 'clear' };
 let panel: 'environment' | 'list' | 'editor' | 'object' | null = null;
-let editing = false;
+let editing = false;let editorTab='overview';
 let selected: string | undefined;
 let placing: ObjectKind | 'relocate' | null = null;
 let points: Vec3[] = [];
@@ -39,11 +40,11 @@ function renderPanel() {
   const body = $('panel-body');
   if (panel === 'environment') body.innerHTML = environmentPanel(config.value, mode, preview);
   if (panel === 'list') body.innerHTML = listPanel(config.value, connection.states, mode, simulatedLights, connection.connected);
-  if (panel === 'editor') body.innerHTML = editorPanel(config.value, placing, points.length);
+  if (panel === 'editor') body.innerHTML = workspaceContent(editorTab,config.value,editorPanel(config.value,placing,points.length),garden);
   if (panel === 'object') { const object = currentObject(); body.innerHTML = object ? objectPanel(object, mode, editing) : '<h2>Välj ett objekt</h2>'; }
   updateStatus();
 }
-function cancelPlacement() { placing = null; points = []; garden.placement = false; garden.markPoints([]); garden.select(selected); $('placement-hint').hidden = true; }
+function cancelPlacement() { delete document.body.dataset.energyDrawing;placing = null; points = []; garden.placement = false; garden.markPoints([]); garden.select(selected); $('placement-hint').hidden = true; }
 function openPanel(value: typeof panel) { panel = value; renderPanel(); }
 function updateStatus() {
   if (!config.value) return;
@@ -125,16 +126,22 @@ function startPlacement(kind: ObjectKind | 'relocate') {
   if (innerWidth <= 760) openPanel(null);
   else if (kind !== 'relocate') openPanel('editor');
 }
-const names: Record<ObjectKind,string> = { light: 'Lampa', car: 'Bil', parking: 'Parkering', solar: 'Solpaneler', mower: 'Robotgräsklippare', surface: 'Materialyta', vacuum: 'Robotdammsugare', energy: 'Energi', dock:'Laddstation',device:'Enhet',occluder:'Skymmande volym' };
+const names: Record<ObjectKind,string> = { light: 'Lampa', car: 'Bil', parking: 'Parkering', solar: 'Solpaneler', mower: 'Robotgräsklippare', surface: 'Materialyta', vacuum: 'Robotdammsugare', energy: 'Energi', dock:'Laddstation',device:'Enhet',occluder:'Skymmande volym',building:'Byggnad' };
 function createObject(kind: ObjectKind, position: Vec3, points: Vec3[] = []): SceneObject {
   return { id: crypto.randomUUID(), type: kind, name: names[kind], entityId: '', position, rotation: [0, 0, 0], scale: [1, 1, 1], color: kind === 'light' ? '#ffd6a0' : kind === 'solar' ? '#1e405e' : kind === 'surface' ? '#668269' : '#7c9898', intensity: 1800, angle: 70, range: 18, roughness: kind === 'solar' ? 0.2 : 0.7, metalness: kind === 'solar' ? 0.5 : 0,representation:'standalone', points };
 }
 function addObject(object: SceneObject) { config.value.objects.push(object); selected = object.id; cancelPlacement(); syncConfig(); garden.select(selected); openPanel('object'); }
 async function handleAction(action: string) {
   const obj = currentObject();
+  if(action==='environment-settings'){openPanel('environment');return;}
+  if(action==='preview-light'&&obj){mode='simulation';for(const o of config.value.objects)simulatedLights.set(o.id,connection.states.get(o.entityId)?.state==='on');simulatedLights.set(obj.id,!simulatedLights.get(obj.id));updateEnvironment();renderPanel();notify('Lokal visuell förhandsvisning · inga kommandon skickas');return;}
+  if(action==='undo'){if(config.undo()){garden.setConfig(config.value);updateEnvironment();renderPanel();}return;}
+  if(action.startsWith('workspace:')){editorTab=action.slice(10);cancelPlacement();openPanel('editor');document.querySelectorAll('[data-workspace]').forEach(el=>el.classList.toggle('active',(el as HTMLElement).dataset.workspace===editorTab));return;}
+  if(await handleWorkspace(action,config,garden,syncConfig,notify,()=>administration.open())){renderPanel();return;}
   if(action.startsWith('vertex:')&&obj){garden.editVertex(obj.id,Number(action.split(':')[1]));return;}
   if (action === 'administration'){cancelPlacement();administration.open();return;}
   if (action === 'toggle-light' && obj && !pending) {
+    if(editing&&mode==='live'){notify('Redigering styr inte verklig belysning. Öppna Miljö och välj lokal simulering för visuellt test.');return;}
     if (mode === 'simulation') { simulatedLights.set(obj.id, !simulatedLights.get(obj.id)); updateStatus(); return; }
     if (config.dirty) { notify('Spara entitetskopplingen innan lampan styrs'); return; }
     pending = true; updateStatus();
@@ -213,6 +220,7 @@ async function start() {
       Object.assign(object, { position, rotation, scale }); config.changed(); renderPanel();
     };
     garden.onPlace = (position, normal) => {
+      if(garden.energyNetwork.enabled&&document.body.dataset.energyDrawing){const route=config.value.energyRoutes?.find(r=>r.id===document.body.dataset.energyDrawing);if(route){if(route.points.length>=100){notify('Högst100 kabelpunkter per sträcka');return;}route.points.push([position[0],position[1]-.5,position[2]]);garden.markPoints(route.points);config.changed();renderPanel();}return;}
       if (!placing) return;
       if (placing === 'solar' || placing === 'surface') { if (points.length >= 100) { notify('Högst 100 hörn per yta'); return; } points.push(position.map((v,i) => v + normal[i] * 0.035) as Vec3); garden.markPoints(points); renderPanel(); return; }
       const object = placing === 'relocate' ? currentObject() : createObject(placing, position);
@@ -244,7 +252,7 @@ async function start() {
       if (el.dataset.object) { selected = el.dataset.object; garden.select(selected); openPanel('object'); }
       if (el.dataset.place) startPlacement(el.dataset.place as ObjectKind);
       if(el.dataset.action==='link-ha'){const object=currentObject();if(object)entityPicker(connection.states,object,()=>{syncConfig();renderPanel();});return;}
-      if (el.dataset.action==='editor-overview'){openPanel('editor');return;}
+      if (el.dataset.action==='editor-overview'){editorTab='objects';openPanel('editor');return;}
       if (el.dataset.action) void handleAction(el.dataset.action).catch(error => notify(error.message));
     });
     window.addEventListener('keydown', event => {
@@ -256,13 +264,14 @@ async function start() {
     window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
     window.addEventListener('pagehide',()=>{connection.stop();administration.dispose();garden.dispose();},{once:true});
     window.addEventListener('beforeunload', event => { if (config.dirty) event.preventDefault(); });
-    document.body.classList.add('editor-mode');
+    document.body.classList.add('editor-mode');workspaceNavigation(action=>void handleAction(action).catch(e=>notify(e.message)));
+    document.addEventListener('change',event=>{const input=event.target as HTMLInputElement;if(input.dataset.routeCoordinate){const route=config.value.energyRoutes?.find(r=>r.id===input.dataset.routeId),[point,axis]=input.dataset.routeCoordinate.split('.').map(Number),value=Number(input.value);if(route&&input.value.trim()!==''&&Number.isFinite(value)){route.points[point][axis]=value;syncConfig();}}if(input.dataset.routeField){const route=config.value.energyRoutes?.find(r=>r.id===input.dataset.routeId);if(route){const key=input.dataset.routeField;if(key==='points'){try{const points=JSON.parse(input.value);if(!Array.isArray(points)||points.length<2||points.length>100||!points.every((p:unknown)=>Array.isArray(p)&&p.length===3&&p.every(Number.isFinite)))throw new Error();route.points=points;}catch{notify('Ange minst två XYZ-punkter i JSON-format');return;}}else if(key==='confirmed')route.confirmed=input.checked;else Object.assign(route,{[key]:input.value});syncConfig();}}if(input.dataset.startMode){config.value.startMode=input.value as 'live'|'photo';syncConfig();}});
     const homeLink=document.createElement('a');homeLink.href='/';homeLink.textContent='Till Hemkontroll';homeLink.className='settings-link';$('list-button').after(homeLink);
     editing = true; garden.setEditing(true); panel = 'editor';
     updateEnvironment(); renderPanel();
     setInterval(updateEnvironment, 1000);
     void connection.start();
-    garden.renderer.setAnimationLoop(() => { if (target) garden.frame(target, connection.states, connection.connected, simulatedLights, mode === 'simulation'); });
+    garden.setAnimationLoop(() => { if (target) garden.frame(target, connection.states, connection.connected, simulatedLights, mode === 'simulation'); });
   } catch (error) { $('model-status').textContent = error instanceof Error ? error.message : String(error); $('data-status').textContent = 'Kontrollera att npm run dev kör både app och simulator. Ladda sedan om sidan.'; }
 }
 void start();

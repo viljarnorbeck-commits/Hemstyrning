@@ -9,6 +9,9 @@ const modelUrl = z.string().regex(/^\/(?:models\/[\w.-]+\.glb|workspace-api\/mod
 export const sceneSchema = z.object({
   version: z.literal(1),
   startView:z.object({position:vector,target:vector,zoom:finite.min(.1).max(10),fov:finite.min(20).max(90)}).optional(),
+  startMode:z.enum(['live','photo']).default('live'),
+  startPhoto:z.object({url:z.string().regex(/^\/workspace-api\/start-images\/[a-f0-9]{64}\.png$/),signature:z.string().min(1).max(20000),createdAt:z.string().datetime(),width:finite.int().min(320).max(4096),height:finite.int().min(240).max(4096),view:z.object({position:vector,target:vector,zoom:finite.min(.1).max(10),fov:finite.min(20).max(90)})}).optional(),
+  energyRoutes:z.array(z.object({id:z.string().min(1).max(100),name:z.string().min(1).max(120),points:z.array(vector).min(2).max(100),sensor:z.string().regex(/^(?:[a-z_]+\.[a-z0-9_]+(?:@[a-z0-9_]+)?)?$/),unit:z.enum(['W','kW']),color:z.string().regex(/^#[a-fA-F0-9]{6}$/),kind:z.enum(['grid','solar','charging','other']),confirmed:z.boolean().default(false)})).max(100).default([]),
   labels:z.boolean().default(true),
   presets:z.array(z.object({id:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),name:z.string().min(1).max(80),icon:z.string().max(12),color:z.string().regex(/^#[0-9a-fA-F]{6}$/),description:z.string().max(300),entityId:z.string().regex(/^(?:scene|script)\.[a-z0-9_]+$/),canStop:z.boolean().default(false),hidden:z.boolean().default(false)})).max(100).default([]),
   layoutVersion: z.number().default(2),
@@ -28,7 +31,7 @@ export const sceneSchema = z.object({
   music:z.object({entities:z.array(z.string().regex(/^media_player\.[a-z0-9_]+$/)).max(20).default([]),activeEntity:z.string().regex(/^(?:media_player\.[a-z0-9_]+)?$/).default(''),jamUrl:z.string().max(1000).refine(v=>v===''||canonicalJamUrl(v)!==null,'Endast en riktig Spotify Jam-inbjudningsadress tillåts').default(''),jamSavedAt:z.string().max(40).default('')}).default({entities:[],activeEntity:'',jamUrl:'',jamSavedAt:''}),
   quality: z.enum(['low', 'high', 'auto']),
   objects: z.array(z.object({
-    id: z.string().min(1).max(100), type: z.enum(['light', 'car', 'parking', 'solar', 'mower', 'surface', 'vacuum', 'energy', 'dock', 'device', 'occluder']),
+    id: z.string().min(1).max(100), type: z.enum(['light', 'car', 'parking', 'solar', 'mower', 'surface', 'vacuum', 'energy', 'dock', 'device', 'occluder', 'building']),
     name: z.string().min(1).max(120), entityId: z.string().max(200), position: vector, rotation: vector, scale: vector,
     color: z.string().regex(/^#[a-fA-F0-9]{6}$/), intensity: finite.min(0).max(20000), angle: finite.min(5).max(150), range: finite.min(1).max(100),
     roughness: finite.min(0).max(1), metalness: finite.min(0).max(1),
@@ -45,6 +48,8 @@ export const sceneSchema = z.object({
   })).max(200),
 }).superRefine((value, ctx) => {
   if(value.music.activeEntity&&!value.music.entities.includes(value.music.activeEntity))ctx.addIssue({code:'custom',message:'Aktivt musikkonto måste vara konfigurerat'});
+  if(new Set(value.energyRoutes.map(r=>r.id)).size!==value.energyRoutes.length)ctx.addIssue({code:'custom',message:'Kabel-ID måste vara unika'});
+  if(value.energyRoutes.some(r=>r.points.every(p=>p.every((n,i)=>n===r.points[0]![i]))))ctx.addIssue({code:'custom',message:'En kabel måste ha skilda punkter'});
   const ids = value.objects.map(o => o.id);
   if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', message: 'Objekt-ID måste vara unika' });
 });

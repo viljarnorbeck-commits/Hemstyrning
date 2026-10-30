@@ -61,9 +61,9 @@ for(const profile of ['mobile','detail'])test(`the existing dashboard loads the 
  await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),config=await response.json();config.quality=profile==='mobile'?'low':'auto';config.panoramas=[];config.sky.mode='procedural';await route.fulfill({json:config});});
  await page.goto('/editor');
  await expect(page.locator('#model-status')).toContainText('originaltextur',{timeout:90000});
- await page.getByRole('button',{name:'Karta, modelljämförelse och import',exact:true}).click();
+ await page.locator('[data-workspace="advanced"]').click();await page.locator('[data-action="administration"]').click();
  await page.locator('[data-field="profile"]').selectOption(profile);await page.locator('[data-field="neutral"]').check();await page.getByRole('button',{name:'Visa vald jämförelse',exact:true}).click();
- await page.getByRole('button',{name:'Karta, modelljämförelse och import',exact:true}).click();
+ await page.locator('[data-workspace="advanced"]').click();await page.locator('[data-action="administration"]').click();
  await expect(page.locator('#render-diagnostics')).toContainText('modelTextures');
  const data=JSON.parse(await page.locator('#render-diagnostics').innerText());
  expect(data.modelTextures).toHaveLength(1);

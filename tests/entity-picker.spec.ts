@@ -10,7 +10,7 @@ test('editor searches HA entities, inspects attributes and persists a selected b
  try{
   await page.goto('/editor');
   await expect(page.locator('#connection-status')).toContainText('ansluten',{timeout:20000});
-  await page.locator(`.editor-object-list [data-object="${lamp.id}"]`).click();
+  await page.locator('[data-workspace="objects"]').click();await page.locator(`.editor-object-list [data-object="${lamp.id}"]`).click();
   await page.getByRole('button',{name:'Koppla Home Assistant',exact:true}).click();
   await page.locator('#entity-search').fill('light.altan');
   await expect(page.locator('#entity-results summary')).toHaveCount(1);

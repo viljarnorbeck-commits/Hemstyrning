@@ -49,6 +49,13 @@ export function workspaceApi(directory: string,onSaved:()=>void=()=>{}) {
     await pending;onSaved();
     res.json({ saved: true });
   });
+  router.post('/start-images',express.raw({type:'image/png',limit:'40mb'}),async(req,res)=>{
+    if(!Buffer.isBuffer(req.body)){res.sendStatus(415);return;}
+    try{const m=await sharp(req.body,{limitInputPixels:17000000}).metadata();if(m.format!=='png'||!m.width||!m.height||m.width>4096||m.height>4096||m.width<320||m.height<240)throw new Error();
+      const id=createHash('sha256').update(req.body).digest('hex');await mkdir(resolve(directory,'start-images'),{recursive:true});await writeFile(resolve(directory,'start-images',id+'.png'),req.body);res.status(201).json({url:'/workspace-api/start-images/'+id+'.png',width:m.width,height:m.height});
+    }catch{res.status(400).json({message:'Startbilden måste vara en PNG, 320–4096 ×240–4096 px'});}
+  });
+  router.get('/start-images/:file',(req,res)=>{if(!/^[a-f0-9]{64}\.png$/.test(req.params.file)){res.sendStatus(404);return;}res.sendFile(resolve(directory,'start-images',req.params.file),{headers:{'Cache-Control':'private,max-age=0'}});});
   router.post('/panoramas',express.raw({type:['image/jpeg','image/png'],limit:'80mb'}),async(req,res)=>{
     if(!Buffer.isBuffer(req.body)){res.status(415).json({message:'Använd JPEG eller PNG'});return;}
     try{const image=await sharp(req.body,{limitInputPixels:150000000}).metadata();

@@ -2,6 +2,18 @@
 
 Senast uppdaterad: 2026-10-30
 
+## Fotografisk start, energinät och gemensam editor – 2026-10-30
+
+- Föregående hero-arbete verifierat/committat/pushat som0b5fc81. Ny guide `docs/PHOTOGRAPHIC_3D_AND_ENERGY.md`.
+- `startMode/startPhoto` sparas i samma scen. PNG genereras från sparad kamera med separat render target, upp till3200px bredd, högst4096px höjd; inga editorhjälpmedel i bilden. Validerad lokal privat lagring `data/start-images`, adminskrivning via befintlig säkerhetsgräns. Modeller och originaltexturer orörda.
+- Fotolagret återanvänder levande GardenScene och HUD. Konservativ visuell signatur, högst5min och matchande aspekt/kamera krävs; ändrade modeller/objekt/väder/visuell telemetri eller frånkoppling ger live. Objekt-/energiöppning väntar på modell/tillgångar, synkroniserar kameran, tonar350ms och börjar sedan fokus. Lista/ren3D döljer foto. Ingen ersättningsbild eller falsk aktuell robotposition.
+- `energyRoutes` är schematiska XYZ-kurvor med endpoints, typ/färg, sensorkoppling och uttrycklig sträckningsbekräftelse. Särskild märkt röntgenvy i3D, pulser bara vid mätbar effekt, korrekt W/kW/negativ riktning och okänt vid kWh/unavailable. Ingen addition av kabelvärden till husets total. Editorn klickritar punkter0,5m under träff eller redigerar numeriska punkter/djup. Simulatorns demo bygger sträckor från konfigurerade energi-/sol-/bilobjekt, blockeras i real-läge.
+- Markeringsramar projiceras från verkliga objektvolymer med befintlig skymning; hover/keyboard/TV-fokus. Ny byggnadstyp definierar explicit osynlig markeringsvolym i samma objektlista, aldrig påhittad segmentering av RealityScan. Volymram, inte exakt pixelsilhuett. Lamptoggle kvar.
+- Editorhuvudnav Översikt/Objekt/Energi/3D-modeller/Kamera/Avancerat. Samma panel, entityPicker och transformverktyg kvar. Svartare gemensamma ytor/formulär även i kontrollpanel/inställningar/simulator. Autosparstatus alltid synlig, Ångra30 lokala steg. Editorlamptest är visuellt lokalt; normala redigeringsklick skickar inte riktiga HA-kommandon.
+- Verifiering:131 enhets-/integrationstester (54 backend +77 frontend), typkontroll och båda produktionsbyggen. Bred Playwright-körning:37 passerade och1 skärmbildstimeout efter bekräftade kommandon; därefter14 riktade slutflöden samtliga godkända, inklusive omkörning av samma test, nytt foto-/energiflöde, ramar, directList→3D och multi-screen. Totalt39 unika browserflöden har passerat över körningarna. Atmosfärens dag/natt/storm passerade även separat efter optimerat molnbrus. Originalhashar oförändrade och texturjämförelse fortsatt0 pixeldifferens. Testerna avbryter om bryggan inte är simulator.
+- Verklig texturerad gård har även exporterats som PNG3200×2133 i både TV- och desktopprofil. Desktopfil cirka7,7MB granskad lokalt i `/tmp/hem-premium-real-start.png`; testet avlyssnade konfigurationsskrivningar och ändrade inte sparad gård. Export pausar den vanliga renderingsloopen under rendering/PNG-kodning, återställer aktuellt loopläge och visar förloppssteg; separat multisampling behövs inte i den högupplösta render targeten. Ingen fysisk GPU-/målplattformstest påstås.
+- Begränsningar: strikt fotogiltighet kan ge ofta live (särskilt LUBA i rörelse); inga exakta fasadsilhuetter, dragbara kabel-Bézierhandtag eller fysisk målplattformstest. Klippet10387.mp4 saknas fortfarande i miljön.
+
 ## Hero / Live World – 2026-10-30
 
 - Ny `hero.ts` bygger startsidans koncentrerade HUD kring befintlig GardenScene/Connection. Grafitbas, prioriterad energirad, bil-/robot-/solkort med kameraåtgärder, Spotify/kalender kvar. Fri 3D, Lista, editor, parkoppling och HA-kommandon återanvänds. Ingen ny styrkanal eller automatiskt demoscenario vid start.
