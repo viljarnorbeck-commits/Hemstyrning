@@ -2,6 +2,14 @@
 
 Senast uppdaterad: 2026-10-30
 
+## Hero / Live World – 2026-10-30
+
+- Ny `hero.ts` bygger startsidans koncentrerade HUD kring befintlig GardenScene/Connection. Grafitbas, prioriterad energirad, bil-/robot-/solkort med kameraåtgärder, Spotify/kalender kvar. Fri 3D, Lista, editor, parkoppling och HA-kommandon återanvänds. Ingen ny styrkanal eller automatiskt demoscenario vid start.
+- En enda ankomst till sparad kamera (extra inflygningssträcka avstängd vid reduced motion), närmare bil-/robotvinklar och Hela gården. Generisk fyrhjulig testrobot ersätter lådan tills egen GLB importeras, tydligt märkt. Samma terräng-/GPS-säkerhet och 6s/3m-gräns kvar.
+- Procedurmoln använder flerskaligt brus i stället för sinusmönster, med diskret solspridning; befintliga panorama-/astronomi-/ljusmotorer och RealityScan-original är kvar. Simulatorn har29 scenarier med Levande hem · hero: sen eftermiddag, varierande energi/pris, laddning/klimat/lampor/robot. Godkänd mark krävs fortfarande för robotens synlighet.
+- Verifierat:127 enhets-/integrationstester, typkontroll och produktionsbygge.16 Playwright-flöden passerar tillsammans (atmosfär, hero, mobilgester, multi-screen, PWA, kamera/editor/lista); efter sista mobiljusteringen även separat hero-test med överlappskontroll.
+- Inspirationsklippet `/mnt/data/10387.mp4` fanns inte; inget påstående om filmens innehåll eller analys. Se `docs/HERO_EXPERIENCE.md`. Visuell desktopgranskning gjord med befintlig texturerad gård och mobilgranskning med testgeometri. Inga fysiska enheter testade.
+
 ## Hemstyrning 2.0 och installerbara appar – 2026-10-30
 
 - Vid start av arbetet fanns ännu inte de tre 2.0-delarna. Den fungerande tidigare 3D-/HA-/LUBA-arkitekturen återanvändes. Nu finns Hem med levande kameraöversikt, fri 3D via knapp, komplett pausad Listvy, modellfri `/control`, `/settings` och `/install`. Världen, redigeraren, Spotify/Jam, kalender, markanalys och positionering är kvar. Se `docs/HEMSTYRNING_2.md` och `docs/INSTALLABLE_APPS.md`.

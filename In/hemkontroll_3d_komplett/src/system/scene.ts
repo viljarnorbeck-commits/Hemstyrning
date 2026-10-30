@@ -12,7 +12,7 @@ import{supportedGroundSegment,ZoneIndex,groundSurface,traversableSegment,zonePoi
 import * as THREE from 'three';
 import{Sky}from'./sky';
 import{Surroundings}from'./terrain';
-import{carVisual}from'./object-visuals';
+import{carVisual,mowerVisual}from'./object-visuals';
 import{isOccluded}from'./occlusion';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
@@ -170,6 +170,7 @@ export class GardenScene {
       if(item.asset){group.userData.assetStatus='Laddar egen modell';void this.assets.attach(group,item.asset);}
       if(item.type==='occluder'){mesh=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial({color:'#b6d5eb',wireframe:true,transparent:true,opacity:.25}));mesh.position.y=.5;group.add(mesh);this.occlusionVolumes.add(group);this.renderObjects.set(item.id,group);material.dispose();continue;}
       if(item.type==='car'){if(item.representation==='standalone')group.add(carVisual(item.color));else{group.userData.embedded=true;const proxy=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.5,4.2),new THREE.MeshBasicMaterial({visible:false}));proxy.position.y=.75;proxy.userData.pickOnly=true;group.add(proxy);}this.objects.add(group);this.renderObjects.set(item.id,group);material.dispose();continue;}
+      if(item.type==='mower'){group.add(mowerVisual());group.userData.assetStatus=item.asset?'Laddar egen modell':'Generisk testrobot · inte en LUBA-skanning';this.objects.add(group);this.renderObjects.set(item.id,group);material.dispose();continue;}
       if ((item.type === 'surface' || item.type === 'solar') && item.points.length >= 3) mesh = new THREE.Mesh(polygonGeometry(item.points), material);
       else if (item.type === 'light') {
         mesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 8), material);
@@ -280,9 +281,19 @@ export class GardenScene {
   lookAtSky(){this.focusGoal=undefined;const env=this.latestEnvironment;if(!env)return;this.skyView=true;this.followId=undefined;this.controls.maxPolarAngle=Math.PI;this.controls.enableDamping=false;this.controls.enabled=false;const direction=env.daylight>.5?new THREE.Vector3(...env.sunDirection):(env.moonAltitude??-1)>0?new THREE.Vector3(...(env.moonDirection??[0,1,0])):new THREE.Vector3(0,.5,-1).normalize();this.controls.target.copy(this.camera.position).addScaledVector(direction,120);this.controls.update();}
   captureView():import('./types').CameraView{return{position:this.camera.position.toArray() as Vec3,target:this.controls.target.toArray() as Vec3,zoom:this.camera.zoom,fov:this.camera.fov};}
   transition(view:import('./types').CameraView,done=()=>{}){this.skyView=false;this.followId=undefined;this.focusGoal=undefined;this.camera.zoom=view.zoom;this.camera.fov=view.fov;this.camera.updateProjectionMatrix();this.controls.maxPolarAngle=Math.PI*.49;this.cameraMotion={at:performance.now(),fromP:this.camera.position.clone(),fromT:this.controls.target.clone(),toP:new THREE.Vector3(...view.position),toT:new THREE.Vector3(...view.target),done};}
+  /** A single restrained arrival, never an endless orbit or a replacement for the saved view. */
+  revealOverview(){
+    const view=this.config?.startView??{position:[55,32,55] as Vec3,target:[0,1,0] as Vec3,zoom:1,fov:42};
+    if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      const target=new THREE.Vector3(...view.target),position=new THREE.Vector3(...view.position);
+      this.camera.position.copy(position.sub(target).multiplyScalar(1.12).add(target));
+      this.controls.target.copy(target);this.constrainCamera();
+    }
+    this.transition(view);
+  }
   overview(done=()=>{}){this.transition(this.config?.startView??{position:[55,32,55],target:[0,1,0],zoom:1,fov:48},done);}
   cancelFollow(){this.followId=undefined;this.cameraMotion=undefined;}
-  focusObject(id:string,follow=false,done=()=>{}){const o=this.config?.objects.find(o=>o.id===id),model=this.renderObjects.get(id);if(!model||!o)throw new Error('Objektet saknas');if(o.type==='mower'&&!this.tracking.get(id)?.safePosition)throw new Error('Ingen verifierad robotposition att följa');const target=model.position.clone(),offset=new THREE.Vector3(10,8,12),position=target.clone().add(offset);const ray=new THREE.Raycaster(target,offset.clone().normalize(),.5,offset.length());const hit=ray.intersectObject(this.models.root,true)[0];if(hit)position.copy(target).addScaledVector(offset.normalize(),Math.max(2,hit.distance-1));this.select(id);this.transition({position:position.toArray() as Vec3,target:target.toArray() as Vec3,zoom:1,fov:48},()=>{if(follow)this.followId=id;done();});}
+  focusObject(id:string,follow=false,done=()=>{}){const o=this.config?.objects.find(o=>o.id===id),model=this.renderObjects.get(id);if(!model||!o)throw new Error('Objektet saknas');if(o.type==='mower'&&!this.tracking.get(id)?.safePosition)throw new Error('Ingen verifierad robotposition att följa');const target=model.position.clone(),offset=o.type==='mower'?new THREE.Vector3(3,2.4,4):o.type==='car'?new THREE.Vector3(6,3.7,7):new THREE.Vector3(10,8,12),position=target.clone().add(offset);const ray=new THREE.Raycaster(target,offset.clone().normalize(),.5,offset.length());const hit=ray.intersectObject(this.models.root,true)[0];if(hit)position.copy(target).addScaledVector(offset.normalize(),Math.max(2,hit.distance-1));this.select(id);this.transition({position:position.toArray() as Vec3,target:target.toArray() as Vec3,zoom:1,fov:48},()=>{if(follow)this.followId=id;done();});}
   follow(id:string){try{this.focusObject(id,true);return true;}catch{return false;}}
 
   screenPosition(id:string){const object=this.renderObjects.get(id);if(!object||!object.visible||this.diagnostic||this.skyView)return null;const physical=object.getWorldPosition(new THREE.Vector3());physical.y+=object.userData.type==='car'?.75:object.userData.type==='mower'?.15:0;const point=physical.clone();point.y+=1.2;const distance=this.camera.position.distanceTo(point),occluded=(this.config?.appearance?.occlusion??true)&&isOccluded(this.camera,physical,[this.models.root,this.occlusionVolumes],this.markerRay);const p=point.project(this.camera);return{x:(p.x*.5+.5)*innerWidth,y:(-p.y*.5+.5)*innerHeight,z:p.z,occluded,distance};}
