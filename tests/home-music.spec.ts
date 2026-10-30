@@ -36,7 +36,7 @@ test('direct Spotify playback uses only the Spotify server API, with Connect dev
  await page.route('**/spotify-api/command',async route=>{const body=route.request().postDataJSON();commands.push(body.action);if(body.action==='play')playing=true;if(body.action==='pause')playing=false;if(body.action==='volume')volume=body.volume;if(body.action==='next')title='Kväll vid havet';if(body.action==='previous')title='Ljus över gården';await route.fulfill({json:{accepted:true}});});
  await open(page);await expect(page.locator('.music-widget')).toContainText('Ljus över gården');
  await page.locator('.music-open').click();const modal=page.locator('dialog.music-panel');
- await expect(modal).toContainText('Spotify Web API');
+ await expect(modal).toContainText('SPOTIFY WEB API');
  await modal.getByRole('button',{name:'Spela musik',exact:true}).click();await expect(modal.locator('.playback-state')).toHaveText('Spelar');
  await modal.getByRole('button',{name:'Nästa låt'}).click();await expect(modal).toContainText('Kväll vid havet');
  await modal.locator('#spotify-volume').fill('63');await modal.locator('#spotify-volume').dispatchEvent('change');await expect.poll(()=>volume).toBe(63);
