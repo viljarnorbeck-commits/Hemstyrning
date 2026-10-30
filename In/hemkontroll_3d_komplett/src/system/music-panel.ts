@@ -9,6 +9,7 @@ type Track={name:string;artist:string;album:string;cover:string;durationMs:numbe
 type Player={connected:boolean;playing:boolean;track:Track|null;progressMs:number;device:{id:string|null;name:string;volume_percent:number|null}|null};
 type Device={id:string;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null};
 type Setup={configured:boolean;connected:boolean;canControl:boolean;canConfigure:boolean;message:string};
+type SpotifyItem={uri:string;name:string;artist?:string;owner?:string;cover?:string;image?:string};
 async function api<T>(path:string,options?:RequestInit):Promise<T>{
  const response=await fetch('/spotify-api'+path,{...options,signal:AbortSignal.timeout(15000)});
  const body=await response.json().catch(()=>({})) as T&{message?:string};
@@ -23,6 +24,7 @@ export class MusicPanel{
  private state:Player=blank;private setup:Setup={configured:false,connected:false,canControl:false,canConfigure:false,message:'Ansluter till Spotify…'};
  private devices:Device[]=[];private busy=false;private feedback='';private open=false;private qr='';private qrLabel='';private timer:ReturnType<typeof setInterval>;
  private loading=false;private stopped=false;private lastRefresh=0;
+ private searchTerm='';private results:SpotifyItem[]=[];private playlists:SpotifyItem[]=[];
  onVisibilityChange:(open:boolean)=>void=()=>{};
  constructor(_connection:Connection,private config:Configuration,private notify:(message:string)=>void){
   this.root.className='music-widget glass';this.root.setAttribute('aria-label','Spotify – direktanslutning');
@@ -44,6 +46,14 @@ export class MusicPanel{
    if(b.dataset.spotify==='save-jam'){void this.saveJam(this.dialog.querySelector<HTMLInputElement>('#jam-url')?.value.trim()??'');return;}
    if(['play','pause','next','previous'].includes(b.dataset.spotify??''))void this.command(b.dataset.spotify!);
    if(b.dataset.spotify==='devices')void this.loadDevices();
+   if(b.dataset.spotify==='play_track'||b.dataset.spotify==='play_playlist'||b.dataset.spotify==='queue')void this.command(b.dataset.spotify,{uri:b.dataset.uri});
+   if(b.dataset.spotify==='playlists')void this.loadPlaylists();
+  });
+  this.dialog.addEventListener('submit',e=>{
+   const form=(e.target as HTMLElement).closest<HTMLFormElement>('form[data-spotify-search]');
+   if(!form)return;e.preventDefault();
+   const input=form.querySelector<HTMLInputElement>('input[name="q"]');
+   if(input)void this.search(input.value);
   });
   this.dialog.addEventListener('change',e=>{
    const el=e.target as HTMLInputElement|HTMLSelectElement;
@@ -75,13 +85,24 @@ export class MusicPanel{
   }catch(error){this.feedback=error instanceof Error?error.message:'Spotify går inte att nå.';}
   finally{this.loading=false;this.update();}
  }
+ private async loadPlaylists(){
+  if(!this.setup.connected)return;
+  try{this.playlists=(await api<{playlists:SpotifyItem[]}>('/playlists')).playlists;if(this.open)this.renderDialog();}
+  catch(e){this.report(e instanceof Error?e.message:String(e));}
+ }
+ private async search(query:string){
+  this.searchTerm=query.trim();
+  if(this.searchTerm.length<2){this.report('Skriv minst två tecken.');return;}
+  try{this.results=(await api<{tracks:SpotifyItem[]}>('/search?q='+encodeURIComponent(this.searchTerm))).tracks;this.feedback='';this.renderDialog();}
+  catch(e){this.report(e instanceof Error?e.message:String(e));}
+ }
  private async loadDevices(){
   try{this.devices=(await api<{devices:Device[]}>('/devices')).devices;this.renderDialog();}
   catch(e){this.report(e instanceof Error?e.message:String(e));}
  }
  show(){
   this.open=true;this.onVisibilityChange(true);this.renderDialog();if(!this.dialog.open)this.dialog.showModal();
-  void this.loadDevices();void this.refresh();
+  void this.loadDevices();void this.loadPlaylists();void this.refresh();
  }
  private renderDialog(){
   const {connected,playing,track,device,progressMs}=this.state;
@@ -102,6 +123,15 @@ export class MusicPanel{
   <button data-spotify="devices">Uppdatera enhetslista</button>
   <label>Volym ${typeof device?.volume_percent==='number'?device.volume_percent+' %':''}<input id="spotify-volume" type="range" min="0" max="100" step="1" value="${typeof device?.volume_percent==='number'?device.volume_percent:50}" ${allow&&device?.volume_percent!=null?'':'disabled'}></label>`
   :`<p>${esc(this.setup.message)}</p>${this.setup.configured&&this.setup.canConfigure?'<button class="primary" data-spotify="connect">Anslut mitt Spotify-konto</button>':''}`}
+  ${connected?`<section class="spotify-browser" aria-label="Spotify-musikbibliotek">
+   <h3>Sök musik</h3>
+   <form data-spotify-search><label>Sök efter låt eller artist
+    <input name="q" type="search" minlength="2" maxlength="100" placeholder="Sök på Spotify" value="${esc(this.searchTerm)}"></label>
+    <button type="submit">Sök</button></form>
+   <div class="spotify-hits">${this.results.map(t=>`<article><div><b>${esc(t.name)}</b><small>${esc(t.artist??'')}</small></div><button data-spotify="play_track" data-uri="${esc(t.uri)}" ${allow?'':'disabled'}>Spela</button><button data-spotify="queue" data-uri="${esc(t.uri)}" ${allow?'':'disabled'}>Kö</button></article>`).join('')}</div>
+   <h3>Dina spellistor <button data-spotify="playlists" class="spotify-refresh">Uppdatera</button></h3>
+   <div class="spotify-hits">${this.playlists.map(p=>`<article><div><b>${esc(p.name)}</b><small>${esc(p.owner??'')}</small></div><button data-spotify="play_playlist" data-uri="${esc(p.uri)}" ${allow?'':'disabled'}>Spela</button></article>`).join('')||'<p>Inga spellistor hittades. Kontrollera att kontot har behörighet för spellistor.</p>'}</div>
+   </section>`:''}
   <section class="jam-section"><h3>Spotify Jam</h3><p>Jam skapas i Spotify-appen. Klistra in dess delningslänk här för att visa en QR-kod. Hemstyrning kan inte skapa en Jam genom Spotify API.</p>
   ${preset?'<button data-spotify="jam" class="primary">Visa Jam QR-kod</button>':'<p>Ingen Jam-länk sparad.</p>'}
   ${this.qr?`<figure class="jam-qr"><img src="${this.qr}" alt="${esc(this.qrLabel)}"><figcaption>${esc(this.qrLabel)}</figcaption></figure>`:''}</section>
