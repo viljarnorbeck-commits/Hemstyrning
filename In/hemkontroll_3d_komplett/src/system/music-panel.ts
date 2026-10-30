@@ -1,63 +1,140 @@
 import QRCode from 'qrcode';
 import {canonicalJamUrl} from '../../../../shared/ha-contract.js';
 import {escapeHtml as esc} from './panels';
-import {mediaSupports,available,mediaPosition,trackTime,artwork} from './music-data';
+import {trackTime} from './music-data';
 import type {Connection} from './connection';
 import type {Configuration} from './configuration';
-import type {MusicConfig} from './types';
 
+type Track={name:string;artist:string;album:string;cover:string;durationMs:number;url:string|null};
+type Player={connected:boolean;playing:boolean;track:Track|null;progressMs:number;device:{id:string|null;name:string;volume_percent:number|null}|null};
+type Device={id:string;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null};
+type Setup={configured:boolean;connected:boolean;canControl:boolean;canConfigure:boolean;message:string};
+async function api<T>(path:string,options?:RequestInit):Promise<T>{
+ const response=await fetch('/spotify-api'+path,{...options,signal:AbortSignal.timeout(15000)});
+ const body=await response.json().catch(()=>({})) as T&{message?:string};
+ if(!response.ok)throw new Error(body.message||'Spotify svarade inte ('+response.status+').');
+ return body;
+}
+function cover(url:string){try{const u=new URL(url);return u.protocol==='https:'&&['i.scdn.co','mosaic.scdn.co'].includes(u.hostname)?esc(u.href):'';}catch{return '';}}
+const blank:Player={connected:false,playing:false,track:null,progressMs:0,device:null};
 export class MusicPanel{
  readonly root=document.createElement('aside');
- private dialog=document.createElement('dialog');private busy=false;private qr='';private qrLabel='';private open=false;private feedback='';
+ private dialog=document.createElement('dialog');
+ private state:Player=blank;private setup:Setup={configured:false,connected:false,canControl:false,canConfigure:false,message:'Ansluter till Spotify…'};
+ private devices:Device[]=[];private busy=false;private feedback='';private open=false;private qr='';private qrLabel='';private timer:ReturnType<typeof setInterval>;
+ private loading=false;private stopped=false;private lastRefresh=0;
  onVisibilityChange:(open:boolean)=>void=()=>{};
- constructor(private connection:Connection,private config:Configuration,private notify:(text:string)=>void){
-  this.root.className='music-widget glass';this.root.setAttribute('aria-label','Spotify');this.dialog.className='music-panel';
+ constructor(_connection:Connection,private config:Configuration,private notify:(message:string)=>void){
+  this.root.className='music-widget glass';this.root.setAttribute('aria-label','Spotify – direktanslutning');
+  this.dialog.className='music-panel spotify-direct';
   document.body.append(this.root,this.dialog);
-  this.root.addEventListener('click',e=>{const button=(e.target as HTMLElement).closest<HTMLElement>('button');if(!button)return;if(button.dataset.media)void this.command(button.dataset.media);else this.show();});
-  this.dialog.addEventListener('click',e=>{const b=(e.target as HTMLElement).closest<HTMLElement>('button');if(!b)return;
-   if(b.dataset.music==='close'){this.dialog.close();return;}
-   if(b.dataset.media)void this.command(b.dataset.media);
-   if(b.dataset.music==='jam')void this.showQr();
-   if(b.dataset.music==='demo')void this.showQr(true);
-   if(b.dataset.music==='save')void this.saveSettings();
-   if(b.dataset.music==='remove'){this.settings.jamUrl='';this.settings.jamSavedAt='';this.qr='';this.config.changed();this.renderDialog();}
+  this.root.addEventListener('click',e=>{
+   const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');
+   if(!b)return;
+   if(b.dataset.spotify)void this.command(b.dataset.spotify);
+   else this.show();
   });
-  this.dialog.addEventListener('change',e=>{const el=e.target as HTMLInputElement|HTMLSelectElement;if(el.id==='music-source')void this.command('select_source',{source:el.value});if(el.id==='music-volume')void this.command('volume_set',{volume_level:Number(el.value)/100});if(el.id==='music-account'){this.settings.activeEntity=el.value;this.config.changed();this.update();}});
+  this.dialog.addEventListener('click',e=>{
+   const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b)return;
+   if(b.dataset.spotify==='close'){this.dialog.close();return;}
+   if(b.dataset.spotify==='connect'){location.assign('/spotify-api/connect');return;}
+   if(b.dataset.spotify==='disconnect'){if(confirm('Koppla bort Spotify-kontot från Hemstyrning?'))void this.disconnect();return;}
+   if(b.dataset.spotify==='jam')void this.showQr();
+   if(b.dataset.spotify==='remove-jam')void this.saveJam('');
+   if(b.dataset.spotify==='save-jam'){void this.saveJam(this.dialog.querySelector<HTMLInputElement>('#jam-url')?.value.trim()??'');return;}
+   if(['play','pause','next','previous'].includes(b.dataset.spotify??''))void this.command(b.dataset.spotify!);
+   if(b.dataset.spotify==='devices')void this.loadDevices();
+  });
+  this.dialog.addEventListener('change',e=>{
+   const el=e.target as HTMLInputElement|HTMLSelectElement;
+   if(el.id==='spotify-device'&&el.value)void this.command('transfer',{deviceId:el.value});
+   if(el.id==='spotify-volume')void this.command('volume',{volume:Math.round(Number(el.value))});
+  });
   this.dialog.addEventListener('close',()=>{this.open=false;this.qr='';this.onVisibilityChange(false);});
+  this.timer=setInterval(()=>{if(!this.stopped&&!document.hidden)void this.refresh();},7000);
+  void this.refresh();
+  this.update();
  }
- private get settings():MusicConfig{return this.config.value.music??=( {entities:[],activeEntity:'',jamUrl:'',jamSavedAt:''});}
- private get state(){return this.connection.states.get(this.settings.activeEntity);}
- update(){const s=this.state,a=s?.attributes??{},ready=available(s)&&this.connection.connected,title=ready?String(a.media_title??'Ingen musik vald'):'Spotify är inte tillgängligt',cover=ready?artwork(s,'/connection-api',this.connection.source==='simulator'):'';
-  this.root.innerHTML=`<button class="music-open" aria-label="Öppna Spotify"><span class="music-cover">${cover?`<img src="${esc(cover)}" alt="Albumomslag" referrerpolicy="no-referrer">`:'♪'}</span><span class="track-copy"><small>SPOTIFY ${this.connection.source==='simulator'?'· DEMO':''}</small><strong>${esc(title)}</strong><span>${esc(ready?a.media_artist??'':this.settings.activeEntity?'Otillgänglig':'Välj konto i inställningarna')}</span><small>${esc(ready?a.source??'Ingen uppspelningsenhet':'')} · ${ready&&s?.state==='playing'?'Spelar':'Pausad'}</small></span></button><div class="music-inline-controls">${this.controls()}</div><button class="jam-open" data-music="open">Spotify Jam ↗</button>`;
-  if(this.open&&(this.busy||(!this.dialog.querySelector('details[open]')&&!this.dialog.querySelector('input:focus,select:focus'))))this.renderDialog();
-  if(this.open)this.syncAvailability();
+ get summary(){return this.state.track?.name??(this.setup.connected?'Ingen låt spelas':'Spotify ej anslutet');}
+ private get jamUrl(){return this.config.value?.music?.jamUrl??'';}
+ update(){
+  const p=this.state,t=p.track,src=cover(t?.cover??'');
+  this.root.innerHTML=`<button class="music-open" aria-label="Öppna Spotify"><span class="music-cover">${src?`<img src="${src}" alt="Albumomslag" referrerpolicy="no-referrer">`:'♪'}</span><span class="track-copy"><small>SPOTIFY · DIREKT</small><strong>${esc(this.summary)}</strong><span>${esc(t?.artist??this.setup.message)}</span><small>${esc(p.device?.name??'Ingen aktiv uppspelningsenhet')} · ${p.playing?'Spelar':'Pausad'}</small></span></button><div class="music-inline-controls">${this.controls()}</div><button class="jam-open" data-music="open">Musik och Jam ↗</button>`;
+  if(this.open&&!this.dialog.querySelector('input:focus,select:focus,details[open]'))this.renderDialog();
  }
- private syncAvailability(){
-  const state=this.state,ready=this.connection.connected&&this.connection.commandsEnabled;
-  for(const button of this.dialog.querySelectorAll<HTMLButtonElement>('[data-media]'))button.disabled=this.busy||!ready||!mediaSupports(state,button.dataset.media!);
-  const source=this.dialog.querySelector<HTMLSelectElement>('#music-source'),volume=this.dialog.querySelector<HTMLInputElement>('#music-volume');
-  if(source)source.disabled=this.busy||!ready||!mediaSupports(state,'select_source');if(volume)volume.disabled=this.busy||!ready||!mediaSupports(state,'volume_set');
-  const status=this.dialog.querySelector('.playback-state');if(status&&!available(state))status.textContent='Otillgänglig';
+ private controls(){
+  const allow=this.setup.connected&&this.setup.canControl&&!this.busy;
+  return [['previous','Föregående låt','⏮'],[this.state.playing?'pause':'play',this.state.playing?'Pausa musik':'Spela musik',this.state.playing?'Ⅱ':'▶'],['next','Nästa låt','⏭']].map(([action,label,icon])=>`<button type="button" data-spotify="${action}" aria-label="${label}" ${allow?'':'disabled'}>${icon}</button>`).join('');
  }
- private controls(){const s=this.state;return [['media_previous_track','Föregående låt','⏮'],[s?.state==='playing'?'media_pause':'media_play',s?.state==='playing'?'Pausa musik':'Spela musik',s?.state==='playing'?'Ⅱ':'▶'],['media_next_track','Nästa låt','⏭']].map(([service,label,symbol])=>`<button data-media="${service}" aria-label="${label}" ${this.busy||!this.connection.connected||!this.connection.commandsEnabled||!mediaSupports(s,service)?'disabled':''}>${symbol}</button>`).join('');}
- show(){this.open=true;this.onVisibilityChange(true);this.renderDialog();if(!this.dialog.open)this.dialog.showModal();}
+ private async refresh(){
+  if(this.loading||this.stopped)return;this.loading=true;
+  try{
+   const setup=await api<Setup>('/status');this.setup=setup;
+   this.state=setup.connected?await api<Player>('/playback'):blank;
+   this.feedback='';this.lastRefresh=Date.now();
+  }catch(error){this.feedback=error instanceof Error?error.message:'Spotify går inte att nå.';}
+  finally{this.loading=false;this.update();}
+ }
+ private async loadDevices(){
+  try{this.devices=(await api<{devices:Device[]}>('/devices')).devices;this.renderDialog();}
+  catch(e){this.report(e instanceof Error?e.message:String(e));}
+ }
+ show(){
+  this.open=true;this.onVisibilityChange(true);this.renderDialog();if(!this.dialog.open)this.dialog.showModal();
+  void this.loadDevices();void this.refresh();
+ }
  private renderDialog(){
-  const s=this.state,a=s?.attributes??{},ready=available(s)&&this.connection.connected,cover=ready?artwork(s,'/connection-api',this.connection.source==='simulator'):'',position=mediaPosition(s),duration=Number(a.media_duration),accounts=this.settings.entities,players=[...this.connection.states.values()].filter(s=>s.entity_id.startsWith('media_player.'));
-  this.dialog.innerHTML=`<header><div><small>MUSIK I HEMMET</small><h2>Spotify</h2></div><button data-music="close" aria-label="Stäng musik">×</button></header><p id="music-feedback" role="status" ${this.feedback?'':'hidden'}>${esc(this.feedback)}</p><div class="music-now">${cover?`<img class="large-cover" src="${esc(cover)}" alt="Albumomslag" referrerpolicy="no-referrer">`:'<div class="large-cover empty-cover">♪</div>'}<h3>${esc(ready?a.media_title??'Ingen musik vald':'Ingen tillgänglig uppspelning')}</h3><p>${esc(ready?a.media_artist??'':'')}<br><small>${esc(ready?a.media_album_name??'':'')}</small></p><span class="playback-state">${!ready?'Otillgänglig':s?.state==='playing'?'Spelar':s?.state==='paused'?'Pausad':'Ingen musik spelas'}</span><div class="music-progress"><progress max="${duration>0?duration:1}" value="${position??0}"></progress><span>${trackTime(position)} / ${trackTime(a.media_duration)}</span>${s?.state==='playing'?'<small>Uppskattad position mellan HA-rapporter</small>':''}</div><div class="music-buttons">${this.controls()}</div>${this.busy?'<p role="status">Väntar på Home Assistant… Låtinformation kan dröja.</p>':''}</div>
-  ${accounts.length>1?`<label>Spotify-konto<select id="music-account">${accounts.map(id=>`<option value="${esc(id)}" ${id===this.settings.activeEntity?'selected':''}>${esc(this.connection.states.get(id)?.attributes.friendly_name??id)}</option>`).join('')}</select></label>`:''}
-  <label>Uppspelningsenhet<select id="music-source" ${!ready||!this.connection.commandsEnabled||!mediaSupports(s,'select_source')||this.busy?'disabled':''}><option value="">${esc(a.source??'Ingen tillgänglig enhet')}</option>${(Array.isArray(a.source_list)?a.source_list:[]).filter(x=>typeof x==='string').map(source=>`<option value="${esc(source)}" ${source===a.source?'selected':''}>${esc(source)}</option>`).join('')}</select></label>
-  <label>Volym ${typeof a.volume_level==='number'?Math.round(a.volume_level*100)+' %':''}<input id="music-volume" type="range" min="0" max="100" step="1" value="${typeof a.volume_level==='number'?a.volume_level*100:0}" ${!ready||!this.connection.commandsEnabled||!mediaSupports(s,'volume_set')||this.busy?'disabled':''}></label>
-  <section class="jam-section"><h3>Lyssna tillsammans</h3><button class="primary" data-music="jam">Visa Jam QR-kod</button>${this.settings.jamUrl?`<p>Länk sparad ${esc(this.settings.jamSavedAt?new Date(this.settings.jamSavedAt).toLocaleString('sv-SE'):'tidigare')}. Sessionens status kan inte verifieras. Be värden om en ny länk om den inte fungerar.</p>`:'<p>Ingen Jam-inbjudningslänk finns. Skapa en Jam i Spotify och lägg in länken nedan.</p>'}${this.qr?`<figure class="jam-qr"><img src="${this.qr}" alt="${esc(this.qrLabel)}"><figcaption>${esc(this.qrLabel)}</figcaption></figure>`:''}</section>
-  <details class="music-settings"><summary>Musikinställningar och Jam-länk</summary><label>Home Assistant-konton<select id="music-entities" multiple size="${Math.max(2,Math.min(5,players.length))}">${players.map(p=>`<option value="${esc(p.entity_id)}" ${accounts.includes(p.entity_id)?'selected':''}>${esc(p.attributes.friendly_name??p.entity_id)} · ${esc(p.entity_id)}</option>`).join('')}</select></label><p>Välj motsvarande Spotify media_player. Flera konton kan sparas.</p><label>Jam-inbjudningslänk<input id="jam-url" type="url" placeholder="https://open.spotify.com/socialsession/…" value="${esc(this.settings.jamUrl)}" autocomplete="off"></label><p>Spotify → Anslut enhet → Starta en Jam → Bjud in → Dela länk. Premium krävs för värden. Kortlänkar kontrolleras så att de leder till en Jam, inte en låt eller spellista.</p><div class="button-row"><button data-music="save">Spara musikinställningar</button><button data-music="remove">Ta bort Jam-länk</button></div></details>${this.connection.source==='simulator'?'<button data-music="demo">Demonstrera QR · testlänk, ingen riktig Jam</button>':''}`;
+  const {connected,playing,track,device,progressMs}=this.state;
+  const art=cover(track?.cover??''),allow=this.setup.connected&&this.setup.canControl&&!this.busy;
+  const duration=track?.durationMs??0;
+  const options=this.devices.map(d=>`<option value="${esc(d.id)}" ${d.id===device?.id?'selected':''} ${d.is_restricted?'disabled':''}>${esc(d.name)}${d.is_active?' · aktiv':''}${d.is_restricted?' · spärrad':''}</option>`).join('');
+  const preset=this.jamUrl;
+  this.dialog.innerHTML=`<header><div><small>MUSIK I HEMMET · SPOTIFY WEB API</small><h2>Spotify</h2></div><button data-spotify="close" aria-label="Stäng musik">×</button></header>
+  ${this.feedback?`<p id="music-feedback" role="status">${esc(this.feedback)}</p>`:''}
+  <div class="music-now">${art?`<img class="large-cover" src="${art}" alt="Albumomslag" referrerpolicy="no-referrer">`:'<div class="large-cover empty-cover">♪</div>'}
+  <h3>${esc(track?.name??(connected?'Ingen aktiv låt':'Anslut Spotify'))}</h3>
+  <p>${esc(track?.artist??'')}<br><small>${esc(track?.album??'')}</small></p>
+  <span class="playback-state">${!connected?'Ej ansluten':playing?'Spelar':'Pausad'}</span>
+  ${track?`<div class="music-progress"><progress max="${duration>0?duration:1}" value="${Math.min(duration,progressMs)}"></progress><span>${trackTime(progressMs/1000)} / ${trackTime(duration/1000)}</span><small>Senaste status från Spotify</small></div>`:''}
+  <div class="music-buttons">${this.controls()}</div>
+  ${this.busy?'<p role="status">Väntar på Spotify…</p>':''}</div>
+  ${connected?`<label>Uppspelningsenhet<select id="spotify-device" ${allow?'':'disabled'}><option value="">${esc(device?.name??'Välj enhet…')}</option>${options}</select></label>
+  <button data-spotify="devices">Uppdatera enhetslista</button>
+  <label>Volym ${typeof device?.volume_percent==='number'?device.volume_percent+' %':''}<input id="spotify-volume" type="range" min="0" max="100" step="1" value="${typeof device?.volume_percent==='number'?device.volume_percent:50}" ${allow&&device?.volume_percent!=null?'':'disabled'}></label>`
+  :`<p>${esc(this.setup.message)}</p>${this.setup.configured&&this.setup.canConfigure?'<button class="primary" data-spotify="connect">Anslut mitt Spotify-konto</button>':''}`}
+  <section class="jam-section"><h3>Spotify Jam</h3><p>Jam skapas i Spotify-appen. Klistra in dess delningslänk här för att visa en QR-kod. Hemstyrning kan inte skapa en Jam genom Spotify API.</p>
+  ${preset?'<button data-spotify="jam" class="primary">Visa Jam QR-kod</button>':'<p>Ingen Jam-länk sparad.</p>'}
+  ${this.qr?`<figure class="jam-qr"><img src="${this.qr}" alt="${esc(this.qrLabel)}"><figcaption>${esc(this.qrLabel)}</figcaption></figure>`:''}</section>
+  <details class="music-settings"><summary>Inställningar och Jam-länk</summary>
+  <p>Spotify använder nu en direkt serveranslutning, inte Home Assistants media_player. Kontot kopplas på servern.</p>
+  ${this.setup.canConfigure?`<label>Jam-inbjudningslänk<input id="jam-url" type="url" placeholder="https://open.spotify.com/socialsession/…" value="${esc(preset)}"></label>
+  <button data-spotify="save-jam">Spara Jam-länk</button><button data-spotify="remove-jam">Ta bort Jam-länk</button>
+  ${connected?'<button data-spotify="disconnect">Koppla bort Spotify</button>':this.setup.configured?'<button data-spotify="connect">Anslut Spotify</button>':''}`
+  :'<p>Kontoinställningar kan bara ändras av en administratör.</p>'}
+  </details>`;
  }
- private report(text:string){this.feedback=text;const el=this.dialog.querySelector<HTMLElement>('#music-feedback');if(el){el.textContent=text;el.hidden=false;}this.notify(text);}
- private async command(action:string,data:Record<string,unknown>={}){if(this.busy)return;this.busy=true;this.feedback='';this.update();try{await this.connection.media(this.settings.activeEntity,action,data);}catch(e){this.report(e instanceof Error?e.message:String(e));}finally{this.busy=false;this.update();}}
- private async saveSettings(){
-  const select=this.dialog.querySelector<HTMLSelectElement>('#music-entities')!,jam=this.dialog.querySelector<HTMLInputElement>('#jam-url')!.value.trim(),entities=[...select.selectedOptions].map(o=>o.value);
-  try{let url='';if(jam){const response=await fetch('/workspace-api/music/jam/resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:jam}),signal:AbortSignal.timeout(30000)}),data=await response.json();if(!response.ok)throw new Error(data.message);url=data.url;}
-   const previous=this.settings.jamUrl;this.config.value.music={entities,activeEntity:entities.includes(this.settings.activeEntity)?this.settings.activeEntity:entities[0]??'',jamUrl:url,jamSavedAt:url===previous?this.settings.jamSavedAt:url?new Date().toISOString():''};this.qr='';this.config.changed();await this.config.save();this.report(this.config.status);this.renderDialog();this.update();
+ private report(text:string){this.feedback=text;this.notify(text);if(this.open)this.renderDialog();}
+ private async command(action:string,data:Record<string,unknown>={}){
+  if(this.busy||!this.setup.canControl||!this.setup.connected)return;
+  this.busy=true;this.update();
+  try{await api('/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data})});await new Promise(r=>setTimeout(r,500));await this.refresh();if(action==='transfer')await this.loadDevices();}
+  catch(e){this.report(e instanceof Error?e.message:String(e));}
+  finally{this.busy=false;this.update();}
+ }
+ private async disconnect(){try{await api('/disconnect',{method:'POST'});this.state=blank;await this.refresh();}catch(e){this.report(e instanceof Error?e.message:String(e));}}
+ private async saveJam(raw:string){
+  try{
+   let url='';if(raw){const response=await fetch('/workspace-api/music/jam/resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:raw}),signal:AbortSignal.timeout(25000)});const json=await response.json();if(!response.ok)throw new Error(json.message);url=json.url;}
+   const settings=this.config.value.music??{entities:[],activeEntity:'',jamUrl:'',jamSavedAt:''};
+   settings.jamUrl=url;settings.jamSavedAt=url?new Date().toISOString():'';this.config.value.music=settings;
+   this.config.changed();await this.config.save();this.qr='';this.report('Jam-länken sparades.');
   }catch(e){this.report(e instanceof Error?e.message:String(e));}
  }
- private async showQr(demo=false){const url=demo?'https://example.invalid/hemkontroll/jam-demo':canonicalJamUrl(this.settings.jamUrl);if(!url){this.report('Ingen giltig Jam-inbjudningslänk finns. Lägg in en delad länk från Spotify.');return;}this.qr=await QRCode.toDataURL(url,{width:360,margin:4,errorCorrectionLevel:'M',color:{dark:'#071710',light:'#ffffff'}});this.qrLabel=demo?'TESTLÄNK · Ingen riktig Spotify Jam':'Skanna för att öppna Jam-inbjudan · aktiv session ej verifierad';this.renderDialog();}
- dispose(){this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
+ private async showQr(){
+  const url=canonicalJamUrl(this.jamUrl);
+  if(!url){this.report('Lägg först in en giltig Spotify Jam-länk.');return;}
+  this.qr=await QRCode.toDataURL(url,{width:360,margin:4,errorCorrectionLevel:'M',color:{dark:'#071710',light:'#ffffff'}});
+  this.qrLabel='Öppna Spotify Jam · aktuell session kan inte verifieras';this.renderDialog();
+ }
+ dispose(){this.stopped=true;clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
 }
