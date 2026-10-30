@@ -2,6 +2,15 @@
 
 Senast uppdaterad: 2026-10-30
 
+## Kontrollpanelens starka färgkort – 2026-10-30
+
+- Kontrollpanelen på `/control` har nu betydligt högre, solida enhetsrutor (minst110px) med starka kategoriaccentfärger för lampor, bilar, sol och övriga objekt. Enheternas namn och tillstånd har större text; de tidigare skjutbrytarna finns kvar.
+- Scen- och skriptförinställningar, inklusive Halloween, visas som större (minst174px) kraftigt färgade kort med full ytfyllnad utifrån inställd accentfärg och beräknad ljus/mörk textkontrast. Detaljer, stoppkontroller och aktiv markering bevaras.
+- Mobil har särskilda storlekar och enkel kolumn för förinställningar på de smalaste skärmarna. Alla ändringar gäller kontrollpanelen och påverkar inte Home Assistant-kommandonas logik.
+- Endast statisk kodgranskning utförd i denna miljö; lokal typecheck, byggning och webbläsarverifiering återstår.
+
+
+
 ## Fotografisk start, energinät och gemensam editor – 2026-10-30
 
 - Föregående hero-arbete verifierat/committat/pushat som0b5fc81. Ny guide `docs/PHOTOGRAPHIC_3D_AND_ENERGY.md`.
