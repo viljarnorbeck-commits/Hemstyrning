@@ -189,3 +189,23 @@ button,input,select,textarea{border-radius:5px}input,select,textarea{background:
  .control-page #control-music{margin-bottom:18px;min-height:200px}
  .control-page #control-music .music-cover{width:55px;height:55px}
 }
+
+/* Spotify search and library – solid, high-contrast controls on desktop and mobile. */
+.spotify-direct .spotify-browser{padding:17px 0;border-top:1px solid #53617788}
+.spotify-direct .spotify-browser h3{font-size:16px;margin:10px 0 12px;color:#d8b8ff}
+.spotify-direct .spotify-browser form{display:flex;align-items:flex-end;gap:9px}
+.spotify-direct .spotify-browser form label{flex:1;min-width:0;margin:0;font-size:13px}
+.spotify-direct .spotify-browser form button{min-height:44px;padding:8px 15px}
+.spotify-direct .spotify-browser input{font-size:16px;min-width:0}
+.spotify-direct .spotify-hits{display:grid;gap:7px;max-height:190px;overflow:auto}
+.spotify-direct .spotify-hits article{display:flex;align-items:center;gap:7px;padding:9px 10px;background:#222e40;border:1px solid #4d5e74;border-radius:6px;min-width:0}
+.spotify-direct .spotify-hits article div{flex:1;min-width:0}
+.spotify-direct .spotify-hits article b{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px;color:#fff}
+.spotify-direct .spotify-hits article small{display:block;font-size:11px;color:#bcc8de;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.spotify-direct .spotify-hits button{flex-shrink:0;min-height:38px;padding:5px 9px;background:#5d3c85;color:#f8efff;border-color:#9c75cb}
+.spotify-direct .spotify-refresh{float:right;font-size:11px;min-height:34px;margin-left:5px}
+@media(max-width:420px){
+ .spotify-direct .spotify-browser form{flex-wrap:wrap}
+ .spotify-direct .spotify-hits article{flex-wrap:wrap}
+ .spotify-direct .spotify-hits article div{flex-basis:100%}
+}
