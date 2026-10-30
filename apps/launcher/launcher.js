@@ -1,0 +1,3 @@
+const form=document.querySelector('form');form.server.value=localStorage.getItem('hem-server')??'';form.role.value=localStorage.getItem('hem-role')??'home';form.onsubmit=async e=>{e.preventDefault();try{const server=form.server.value,role=form.role.value;await window.__TAURI__.core.invoke('open_server',{server,role});localStorage.setItem('hem-server',server);localStorage.setItem('hem-role',role);document.querySelector('[role=status]').textContent='Fönstret är öppnat. Du kan öppna ett till.';}catch(e){document.querySelector('[role=status]').textContent=String(e);}};
+
+if(form.server.value)void window.__TAURI__.core.invoke('open_server',{server:form.server.value,role:form.role.value}).catch(e=>document.querySelector('[role=status]').textContent=String(e));

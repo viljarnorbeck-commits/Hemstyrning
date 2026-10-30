@@ -1,3 +1,4 @@
+import {demoPresets} from './demo-presets.js';
 import {advanceMedia} from './music.js';
 import {MoonPhase,Illumination,Equator,Horizon,Observer,Body} from 'astronomy-engine';
 import { z } from 'zod';
@@ -14,7 +15,7 @@ export const simulationSchema=z.object({
   mowerInterval:n.min(0.5).max(30),mowerJitter:n.min(0).max(10),gpsFault:z.enum(['none','lost','jump','delayed','dropout']),cars:z.array(carSchema).min(1).max(8),
 }).superRefine((v,ctx)=>{if(new Set(v.cars.map(c=>c.id)).size!==v.cars.length)ctx.addIssue({code:'custom',message:'Bil-ID måste vara unika'});});
 export type SimulationSettings=z.infer<typeof simulationSchema>;
-export const scenarios=[['summer','Solig sommardag'],['sunset','Solnedgång'],['winter','Mörk vinterkväll med gårdsbelysning'],['rain','Kraftigt regn'],['snow','Kraftigt snöfall'],['blizzard','Snöstorm med hård vind'],['fog','Tät dimma'],['rapid','Snabba väderförändringar'],['car-arrives','Bil anländer och börjar laddas'],['car-climate','Bil startar klimatisering'],['mower-job','Gräsklippare · helt arbetspass'],['gps-loss','Gräsklippare · GPS-bortfall'],['solar','Varierande solproduktion'],['offline','Enheter tappar anslutningen'],['mower-slope','Gräsklippare · testsluttning'],['mower-driveway','Gräsklippare · passage över uppfart'],['mower-return','Gräsklippare · åter till laddstation'],['mower-normal','LUBA A · normal körning'],['mower-repeat','LUBA B · upprepade körningar'],['mower-changed','LUBA C · förändrad rutt'],['mower-bad-gps','LUBA D · dålig GPS'],['mower-obstacles','LUBA E · hinder och sluttning'],['mower-restart','LUBA F · historik före omstart']] as const;
+export const scenarios=[['normal-day','Normal dag'],['winter-evening','Vinterkväll'],['halloween','Halloween'],['high-price','Högt elpris'],['communication-error','Kommunikationsfel'],['summer','Solig sommardag'],['sunset','Solnedgång'],['winter','Mörk vinterkväll med gårdsbelysning'],['rain','Kraftigt regn'],['snow','Kraftigt snöfall'],['blizzard','Snöstorm med hård vind'],['fog','Tät dimma'],['rapid','Snabba väderförändringar'],['car-arrives','Bil anländer och börjar laddas'],['car-climate','Bil startar klimatisering'],['mower-job','Gräsklippare · helt arbetspass'],['gps-loss','Gräsklippare · GPS-bortfall'],['solar','Varierande solproduktion'],['offline','Enheter tappar anslutningen'],['mower-slope','Gräsklippare · testsluttning'],['mower-driveway','Gräsklippare · passage över uppfart'],['mower-return','Gräsklippare · åter till laddstation'],['mower-normal','LUBA A · normal körning'],['mower-repeat','LUBA B · upprepade körningar'],['mower-changed','LUBA C · förändrad rutt'],['mower-bad-gps','LUBA D · dålig GPS'],['mower-obstacles','LUBA E · hinder och sluttning'],['mower-restart','LUBA F · historik före omstart']] as const;
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
 /** NOAA solar geometry; mirrored contract tests against the frontend implementation. */
 export function solar(date:Date,latitude:number,longitude:number){
@@ -49,15 +50,21 @@ export class Simulation {
   if(id==='mower-job'||id==='gps-loss'||id.startsWith('mower-')){this.jobProgress=0;this.store.set('lawn_mower.luba_3_awd','mowing',{progress:0,error:null});s.mowerJitter=2;}
   if(id==='mower-obstacles')s.mowerRoute=[[-17,0,7],[-10,1.2,7],[-10,1.2,-5],[-2,0,-5],[-2,0,7]];
   if(id==='mower-repeat'||id==='mower-changed'||id==='mower-restart')this.mowerTravel=0;
+  if(id==='normal-day'){s.cars[0]!.charging=true;s.cars[0]!.plugged=true;this.store.set('switch.car_one_charging','on');this.store.set('lawn_mower.luba_3_awd','mowing');}
+  if(id==='winter-evening'){s.date='2026-12-20T19:00:00Z';s.houseLoad=5;s.cars.forEach(c=>{c.climate=true;this.store.set('climate.'+c.id,'heat');});demoPresets(this.store).activate('scene.evening');}
+  if(id==='halloween'){s.date='2026-10-31T20:00:00Z';demoPresets(this.store).activate('script.halloween');}
+  if(id==='high-price')s.price=7.5;
+  if(id==='communication-error'){this.store.set('light.garage','unavailable');s.luxMode='unavailable';}
   if(id==='mower-slope')s.mowerRoute=[[-17,0,7],[-10,1.2,7],[-2,0,7],[-2,0,22],[-17,0,22]];
   if(id==='mower-driveway')s.mowerRoute=[[-17,0,7],[-10,0,7],[-10,0,-5],[-2,0,-5],[-2,0,7]];
   if(id==='mower-return'){this.mowerTravel=20;this.store.set('lawn_mower.luba_3_awd','returning');}
   this.luxElapsed=999;this.publish(0);
  }
- tick(seconds:number){if(!this.settings.running)return;const dt=clamp(seconds,0,3600);advanceMedia(this.store,dt);this.elapsed+=dt;this.clock+=dt*1000;this.timeline();let remaining=dt*this.settings.timeScale;
+ tick(seconds:number){if(!this.settings.running)return;const dt=clamp(seconds,0,3600);advanceMedia(this.store,dt);demoPresets(this.store).tick(dt);this.elapsed+=dt;this.clock+=dt*1000;this.timeline();let remaining=dt*this.settings.timeScale;
   while(remaining>1e-6){const time=Date.parse(this.settings.date),midnight=Date.parse(this.settings.date.slice(0,10)+'T00:00:00Z')+86400000,seconds=Math.min(remaining,(midnight-time)/1000);this.settings.date=new Date(time+seconds*1000-(seconds*1000===midnight-time?1:0)).toISOString();this.publish(seconds/3600);remaining-=seconds;if(seconds*1000===midnight-time){this.settings.date=new Date(midnight).toISOString();this.publish(0);}}
   if(dt*this.settings.timeScale===0)this.publish(0);this.luxElapsed+=dt;this.mowerElapsed+=dt;this.updateMower(dt);}
  private timeline(){const s=this.settings,t=this.elapsed;
+  if(this.scenario==='normal-day'){s.price=1.1+.35*Math.sin(t/120);s.houseLoad=2.8+.35*Math.sin(t/60);if(s.cars[0])s.cars[0].amps=10+2*Math.sin(t/90);}
   if(this.scenario==='rapid'){s.cloud=(Math.sin(t/5)+1)*50;s.rain=(Math.sin(t/9)+1)/2;s.snow=0;}
   if(this.scenario==='solar')s.cloud=(Math.sin(t/10)+1)*50;
   if(this.scenario==='car-arrives'&&t>=5){const c=s.cars[0]!;c.home=true;c.plugged=t>=8;if(t>=10)this.store.set(`switch.${c.id}_charging`,'on');}

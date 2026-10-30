@@ -3,11 +3,11 @@ import {fixture} from './fixtures';
 
 async function setup(page:Page,objects=false){
  await fixture(page);
- await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),config=await response.json();config.quality='low';config.sky.mode='procedural';config.panoramas=[];
+ await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),config=await response.json();config.objects.push({...config.objects[0],id:'mobile-test-ground',type:'surface',entityId:'',zone:'ground',points:[[-30,0,-30],[30,0,-30],[30,0,30],[-30,0,30]],position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]});config.quality='low';config.sky.mode='procedural';config.panoramas=[];
  for(const model of Object.values(config.models) as any[])Object.assign(model,{url:'/models/daniels.glb',position:[0,0,0],rotation:[-90,0,0],scale:1});
  if(!objects)config.objects=[];else{const lamp=config.objects.find((o:any)=>o.type==='light');lamp.position=[0,4,0];config.objects=[lamp];}
  await route.fulfill({json:config});});
- await page.goto('/');await expect(page.locator('#connection-status')).toHaveText('Ansluten');await expect(page.locator('#model-status')).toBeHidden();await expect(page.locator('#garden')).toHaveAttribute('data-camera-target',/^\[/);
+ await page.goto('/?view=3d');await expect(page.locator('#connection-status')).toHaveText('Ansluten');await expect(page.locator('#model-status')).toBeHidden();await expect(page.locator('#garden')).toHaveAttribute('data-camera-target',/^\[/);
 }
 async function state(page:Page){return page.locator('#garden').evaluate(el=>{const c=el as HTMLElement;return{position:JSON.parse(c.dataset.cameraPosition!),target:JSON.parse(c.dataset.cameraTarget!),distance:Number(c.dataset.cameraDistance),mode:c.dataset.navigationMode,following:c.dataset.following};});}
 const difference=(a:number[],b:number[])=>Math.hypot(...a.map((v,i)=>v-b[i]));
@@ -75,10 +75,10 @@ test('touch on a lamp activates once; marker drags, pinches and double taps neve
 
 test('manual touch navigation exits LUBA follow mode and camera clearance survives close zoom',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true}),page=await context.newPage();
- try{await fixture(page);await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),config=await response.json();config.quality='low';config.sky.mode='procedural';config.panoramas=[];for(const m of Object.values(config.models) as any[])Object.assign(m,{url:'/models/daniels.glb',position:[0,0,0],rotation:[-90,0,0],scale:1});await route.fulfill({json:config});});await page.goto('/');await expect(page.locator('#connection-status')).toHaveText('Ansluten');await expect(page.locator('#model-status')).toBeHidden();
-  await page.locator('.mobile-home-nav [data-view="home"]').tap();await page.locator('#home-dashboard [data-follow]').first().tap();await expect.poll(async()=>(await state(page)).following).not.toBe('');const cdp=await context.newCDPSession(page);
+ try{await fixture(page);await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),config=await response.json();config.objects.push({...config.objects[0],id:'mobile-test-ground',type:'surface',entityId:'',zone:'ground',points:[[-30,0,-30],[30,0,-30],[30,0,30],[-30,0,30]],position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]});config.quality='low';config.sky.mode='procedural';config.panoramas=[];for(const m of Object.values(config.models) as any[])Object.assign(m,{url:'/models/daniels.glb',position:[0,0,0],rotation:[-90,0,0],scale:1});await route.fulfill({json:config});});await page.goto('/?view=3d');await expect(page.locator('#connection-status')).toHaveText('Ansluten');await expect(page.locator('#model-status')).toBeHidden();
+  await page.locator('#list-button').tap();await page.locator('#home-dashboard [data-follow]').first().tap();await expect.poll(async()=>(await state(page)).following).not.toBe('');const cdp=await context.newCDPSession(page);
   await gesture(cdp,[[touch(1,160,310)],[touch(1,190,330)],[touch(1,230,350)]]);await expect.poll(async()=>(await state(page)).following).toBe('');
-  await page.locator('#reset-button').tap();await gesture(cdp,[[touch(1,195,500)],[touch(1,195,320)],[touch(1,195,160)]]);await page.mouse.move(195,370);const beforeZoom=(await state(page)).distance;for(let i=0;i<10;i++)await page.mouse.wheel(0,-1000);
+  await page.locator('#reset-button').tap();await expect.poll(async()=>(await state(page)).distance).toBeGreaterThan(50);await gesture(cdp,[[touch(1,195,500)],[touch(1,195,320)],[touch(1,195,160)]]);await page.mouse.move(195,370);const beforeZoom=(await state(page)).distance;for(let i=0;i<10;i++)await page.mouse.wheel(0,-1000);
   // Clearance may legitimately stop the camera before OrbitControls.minDistance.
   await expect.poll(async()=>(await state(page)).distance).toBeLessThan(beforeZoom*.4);expect((await state(page)).position[1]).toBeGreaterThanOrEqual(.89);
  }finally{await context.close();}
@@ -86,7 +86,7 @@ test('manual touch navigation exits LUBA follow mode and camera clearance surviv
 
 test('a native mobile swipe scrolls the dashboard with invisible scrollbars while 3D stays paused',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true}),page=await context.newPage();
- try{await setup(page);await page.locator('.mobile-home-nav [data-view="home"]').tap();const frames=await page.locator('#garden').getAttribute('data-render-frames'),cdp=await context.newCDPSession(page);
+ try{await setup(page);await page.locator('#list-button').tap();const frames=await page.locator('#garden').getAttribute('data-render-frames'),cdp=await context.newCDPSession(page);
   await gesture(cdp,[[touch(1,300,680)],[touch(1,300,580)],[touch(1,300,480)],[touch(1,300,350)]]);
   await expect.poll(()=>page.locator('#home-dashboard').evaluate(el=>el.scrollTop)).toBeGreaterThan(40);expect(await page.locator('#garden').getAttribute('data-render-frames')).toBe(frames);expect(await page.locator('#home-dashboard').evaluate(el=>getComputedStyle(el).scrollbarWidth)).toBe('none');
  }finally{await context.close();}

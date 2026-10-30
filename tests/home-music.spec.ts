@@ -14,7 +14,7 @@ test.beforeEach(async({page,request})=>{
  await request.put('/workspace-api/scene',{data:config});await request.post('/dev-api/states/'+player,{data:{state:'paused',attributes:{supported_features:16384|1|32|16|4|2048,media_title:'Ljus över gården',media_artist:'Hemkontroll · testartist',media_album_name:'Nordiska rum · simulator',media_duration:214,media_position:32,entity_picture:'/textures/music/dawn.svg',source:'Vardagsrum',source_list:['Vardagsrum','Kök','Mobil']}}});
 });
 test.afterEach(async({request})=>{await request.put('/workspace-api/scene',{data:original});await request.put('/dev-api/settings',{data:settings.settings});await request.delete('/dev-api/states/'+player);await request.post('/dev-api/services/media_player/media_pause',{data:{entity_id:player}});});
-async function open(page:any){await page.goto('/');await expect(page.locator('#connection-status')).toHaveText('Ansluten');await expect(page.locator('#model-status')).toBeHidden();}
+async function open(page:any){await page.goto('/?view=3d');await expect(page.locator('#connection-status')).toHaveText('Ansluten');await expect(page.locator('#model-status')).toBeHidden();}
 
 test('desktop direct controls confirm each car, all lights and robot commands independently',async({page,request})=>{
  await open(page);const left=page.locator('.home-quick-controls');
@@ -59,6 +59,6 @@ test('list mode stops the animation loop, preserves camera and clean fullscreen 
 
 test('mobile portrait and landscape provide bottom navigation and scrollable dashboard without overflow',async({page})=>{
  await page.setViewportSize({width:390,height:844});await open(page);await expect(page.locator('.home-quick-controls')).toBeHidden();await expect(page.locator('.music-widget')).toBeVisible();await page.locator('.mobile-home-nav [data-view="music"]').click();await expect(page.locator('dialog.music-panel')).toBeVisible();await page.getByRole('button',{name:'Stäng musik',exact:true}).click();
- await page.locator('.mobile-home-nav [data-view="home"]').click();await expect(page.locator('#home-dashboard')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'/tmp/hemkontroll-home-mobile.png'});
+ await page.locator('#list-button').click();await expect(page.locator('#home-dashboard')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'/tmp/hemkontroll-home-mobile.png'});
  await page.setViewportSize({width:844,height:390});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('.mobile-home-nav [data-view="3d"]').click();await expect(page.locator('#garden')).toBeVisible();await page.locator('#clean-view').click();await expect(page.locator('.mobile-home-nav')).toBeHidden();await page.getByRole('button',{name:'Återgå till normalläge',exact:true}).click();await expect(page.locator('.mobile-home-nav')).toBeVisible();
 });

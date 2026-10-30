@@ -1,0 +1,41 @@
+name: Native applications
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {lfs: false}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: '8.9'}
+      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - run: mkdir -p .build-tools && keytool -genkeypair -keystore .build-tools/debug.keystore -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Hemstyrning Debug,O=Development,C=SE'
+      - run: gradle -p apps/android assembleMobileDebug assembleTvDebug bundleMobileRelease bundleTvRelease
+      - uses: actions/upload-artifact@v4
+        with: {name: android-packages, path: 'apps/android/app/build/outputs/'}
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm exec --yes --package @tauri-apps/cli -- tauri build
+        working-directory: apps/windows
+      - uses: actions/upload-artifact@v4
+        with: {name: windows-installers, path: 'apps/windows/target/release/bundle/'}
+  ios-project:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: xcodebuild -project apps/ios/Hemstyrning.xcodeproj -scheme Hemstyrning -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+      - uses: actions/upload-artifact@v4
+        with: {name: ios-project, path: apps/ios/}

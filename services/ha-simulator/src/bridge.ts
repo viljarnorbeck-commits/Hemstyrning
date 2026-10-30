@@ -1,3 +1,4 @@
+import {allowedOrigin} from './access.js';
 import {mediaSupports,robotSupports,available} from '../../../shared/ha-contract.js';
 import express from 'express';
 import {calendarEvents} from './calendar.js';
@@ -10,7 +11,7 @@ export interface LiveTarget { url: string; token: string; commandsEnabled?: bool
 export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, delay: number, live?: LiveTarget) {
   const router = express.Router();
   router.use((req, res, next) => {
-    if (req.headers.origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.origin)) { res.sendStatus(403); return; }
+    if (req.headers.origin && !allowedOrigin(req.headers.origin)) { res.sendStatus(403); return; }
     next();
   });
   router.use((req, res, next) => {
@@ -19,7 +20,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     }
     next();
   });
-  router.get('/info', (_req, res) => res.json({ mode: live ? 'home-assistant' : 'simulator', commandsEnabled: !live||live.commandsEnabled===true }));
+  router.get('/info', (_req, res) => res.json({ mode: live ? 'home-assistant' : 'simulator', commandsEnabled: res.locals.hemRole!=='viewer'&&(!live||live.commandsEnabled===true) }));
   const read = async (path: string) => {
     if(!live){if(path==='states')return store.all();const scene=await load();return{latitude:scene.location.latitude,longitude:scene.location.longitude,time_zone:scene.location.timeZone};}
     const response = await fetch(`${live.url}/api/${path}`, { headers: { Authorization: `Bearer ${live.token}` }, signal: AbortSignal.timeout(10000) });
@@ -52,6 +53,26 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     if(live){const response=await fetch(`${live.url}/api/services/media_player/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(10000)});if(!response.ok){res.status(502).json({message:'Home Assistant avvisade musikkommandot'});return;}}
     else await callService(store,{domain:'media_player',service,serviceData:data},delay);
     res.json({accepted:true});
+  });
+  router.post('/presets/:id',async(req,res)=>{
+    if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
+    const config=await load(),preset=config.presets.find(p=>p.id===req.params.id&&!p.hidden),stop=req.body?.action==='stop';
+    if(!preset||!['activate','stop'].includes(req.body?.action)||stop&&(!preset.canStop||!preset.entityId.startsWith('script.'))){res.sendStatus(403);return;}
+    const domain=preset.entityId.split('.')[0]!,service=stop?'turn_off':'turn_on',target=(await read('states') as {entity_id:string;state:string}[]).find(s=>s.entity_id===preset.entityId);
+    if(!target||target.state==='unavailable'||target.state==='unknown'&&domain==='script'){res.status(400).json({message:'Scenen eller skriptet är otillgängligt'});return;}
+    if(live){const response=await fetch(`${live.url}/api/services/${domain}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify({entity_id:preset.entityId}),signal:AbortSignal.timeout(10000)});if(!response.ok){res.sendStatus(502);return;}}
+    else await callService(store,{domain,service,serviceData:{entity_id:preset.entityId}},delay);
+    res.json({accepted:true,confirmed:false});
+  });
+  router.post('/light',async(req,res)=>{
+    const c=await load(),o=c.objects.find(o=>o.id===req.body?.object_id&&o.type==='light'),a=req.body;
+    if(req.headers['x-hemkontroll-mode']!=='live'||!o||!/^light\.[a-z0-9_]+$/.test(o.entityId)||typeof a.on!=='boolean'){res.sendStatus(403);return;}
+    const state=(await read('states') as {entity_id:string;state:string;attributes:Record<string,unknown>}[]).find(s=>s.entity_id===o.entityId),modes=state?.attributes.supported_color_modes as string[]|undefined;
+    if(!available(state)){res.sendStatus(400);return;}const payload:Record<string,unknown>={entity_id:o.entityId};
+    if(a.brightness!==undefined){if(typeof a.brightness!=='number'||!Number.isFinite(a.brightness)||a.brightness<0||a.brightness>255||!modes?.some(m=>m!=='onoff')){res.sendStatus(400);return;}payload.brightness=Math.round(a.brightness);}
+    if(a.kelvin!==undefined){if(typeof a.kelvin!=='number'||!Number.isFinite(a.kelvin)||a.kelvin<2000||a.kelvin>6500||!modes?.includes('color_temp')){res.sendStatus(400);return;}payload.color_temp_kelvin=a.kelvin;}
+    if(a.rgb!==undefined){if(!Array.isArray(a.rgb)||a.rgb.length!==3||!a.rgb.every((v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=255)||!modes?.some(m=>['rgb','rgbw','rgbww','xy','hs'].includes(m))){res.sendStatus(400);return;}payload.rgb_color=a.rgb;}
+    const service=a.on?'turn_on':'turn_off';if(live){const r=await fetch(`${live.url}/api/services/light/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});if(!r.ok){res.sendStatus(502);return;}}else await callService(store,{domain:'light',service,serviceData:payload},delay);res.json({accepted:true});
   });
   router.get('/artwork',async(req,res)=>{
     const config=await load(),id=String(req.query.entity_id??'');
@@ -89,13 +110,13 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
   router.post('/commands',async(req,res)=>{
     if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
     const scene=await load(),object=scene.objects.find(o=>o.id===req.body.object_id);if(!object){res.sendStatus(403);return;}
-    const actions:Record<string,[string,string,string]>={climate_on:['car','climate','turn_on'],climate_off:['car','climate','turn_off'],charge_on:['car','switch','turn_on'],charge_off:['car','switch','turn_off'],mower_start:['mower','lawn_mower','start_mowing'],mower_pause:['mower','lawn_mower','pause'],mower_dock:['mower','lawn_mower','dock'],vacuum_start:['vacuum','vacuum','start'],vacuum_pause:['vacuum','vacuum','pause'],vacuum_dock:['vacuum','vacuum','return_to_base']};
+    const actions:Record<string,[string,string,string]>={climate_on:['car','climate','turn_on'],climate_off:['car','climate','turn_off'],charge_on:['car','switch','turn_on'],charge_off:['car','switch','turn_off'],mower_start:['mower','lawn_mower','start_mowing'],mower_pause:['mower','lawn_mower','pause'],mower_dock:['mower','lawn_mower','dock'],vacuum_start:['vacuum','vacuum','start'],vacuum_pause:['vacuum','vacuum','pause'],vacuum_dock:['vacuum','vacuum','return_to_base'],device_on:['device','switch','turn_on'],device_off:['device','switch','turn_off']};
     const action=actions[String(req.body.action)];if(!action||object.type!==action[0]){res.sendStatus(403);return;}
     const [kind,domain,service]=action;let entity=object.entityId;
     if(kind==='car'){const binding=domain==='climate'?'climate':'charging',attrs=store.get(object.entityId)?.attributes.command_entities as Record<string,string>|undefined;entity=object.bindings[binding]??(!live?attrs?.[binding]:'')??'';}
     if(!entity.startsWith(domain+'.')){res.sendStatus(403);return;}
     const target=(await read('states') as {entity_id:string;state:string;attributes:Record<string,unknown>}[]).find(s=>s.entity_id===entity);
-    if(!available(target)||(kind!=='car'&&!robotSupports(target,String(req.body.action)))){res.status(400).json({message:'Enheten är otillgänglig eller saknar stöd'});return;}
+    if(!available(target)||(!['car','device'].includes(kind)&&!robotSupports(target,String(req.body.action)))){res.status(400).json({message:'Enheten är otillgänglig eller saknar stöd'});return;}
     if(kind==='car'&&domain==='climate'&&(Number(target?.attributes.supported_features??0)&(service==='turn_on'?256:128))===0){res.status(400).json({message:'Klimatentiteten saknar stöd'});return;}
     if(live){const response=await fetch(`${live.url}/api/services/${domain}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify({entity_id:entity}),signal:AbortSignal.timeout(10000)});if(!response.ok){res.sendStatus(502);return;}}
     else await callService(store,{domain,service,serviceData:{entity_id:entity}},delay);

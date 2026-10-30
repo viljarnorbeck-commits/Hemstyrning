@@ -14,6 +14,9 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
+      '/screen-ws':{target:'ws://127.0.0.1:8123',ws:true},
+      '/app-api':{target:'http://127.0.0.1:8123'},
+      '/downloads':{target:'http://127.0.0.1:8123'},
       '/dev-api': { target: 'http://127.0.0.1:8123' },
       '/dev-ws': { target: 'ws://127.0.0.1:8123', ws: true, rewrite: () => '/simulator/ws' },
       '/workspace-api': { target: 'http://127.0.0.1:8123' },

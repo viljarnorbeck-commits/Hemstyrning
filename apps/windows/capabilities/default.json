@@ -1,0 +1,1 @@
+{"identifier":"launcher-only","description":"Enbart den lokala anslutningsguiden får öppna appfönster. Serversidor har inga nativebehörigheter.","windows":["main"],"permissions":["core:default"],"local":true}

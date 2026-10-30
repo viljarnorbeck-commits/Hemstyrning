@@ -1,3 +1,4 @@
+import {demoPresets} from './demo-presets.js';
 import {mediaSupports} from '../../../shared/ha-contract.js';
 import {setDemoTrack} from './music.js';
 import {calendarEvents} from './calendar.js';
@@ -7,6 +8,7 @@ export class ServiceError extends Error {constructor(message:string,readonly sta
 function entityIds(call:ServiceCall):string[]{const selected=call.target?.entity_id??call.serviceData.entity_id;if(typeof selected==='string')return[selected];if(Array.isArray(selected)&&selected.every(v=>typeof v==='string'))return selected;throw new ServiceError('Service call requires target.entity_id or service_data.entity_id');}
 export async function callService(store:StateStore,call:ServiceCall,delayMs:number):Promise<unknown>{
  const ids=entityIds(call),{domain,service}=call;
+ if(['scene','script'].includes(domain)){if(!['turn_on',...(domain==='script'?['turn_off']:[])].includes(service)||ids.some(id=>!id.startsWith(domain+'.')||!store.get(id)))throw new ServiceError('Otillåten scen eller skript');await new Promise(r=>setTimeout(r,delayMs));for(const id of ids){if(service==='turn_off'){demoPresets(store).stop(id);}else demoPresets(store).activate(id);}return;}
  if(domain==='calendar'&&service==='get_events'){const from=String(call.serviceData.start_date_time??new Date().toISOString()),duration=call.serviceData.duration as Record<string,unknown>|undefined,to=String(call.serviceData.end_date_time??new Date(Date.parse(from)+Number(duration?.hours??24)*3600000).toISOString());return Object.fromEntries(ids.map(id=>[id,{events:calendarEvents(store,id,from,to).map(e=>({...e,start:e.start.dateTime??e.start.date,end:e.end.dateTime??e.end.date}))}]));}
  if(domain==='weather'&&service==='get_forecasts'){
   return Object.fromEntries(ids.map(id=>{const s=store.get(id);if(!s)throw new ServiceError('Entity not found',404);const now=Date.parse(String(s.attributes.simulated_datetime??new Date().toISOString()));return[id,{forecast:Array.from({length:24},(_,i)=>({datetime:new Date(now+(i+1)*3600000).toISOString(),condition:s.state,temperature:s.attributes.temperature,cloud_coverage:s.attributes.cloud_coverage,wind_speed:s.attributes.wind_speed,precipitation:Number(s.attributes.rain_intensity??0)*8}))}];}));
@@ -38,7 +40,7 @@ export async function callService(store:StateStore,call:ServiceCall,delayMs:numb
  for(const id of targets){const current=store.get(id)!;if(['unknown','unavailable'].includes(current.state))throw new ServiceError(`${id} became unavailable`,503);
   if(domain==='light'){
    const on=service==='toggle'?current.state!=='on':service==='turn_on',previous=Number(current.attributes.brightness??255),level=on?Number(brightness??(previous>0?previous:current.attributes.last_brightness??255)):0;
-   store.set(id,on&&level>0?'on':'off',{brightness:level,last_brightness:previous>0?previous:current.attributes.last_brightness??255,...(kelvin!==undefined?{color_temp_kelvin:kelvin}:{}),...(rgb!==undefined?{rgb_color:rgb}:{})},'simulator-user');
+   store.set(id,on&&level>0?'on':'off',{brightness:level,last_brightness:previous>0?previous:current.attributes.last_brightness??255,...(kelvin!==undefined?{color_temp_kelvin:kelvin}:{}),...(rgb!==undefined?{rgb_color:rgb,color_mode:'rgb'}:{}),...(kelvin!==undefined?{color_mode:'color_temp'}:{})},'simulator-user');
   }else if(domain==='climate')store.set(id,service==='turn_on'?'heat':'off',{},'simulator-user');
   else if(domain==='switch')store.set(id,service==='turn_on'?'on':'off',{},'simulator-user');
   else if(domain==='lawn_mower')store.set(id,service==='start_mowing'?'mowing':service==='pause'?'paused':'returning',{},'simulator-user');

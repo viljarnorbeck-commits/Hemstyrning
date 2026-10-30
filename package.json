@@ -1,6 +1,6 @@
 {
   "name": "hemstyrning",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -16,7 +16,16 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test:e2e": "playwright test",
     "prepare:model": "node scripts/prepare-model.mjs",
-    "verify:model": "node scripts/verify-model.mjs"
+    "verify:model": "node scripts/verify-model.mjs",
+    "build:web": "npm run build --workspace @hemkontroll/dashboard",
+    "build:assets": "node scripts/build-client-assets.mjs",
+    "build:android": "bash scripts/build-android.sh assembleMobileDebug",
+    "build:tv": "bash scripts/build-android.sh assembleTvDebug",
+    "build:ios": "bash scripts/build-ios.sh",
+    "build:windows": "bash scripts/build-windows.sh",
+    "release:publish": "node scripts/publish-local-release.mjs",
+    "release:package": "python3 scripts/create-release.py",
+    "check:versions": "node scripts/check-versions.mjs"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.5.1",

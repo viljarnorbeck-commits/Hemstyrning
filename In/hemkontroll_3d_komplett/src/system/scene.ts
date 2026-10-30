@@ -1,3 +1,4 @@
+import{graphicsProfile,profiles}from'./client-platform';
 import {cameraFloor,constrainGroundCamera} from './ground-model';
 import type {LearnedGraph,YardGrid} from '../../../../shared/yard-types';
 import {SurfaceInput,type Tap} from './surface-input';
@@ -78,7 +79,7 @@ export class GardenScene {
   editing = false;
   private dragging = false;
   private input:SurfaceInput;
-  private focusGoal?:THREE.Vector3;
+  private focusGoal?:THREE.Vector3;private cameraMotion?:{at:number;fromP:THREE.Vector3;fromT:THREE.Vector3;toP:THREE.Vector3;toT:THREE.Vector3;done:()=>void};
   private navigationMode:'rotate'|'pan'='rotate';
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -86,7 +87,7 @@ export class GardenScene {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.camera.position.set(55, 32, 55);
-    this.input=new SurfaceInput(canvas,tap=>this.tap(tap),tap=>this.focusAtScreen(tap.x,tap.y),()=>{this.followId=undefined;this.focusGoal=undefined;});
+    this.input=new SurfaceInput(canvas,tap=>this.tap(tap),tap=>this.focusAtScreen(tap.x,tap.y),()=>{this.followId=undefined;this.focusGoal=undefined;this.cameraMotion=undefined;});
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping=true;this.controls.dampingFactor=.12;this.controls.rotateSpeed=.65;this.controls.panSpeed=.85;this.controls.zoomSpeed=.8;this.controls.screenSpacePanning=false;this.controls.zoomToCursor=true;this.controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;canvas.tabIndex=0;this.controls.listenToKeyEvents(canvas);
     this.controls.addEventListener('start',()=>this.input.navigationStarted());
@@ -97,7 +98,7 @@ export class GardenScene {
     this.sun.position.set(40, 80, 30);
     this.sun.target.position.set(0, 0, 0);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(1024, 1024);
+    this.sun.shadow.mapSize.set(graphicsProfile()==='ultra'?2048:1024,graphicsProfile()==='ultra'?2048:1024);
     this.sun.shadow.camera.left = -45; this.sun.shadow.camera.right = 45;
     this.sun.shadow.camera.top = 45; this.sun.shadow.camera.bottom = -45;
     this.sun.shadow.camera.far = 220;
@@ -145,15 +146,15 @@ export class GardenScene {
   }
   private constrainCamera(){if(this.skyView)return;const model=this.models.root.children[0];if(model!==this.yardModel){this.yardModel=model;this.zoneIndex=undefined;this.yard=undefined;if(model){const box=new THREE.Box3().setFromObject(model);this.fallbackGround=box.isEmpty()?0:box.max.y+.6;void this.loadYardAnalysis();}}const before=this.controls.target.clone();this.surroundings.constrainFocus(this.controls.target);this.camera.position.add(this.controls.target.clone().sub(before));constrainGroundCamera(this.camera.position,this.controls.target,(x,z)=>cameraFloor(x,z,this.activeZones(x,z),this.yard,this.fallbackGround));this.camera.lookAt(this.controls.target);}
   private cameraStats(){const canvas=this.renderer.domElement;canvas.dataset.cameraPosition=JSON.stringify(this.camera.position.toArray());canvas.dataset.cameraTarget=JSON.stringify(this.controls.target.toArray());canvas.dataset.cameraDistance=String(this.camera.position.distanceTo(this.controls.target));canvas.dataset.navigationMode=this.navigationMode;canvas.dataset.following=this.followId??'';}
-  private resize() { const { width, height } = this.renderer.domElement.getBoundingClientRect(); if(width<=0||height<=0)return; if(this.config?.quality==='auto'){this.models.detail=width>=900;this.renderer.setPixelRatio(Math.min(devicePixelRatio,width>=900?2:1.5));} this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); }
+  private resize() { const { width, height } = this.renderer.domElement.getBoundingClientRect(); if(width<=0||height<=0)return; if(this.config?.quality==='auto'){this.models.detail=width>=900;this.renderer.setPixelRatio(Math.min(devicePixelRatio,profiles[graphicsProfile()].dpr));} this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); }
   setConfig(config: SceneConfig) {
     this.zoneIndex=undefined;
     const model=config.models[config.activeModel],signature=JSON.stringify([model.url,model.position,model.rotation,model.scale]);if(signature!==this.yardSignature){this.yardSignature=signature;this.yard=undefined;this.yardModel=undefined;this.yardRequest++;}this.config = config;this.renderer.toneMapping=config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;
     this.models.grading=config.appearance;
     this.moon.castShadow=config.quality==='high';
-    const high=config.quality==='high'||config.quality==='auto'&&innerWidth>=900;
+    const high=graphicsProfile()==='ultra'||config.quality==='high'||config.quality==='auto'&&innerWidth>=900;
     this.models.detail=high;
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, high ? 2 : 1.5));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio,profiles[graphicsProfile()].dpr));
     this.renderer.shadowMap.enabled = config.quality==='high';
     this.models.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     this.rebuildObjects(); this.resize();
@@ -205,8 +206,8 @@ export class GardenScene {
   frame(target: EnvironmentFrame, states: Map<string, HassState>, connected: boolean, simulatedLights: Map<string, boolean>, simulation: boolean) {
     this.latestEnvironment=target;
     const now = performance.now();
-    if(now-this.lastFrame<1000/30)return;
-    const dt = Math.min((now - this.lastFrame) / 1000, 0.1); this.lastFrame = now;
+    if(now-this.lastFrame<1000/profiles[graphicsProfile()].fps)return;
+    const dt = Math.min((now - this.lastFrame) / 1000, 0.1); this.renderer.domElement.dataset.frameMs=String(now-this.lastFrame);this.lastFrame = now;
     if(this.diagnostic){this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.routeOverlay.visible=this.yardOverlay.visible=false;this.controls.update();this.constrainCamera();this.cameraStats();this.renderer.render(this.scene,this.camera);return;}
     this.scene.fog??=new THREE.FogExp2('#8faeb6',.001);this.sky.root.visible=this.environment.visible=true;this.models.root.visible=this.objects.visible=!this.skyView;this.transform.getHelper().visible=this.editing&&!this.skyView;this.surfaceMarkers.visible=this.editing&&!this.skyView;
     this.daylight = damp(this.daylight, target.daylight, dt);
@@ -224,9 +225,10 @@ export class GardenScene {
     const fog = this.scene.fog as THREE.FogExp2;
     fog.color.copy(this.scene.background as THREE.Color); fog.density = damp(fog.density, Math.max(.0015,target.fog), dt, 4);
     this.sky.update(target,this.camera,this.config,dt);this.surroundings.update(this.models.root.children[0],target.season??'autumn',this.config?.appearance?.terrain??true);
-    if(this.skyView)this.surroundings.root.visible=false;this.precipitation.update(target,this.camera,dt,this.config?.quality??'low',(x,z)=>this.groundAt(x,z));
+    if(this.skyView)this.surroundings.root.visible=false;this.precipitation.update(target,this.camera,dt,['tv','mobile'].includes(graphicsProfile())?'low':this.config?.quality??'low',(x,z)=>this.groundAt(x,z));
     this.models.setWetness(target.rain);
-    this.renderer.shadowMap.enabled=this.config?.quality==='high'||this.config?.quality==='auto'&&target.daylight<.15;
+    this.renderer.shadowMap.enabled=graphicsProfile()==='ultra'||this.config?.quality==='high'||this.config?.quality==='auto'&&target.daylight<.15;
+    if(['tv','mobile'].includes(graphicsProfile()))this.renderer.shadowMap.enabled=false;
     let activeLights=0;
     for (const item of this.config?.objects ?? []) {
       if(item.type==='car'){const model=this.renderObjects.get(item.id);if(model){const visible=carVisible(item,states,model.userData.presenceVisible);model.userData.presenceVisible=visible;model.visible=this.editing||visible;}}
@@ -259,30 +261,36 @@ export class GardenScene {
       const kelvin = Number(state?.attributes.color_temp_kelvin);
       lamp.color.set(item.color);
       if (!simulation && Number.isFinite(kelvin)) lamp.color.setRGB(...kelvinRGB(kelvin));
-      const rgb=state?.attributes.rgb_color;if(!simulation&&Array.isArray(rgb)&&rgb.length===3&&rgb.every(v=>Number.isFinite(v)))lamp.color.setRGB(Number(rgb[0])/255,Number(rgb[1])/255,Number(rgb[2])/255,THREE.SRGBColorSpace);
+      const rgb=state?.attributes.rgb_color;if(!simulation&&(!state?.attributes.color_mode||['rgb','rgbw','rgbww','hs','xy'].includes(String(state.attributes.color_mode)))&&Array.isArray(rgb)&&rgb.length===3&&rgb.every(v=>Number.isFinite(v)))lamp.color.setRGB(Number(rgb[0])/255,Number(rgb[1])/255,Number(rgb[2])/255,THREE.SRGBColorSpace);
       const bulb = this.renderObjects.get(item.id)?.children.find(c => c instanceof THREE.Mesh && c.geometry instanceof THREE.SphereGeometry) as THREE.Mesh | undefined;
       if (bulb) { const m = bulb.material as THREE.MeshStandardMaterial; m.emissive.copy(lamp.color); m.emissiveIntensity = on ? 2 : 0; }
     }
     if(this.followId){const followed=this.renderObjects.get(this.followId);if(followed){const offset=followed.position.clone().sub(this.controls.target).multiplyScalar(1-Math.exp(-dt*2));this.controls.target.add(offset);this.camera.position.add(offset);}}
     if(this.focusGoal){const delta=this.focusGoal.clone().sub(this.controls.target);if(delta.length()<.015){this.focusGoal=undefined;}else{delta.multiplyScalar(1-Math.exp(-dt*10));this.controls.target.add(delta);this.camera.position.add(delta);}}
-    this.updateReplay();this.controls.update();this.constrainCamera();this.cameraStats();
+    if(this.cameraMotion){const m=this.cameraMotion,t=Math.min(1,(performance.now()-m.at)/1400),f=t*t*(3-2*t);this.camera.position.lerpVectors(m.fromP,m.toP,f);this.controls.target.lerpVectors(m.fromT,m.toT,f);if(t===1){this.cameraMotion=undefined;m.done();}}this.updateReplay();this.controls.update();this.constrainCamera();this.cameraStats();
     this.renderer.render(this.scene, this.camera);
   }
   setDiagnostics(profile:'mobile'|'detail'|'reference',neutral:boolean){this.diagnostic=neutral;this.models.reference=profile==='reference';this.models.detail=profile!=='mobile';this.models.setNeutral(neutral);this.transform.enabled=this.editing&&!neutral;this.transform.getHelper().visible=this.editing&&!neutral;if(!neutral&&this.config)this.renderer.toneMapping=this.config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:this.config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;const season=this.models.active??this.config?.activeModel;if(season&&this.config)void this.models.select(season,this.config.models[season]);}
-  diagnostics(){return{modelTextures:this.models.diagnostics(),maxTextureSize:this.renderer.capabilities.maxTextureSize,sky:this.sky.status(),triangles:this.renderer.info.render.triangles,calls:this.renderer.info.render.calls,textures:this.renderer.info.memory.textures,geometries:this.renderer.info.memory.geometries,pixelRatio:this.renderer.getPixelRatio(),resolution:[this.renderer.domElement.width,this.renderer.domElement.height],anisotropy:this.renderer.capabilities.getMaxAnisotropy()};}
+  diagnostics(){return{profile:graphicsProfile(),targetFps:profiles[graphicsProfile()].fps,frameIntervalMs:Number(this.renderer.domElement.dataset.frameMs),jsHeapBytes:(performance as unknown as {memory?:{usedJSHeapSize:number}}).memory?.usedJSHeapSize??null,modelTextures:this.models.diagnostics(),maxTextureSize:this.renderer.capabilities.maxTextureSize,sky:this.sky.status(),triangles:this.renderer.info.render.triangles,calls:this.renderer.info.render.calls,textures:this.renderer.info.memory.textures,geometries:this.renderer.info.memory.geometries,pixelRatio:this.renderer.getPixelRatio(),resolution:[this.renderer.domElement.width,this.renderer.domElement.height],anisotropy:this.renderer.capabilities.getMaxAnisotropy()};}
   private updateHeadlight(item:SceneObject,states:Map<string,HassState>,target:EnvironmentFrame,dt:number,connected:boolean){const config=item.headlight,model=this.renderObjects.get(item.id);if(!config?.enabled||!model||this.editing)return;let lamp=this.headlights.get(item.id);if(!lamp){lamp=new THREE.SpotLight('#fff1db',0,9,radians(config.angle/2),.65,2);lamp.target.position.set(0,-.35,-4);lamp.target.userData.lightTarget=true;model.add(lamp,lamp.target);this.headlights.set(item.id,lamp);}lamp.castShadow=this.config?.quality==='high';lamp.shadow.mapSize.set(256,256);lamp.shadow.normalBias=.02;lamp.position.fromArray(config.position);lamp.color.setRGB(...kelvinRGB(config.kelvin));const status=robotLightState(item,states,this.config!,target,connected),on=status.on;lamp.power=damp(lamp.power,on?config.lumens:0,dt,.3);lamp.visible=lamp.power>.5;model.userData.headlightStatus=`${on?'På':'Av'} · ${status.source} · okalibrerad ljusprofil`;}
   assetInfo(id:string){return this.renderObjects.get(id)?.userData.assetStatus??'Testgeometri · egen 3D-modell saknas';}
   headlightInfo(id:string){return this.renderObjects.get(id)?.userData.headlightStatus??'Ej konfigurerat';}
   previewSky(){this.lookAtSky();this.controls.enabled=true;this.controls.enableZoom=false;this.controls.enablePan=false;}
   trackingInfo(id:string){return this.tracking.get(id);}
   lookAtSky(){this.focusGoal=undefined;const env=this.latestEnvironment;if(!env)return;this.skyView=true;this.followId=undefined;this.controls.maxPolarAngle=Math.PI;this.controls.enableDamping=false;this.controls.enabled=false;const direction=env.daylight>.5?new THREE.Vector3(...env.sunDirection):(env.moonAltitude??-1)>0?new THREE.Vector3(...(env.moonDirection??[0,1,0])):new THREE.Vector3(0,.5,-1).normalize();this.controls.target.copy(this.camera.position).addScaledVector(direction,120);this.controls.update();}
-  follow(id:string){this.focusGoal=undefined;this.skyView=false;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.followId=id;const model=this.renderObjects.get(id);if(model){const delta=this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(22);this.controls.target.copy(model.position);this.camera.position.copy(model.position).add(delta);}}
+  captureView():import('./types').CameraView{return{position:this.camera.position.toArray() as Vec3,target:this.controls.target.toArray() as Vec3,zoom:this.camera.zoom,fov:this.camera.fov};}
+  transition(view:import('./types').CameraView,done=()=>{}){this.skyView=false;this.followId=undefined;this.focusGoal=undefined;this.camera.zoom=view.zoom;this.camera.fov=view.fov;this.camera.updateProjectionMatrix();this.controls.maxPolarAngle=Math.PI*.49;this.cameraMotion={at:performance.now(),fromP:this.camera.position.clone(),fromT:this.controls.target.clone(),toP:new THREE.Vector3(...view.position),toT:new THREE.Vector3(...view.target),done};}
+  overview(done=()=>{}){this.transition(this.config?.startView??{position:[55,32,55],target:[0,1,0],zoom:1,fov:48},done);}
+  cancelFollow(){this.followId=undefined;this.cameraMotion=undefined;}
+  focusObject(id:string,follow=false,done=()=>{}){const o=this.config?.objects.find(o=>o.id===id),model=this.renderObjects.get(id);if(!model||!o)throw new Error('Objektet saknas');if(o.type==='mower'&&!this.tracking.get(id)?.safePosition)throw new Error('Ingen verifierad robotposition att följa');const target=model.position.clone(),offset=new THREE.Vector3(10,8,12),position=target.clone().add(offset);const ray=new THREE.Raycaster(target,offset.clone().normalize(),.5,offset.length());const hit=ray.intersectObject(this.models.root,true)[0];if(hit)position.copy(target).addScaledVector(offset.normalize(),Math.max(2,hit.distance-1));this.select(id);this.transition({position:position.toArray() as Vec3,target:target.toArray() as Vec3,zoom:1,fov:48},()=>{if(follow)this.followId=id;done();});}
+  follow(id:string){try{this.focusObject(id,true);return true;}catch{return false;}}
+
   screenPosition(id:string){const object=this.renderObjects.get(id);if(!object||!object.visible||this.diagnostic||this.skyView)return null;const physical=object.getWorldPosition(new THREE.Vector3());physical.y+=object.userData.type==='car'?.75:object.userData.type==='mower'?.15:0;const point=physical.clone();point.y+=1.2;const distance=this.camera.position.distanceTo(point),occluded=(this.config?.appearance?.occlusion??true)&&isOccluded(this.camera,physical,[this.models.root,this.occlusionVolumes],this.markerRay);const p=point.project(this.camera);return{x:(p.x*.5+.5)*innerWidth,y:(-p.y*.5+.5)*innerHeight,z:p.z,occluded,distance};}
   private activeZones(x?:number,z?:number){this.zoneIndex??=new ZoneIndex((this.config?.objects??[]).filter(o=>!o.classification||o.classification.origin==='manual'||o.classification.analysisKey===this.yard?.key));return x===undefined||z===undefined?this.zoneIndex.all:this.zoneIndex.region(x,z);}
   private safeMowerSegment(from:{x:number;z:number},to:{x:number;z:number},radius:number){this.activeZones();const zones=this.zoneIndex!.region(Math.min(from.x,to.x)-radius,Math.min(from.z,to.z)-radius,Math.max(from.x,to.x)+radius,Math.max(from.z,to.z)+radius);if(!supportedGroundSegment(from,to,zones))return false;return traversableSegment(from,to,zones,radius);}
   private groundAt(x:number,z:number){return groundSurface(x,z,this.activeZones(x,z))?.height??null;}
   dispose(){this.input.dispose();this.assets.reset();this.renderer.setAnimationLoop(null);this.observer.disconnect();this.controls.dispose();this.transform.dispose();this.models.dispose();this.sky.dispose();disposeTree(this.sky.root);disposeTree(this.surroundings.root);disposeTree(this.occlusionVolumes);disposeTree(this.objects);disposeTree(this.environment);disposeTree(this.surfaceMarkers);disposeTree(this.yardOverlay);disposeTree(this.routeOverlay);this.renderer.dispose();}
-  reset() { this.focusGoal=undefined;this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.controls.enableZoom=this.controls.enablePan=true;this.camera.position.set(55, 32, 55); this.controls.target.set(0, 1, 0); }
+  reset() { this.cameraMotion=undefined;this.focusGoal=undefined;this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.controls.enableZoom=this.controls.enablePan=true;this.camera.position.set(55, 32, 55); this.controls.target.set(0, 1, 0);this.cameraStats(); }
 }
 function kelvinRGB(value: number): Vec3 {
   const temp = clamp(value, 1000, 12000) / 100;

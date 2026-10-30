@@ -11,3 +11,26 @@ coverage/
 data/
 test-results/
 playwright-report/
+
+# Local native build tools, signing material and release artifacts
+.build-tools/
+artifacts/
+apps/android/.gradle/
+apps/android/local.properties
+apps/android/**/build/
+apps/windows/bin/
+apps/windows/obj/
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+.env.*
+!.env.example
+*.p8
+*.pem
+*.key
+apps/windows/target/
+apps/ios/**/xcuserdata/
+apps/ios/build/
+apps/ios/DerivedData/
+apps/ios/ExportOptions.plist

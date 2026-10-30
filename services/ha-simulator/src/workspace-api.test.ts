@@ -25,6 +25,7 @@ function glb(document: object) {
 describe('persistent workspace and calibrated scene',()=>{
   it('saves all four calibrations and independent object properties across a server restart',async()=>{
     const config=defaultScene();
+    config.startView={position:[20,15,30],target:[2,1,3],zoom:1.25,fov:48};
     config.models['winter']!.position=[12,4,19];config.models['winter']!.rotation=[-90,45,0];config.models['winter']!.scale=1.7;
     config.objects[0]!.position=[3,5,7];config.objects[0]!.angle=35;config.bindings.lux='sensor.custom_lux';
     expect((await fetch(`${base}/workspace-api/scene`,{method:'PUT',headers:json,body:JSON.stringify(config)})).status).toBe(200);

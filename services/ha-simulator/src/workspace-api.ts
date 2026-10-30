@@ -1,3 +1,4 @@
+import {allowedOrigin} from './access.js';
 import {yardApi} from './yard-api.js';
 import {resolveJamLink} from './music.js';
 import { createHash } from 'node:crypto';
@@ -8,7 +9,7 @@ import sharp from 'sharp';
 import { defaultScene, sceneSchema, type SceneConfig } from './scene-config.js';
 
 /** Local authoring API. Data lives outside public/ and survives server restarts. */
-export function workspaceApi(directory: string) {
+export function workspaceApi(directory: string,onSaved:()=>void=()=>{}) {
   const router = express.Router();
   const configPath = resolve(directory, 'scene.json');
   let pending: Promise<unknown> = Promise.resolve();
@@ -28,7 +29,7 @@ export function workspaceApi(directory: string) {
   }
   router.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) { res.sendStatus(403); return; }
+    if (origin && !allowedOrigin(origin)) { res.sendStatus(403); return; }
     next();
   });
   const yard=yardApi(directory,load);router.use('/yard-analysis',yard.router);
@@ -45,7 +46,7 @@ export function workspaceApi(directory: string) {
       await rename(temp, configPath);
     };
     pending = pending.catch(() => {}).then(save);
-    await pending;
+    await pending;onSaved();
     res.json({ saved: true });
   });
   router.post('/panoramas',express.raw({type:['image/jpeg','image/png'],limit:'80mb'}),async(req,res)=>{

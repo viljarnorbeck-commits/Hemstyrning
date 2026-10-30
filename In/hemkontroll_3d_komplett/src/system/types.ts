@@ -13,7 +13,10 @@ export interface SceneObject {
 }
 export interface ModelConfig { appearance?:import('./appearance').Grade; url: string; label: string; verified: boolean; position: Vec3; rotation: Vec3; scale: number }
 export interface MusicConfig {entities:string[];activeEntity:string;jamUrl:string;jamSavedAt:string}
+export interface Preset{id:string;name:string;icon:string;color:string;description:string;entityId:string;canStop:boolean;hidden:boolean}
+export interface CameraView{position:Vec3;target:Vec3;zoom:number;fov:number}
 export interface SceneConfig {
+ startView?:CameraView;labels?:boolean;presets?:Preset[];
   music?:MusicConfig;
   geography?:{simulatorRoute?:Vec3[];altitude:number;points:import('./geography').ControlPoint[];rms?:number;mapTiles:string};
   panoramas?:Panorama[];sky?:{mode:'procedural'|'automatic'|'manual';panoramaId:string;transitionSeconds:number};

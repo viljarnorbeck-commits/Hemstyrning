@@ -1,0 +1,1 @@
+<?xml version="1.0" standalone='no'?><!DOCTYPE service-group SYSTEM "avahi-service.dtd"><service-group><name replace-wildcards="yes">Hemstyrning på %h</name><service><type>_hemstyrning._tcp</type><port>443</port><txt-record>protocol=1</txt-record><txt-record>hostname=hemstyrning.local</txt-record></service></service-group>

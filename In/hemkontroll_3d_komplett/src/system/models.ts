@@ -1,3 +1,4 @@
+import{graphicsProfile}from'./client-platform';
 import * as THREE from 'three';
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -50,6 +51,7 @@ export class ModelManager {
   async select(season: Season, config: ModelConfig) {
     if(this.reference&&config.url==='/models/daniels.glb')config={...config,url:'/models/daniels-reference.glb'};
     if(this.detail&&config.url==='/models/daniels.glb')config={...config,url:'/models/daniels-detail.glb'};
+    const profile=graphicsProfile();if(!this.reference&&['/models/daniels.glb','/models/daniels-detail.glb'].includes(config.url)&&['mobile','tv'].includes(profile))config={...config,url:profile==='tv'?'/models/daniels-tv.glb':'/models/daniels-portable.glb'};
     const key = JSON.stringify([season, config]);
     if (key === this.requested) return;
     this.requested = key;

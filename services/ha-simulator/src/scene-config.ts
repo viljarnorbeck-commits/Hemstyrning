@@ -8,6 +8,9 @@ const grade=z.object({warmth:finite.min(-.2).max(.2),saturation:finite.min(.5).m
 const modelUrl = z.string().regex(/^\/(?:models\/[\w.-]+\.glb|workspace-api\/models\/[a-f0-9]{64}\.glb)$/);
 export const sceneSchema = z.object({
   version: z.literal(1),
+  startView:z.object({position:vector,target:vector,zoom:finite.min(.1).max(10),fov:finite.min(20).max(90)}).optional(),
+  labels:z.boolean().default(true),
+  presets:z.array(z.object({id:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),name:z.string().min(1).max(80),icon:z.string().max(12),color:z.string().regex(/^#[0-9a-fA-F]{6}$/),description:z.string().max(300),entityId:z.string().regex(/^(?:scene|script)\.[a-z0-9_]+$/),canStop:z.boolean().default(false),hidden:z.boolean().default(false)})).max(100).default([]),
   layoutVersion: z.number().default(2),
   location: z.object({ timeZone:z.string().refine(value=>{try{new Intl.DateTimeFormat('sv-SE',{timeZone:value});return true;}catch{return false;}},'Ogiltig tidszon').default('Europe/Stockholm'),latitude: finite.min(-90).max(90), longitude: finite.min(-180).max(180), northOffset: finite }),
   models: z.object(Object.fromEntries(['summer', 'autumn', 'firstSnow', 'winter'].map(key => [key, z.object({

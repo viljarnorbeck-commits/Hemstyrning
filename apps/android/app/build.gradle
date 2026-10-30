@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'se.hemstyrning'
+ compileSdk 35
+ defaultConfig { applicationId 'se.hemstyrning'; minSdk 26; targetSdk 35; versionCode 20000; versionName '2.0.0' }
+ flavorDimensions 'device'
+ productFlavors { mobile { dimension 'device' }; tv { dimension 'device'; applicationIdSuffix '.tv' } }
+ signingConfigs {
+  debug { storeFile rootProject.file('../../.build-tools/debug.keystore') }
+  release { if(System.getenv('HEM_ANDROID_KEYSTORE')){storeFile file(System.getenv('HEM_ANDROID_KEYSTORE'));storePassword System.getenv('HEM_ANDROID_STORE_PASSWORD');keyAlias System.getenv('HEM_ANDROID_KEY_ALIAS');keyPassword System.getenv('HEM_ANDROID_KEY_PASSWORD')} }
+ }
+ buildTypes { release { minifyEnabled false; if(System.getenv('HEM_ANDROID_KEYSTORE'))signingConfig signingConfigs.release } }
+}

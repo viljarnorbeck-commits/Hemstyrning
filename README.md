@@ -2,6 +2,21 @@
 
 Hemstyrning är en interaktiv 3D-klient som drivs av en lokal [Home Assistant-simulator](services/ha-simulator/README.md). Dashboarden och simulatorn utvecklas och testas tillsammans utan riktiga enheter.
 
+## Hemstyrning 2.0 och installerbara appar
+
+Hem är nu en levande 3D-startvy med energikort och sparad kamera. **Öppna 3D**
+ger fri navigering. **Lista** behåller hela hemöversikten och pausar GPU-rendering.
+`/control` är en separat modellfri kontrollpanel med parkoppling till en vald skärm.
+`/settings` kopplar energimätare och färgkodade HA-scener/skript. `/install` visar
+PWA-installation och bara verkligt byggda paket.
+
+- [2.0: Hem, kontrollpanel, förinställningar och simulator](docs/HEMSTYRNING_2.md)
+- [Appar: faktiska APK-filer, Windows/iOS-projekt, HTTPS och byggning](docs/INSTALLABLE_APPS.md)
+- Android/Google TV: byggda debug-APK:er finns lokalt under `artifacts/` och via `/install`.
+- Windows Tauri och iOS Xcode-projekt finns; inga EXE/MSI/IPA har byggts här.
+- Nativeappar använder en central **betrodd HTTPS-server**, inte utvecklingsservern
+  öppet på LAN. Se guiden för viewer/controller/admin och privat CA.
+
 ## Gränssnitt och musik
 
 3D-vyn har direkta kontroller och Spotify. **Lista** öppnar en komplett dashboard

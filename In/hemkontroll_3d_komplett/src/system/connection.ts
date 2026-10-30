@@ -113,12 +113,15 @@ export class Connection extends EventTarget {
       return (current.attributes.media_content_id??current.attributes.media_title)!==title;
     },20000);
   }
+  async preset(p:import('./types').Preset,stop=false){const before=this.states.get(p.entityId),old=before?.attributes.last_triggered??before?.state;await this.confirmRequest('/presets/'+encodeURIComponent(p.id),{action:stop?'stop':'activate'},()=>{const s=this.states.get(p.entityId);return !!s&&(stop?s.state==='off':(s.attributes.last_triggered??s.state)!==old);});}
+  async light(object:import('./types').SceneObject,on:boolean,options:{brightness?:number;kelvin?:number;rgb?:number[]}={}){await this.confirmRequest('/light',{object_id:object.id,on,...options},()=>{const s=this.states.get(object.entityId);return s?.state===(on?'on':'off')&&(options.brightness===undefined||Math.abs(Number(s.attributes.brightness)-options.brightness)<2)&&(options.kelvin===undefined||Math.abs(Number(s.attributes.color_temp_kelvin)-options.kelvin)<100)&&(options.rgb===undefined||JSON.stringify(s.attributes.rgb_color)===JSON.stringify(options.rgb));});}
   async history(entityId:string){const response=await fetch(`${this.base}/history?entity_id=${encodeURIComponent(entityId)}`).then(check);return response.json();}
   async command(object:import('./types').SceneObject,action:string){
     if(!this.connected||!this.commandsEnabled)throw new Error('Frånkopplad eller skrivskyddad');
     const matches=()=>{
       const state=this.states.get(object.entityId);
       if(action.startsWith('climate')){const entity=object.bindings?.climate,target=entity?this.states.get(entity):null;return target?(action==='climate_off'?target.state==='off':!['off','unknown','unavailable'].includes(target.state)):state?.attributes.climate_on===(action==='climate_on');}
+      if(action.startsWith('device_'))return state?.state===(action==='device_on'?'on':'off');
       if(action.startsWith('charge')){const entity=object.bindings?.charging,target=entity?this.states.get(entity):null;return target?target.state===(action==='charge_on'?'on':'off'):state?.attributes.charging===(action==='charge_on');}
       const expected:Record<string,string[]>={mower_start:['mowing'],mower_pause:['paused'],mower_dock:['returning','docked'],vacuum_start:['cleaning'],vacuum_pause:['paused'],vacuum_dock:['returning','docked']};return expected[action]?.includes(state?.state??'')??false;
     };

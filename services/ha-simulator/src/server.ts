@@ -1,3 +1,7 @@
+import{readFile,stat}from'node:fs/promises';
+import {createAccess} from './access.js';
+import {screenHub} from './screens.js';
+import {allowedOrigin} from './access.js';
 import {MowerHistory} from './mower-history.js';
 import {mowerRecorder} from './mower-recorder.js';
 import {mowerHistoryApi} from './mower-history-api.js';
@@ -36,16 +40,17 @@ export function createSimulator(options: SimulatorOptions) {
   const store = new StateStore(createInitialStates());
   const simulation = new Simulation(store);
   const app = express();
-  app.use(cors());
-  const workspace = workspaceApi(options.dataDirectory ?? resolve(import.meta.dirname, '../../../data'));
+  const access=createAccess();app.use(express.json({limit:'2mb'}));app.use(access.middleware);app.use(cors());
+  let notifyConfig=()=>{};
+  const workspace = workspaceApi(options.dataDirectory ?? resolve(import.meta.dirname, '../../../data'),()=>notifyConfig());
   const history=new MowerHistory(process.env.VITEST&&!options.dataDirectory?':memory:':resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),'luba.sqlite'));
   const stopRecorder=mowerRecorder(history,store,workspace.load,options.live);
   app.use('/workspace-api/learning',mowerHistoryApi(history,options.live?'real':'simulator',workspace.load));
   app.use('/workspace-api', workspace.router);
   app.use(express.json());
-  app.use('/bridge/api', bridgeApi(store, workspace.load, delayMs, options.live));
+  app.use(['/bridge/api','/connection-api'], bridgeApi(store, workspace.load, delayMs, options.live));
   const dev = express.Router();
-  dev.use((req,res,next)=>{ if(req.headers.origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.origin)){res.sendStatus(403);return;}next(); });
+  dev.use((req,res,next)=>{ if(req.headers.origin && !allowedOrigin(req.headers.origin)){res.sendStatus(403);return;}next(); });
   dev.use('/learning',mowerHistoryApi(history,'simulator',workspace.load));
   dev.get('/info',(_req,res)=>res.json({mode:'simulator'}));
   dev.get('/settings',(_req,res)=>res.json({settings:simulation.settings,scenario:simulation.scenario,scenarios}));
@@ -123,7 +128,15 @@ export function createSimulator(options: SimulatorOptions) {
     res.json(store.set(entityId, body.state, asObject(body.attributes)));
   });
 
+  const hub=screenHub(access.role,async id=>(await workspace.load()).objects.some(o=>o.id===id),process.env.VITEST&&!options.dataDirectory?undefined:resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),options.live?'screens-real.json':'screens-simulator.json'));
+  notifyConfig=hub.broadcast;
+  app.get('/app-api/releases',async(_req,res)=>{try{const dir=resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),'releases'),list=JSON.parse(await readFile(resolve(dir,'index.json'),'utf8'));const valid=[];for(const r of list){if(/^[a-zA-Z0-9_.-]+\.(apk|exe|msi|ipa)$/.test(r.file)){try{if((await stat(resolve(dir,r.file))).isFile())valid.push(r);}catch{}}}res.json(valid);}catch{res.json([]);}});
+  app.get('/downloads/:file',(req,res)=>{if(!/^[a-zA-Z0-9_.-]+\.(apk|exe|msi|ipa)$/.test(req.params.file)){res.sendStatus(404);return;}res.download(resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),'releases',req.params.file));});
+  app.get('/app-api/info',(_req,res)=>res.json({name:'Hemstyrning',version:'2.0.0',protocol:1,source:options.live?'real':'simulator',role:access.role(_req)}));
+  app.use(express.static(resolve(import.meta.dirname,'../../../In/hemkontroll_3d_komplett/dist')));
+  app.get(['/', '/control','/settings','/install','/device','/editor','/dev/simulator'],(_req,res)=>res.sendFile(resolve(import.meta.dirname,'../../../In/hemkontroll_3d_komplett/dist/index.html')));
   const server = http.createServer(app);
+  server.on('close',()=>hub.close());
   const webSockets = new WebSocketServer({ noServer: true });
   const sessions = new Map<WebSocket, ClientSession>();
   server.on('close',()=>{workspace.close();stopRecorder();history.close();});
@@ -131,11 +144,14 @@ export function createSimulator(options: SimulatorOptions) {
   server.on('close',()=>simulation.stop());
 
   server.on("upgrade", (request, socket, head) => {
+    if(!access.role(request)||!allowedOrigin(request.headers.origin)){socket.destroy();return;}
+    if(request.url==='/screen-ws'){hub.wss.handleUpgrade(request,socket,head,ws=>hub.wss.emit('connection',ws,request));return;}
+    if(request.url==='/connection-ws')request.url='/bridge/ws';
     if (request.url !== "/api/websocket" && request.url !== '/bridge/ws' && request.url !== '/simulator/ws') {
       socket.destroy();
       return;
     }
-    if (request.url === '/bridge/ws' && request.headers.origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(request.headers.origin)) { socket.destroy(); return; }
+    if (request.url === '/bridge/ws' && request.headers.origin && !allowedOrigin(request.headers.origin)) { socket.destroy(); return; }
     webSockets.handleUpgrade(request, socket, head, (ws) => webSockets.emit("connection", ws, request));
   });
 
@@ -220,5 +236,5 @@ export function createSimulator(options: SimulatorOptions) {
     res.status(status).json({ message });
   });
 
-  return { app, server, store, webSockets, simulation };
+  return { app, server, store, webSockets, simulation, stopScreens:hub.close };
 }

@@ -1,3 +1,4 @@
+import{homeV2}from'./home-v2';
 import {available,robotSupports} from '../../../../shared/ha-contract.js';
 import './style.css';
 import {HomeControls} from './home-controls';
@@ -74,24 +75,26 @@ function update(){
   const manual=connection.source==='simulator'?weatherAttrs.season_model:null;
   const season=typeof manual==='string'&&manual in config.value.models?manual as Season:automaticSeason(config.value,connection.states,date,connection.connected);
   target.season=season;
-  void garden.models.select(season,config.value.models[season]);
+  if(!document.body.classList.contains('home-list'))void garden.models.select(season,config.value.models[season]);
   $('model-status').hidden=!garden.models.loading&&!garden.models.status.includes('kunde inte');$('model-status').textContent=garden.models.status;
   $('data-status').textContent=!connection.connected?'Enheternas senaste kända status visas.':live.warnings?'Vissa miljövärden saknas.':'';
 }
 async function start(){try{
  await config.load();garden=new GardenScene($('garden') as HTMLCanvasElement);garden.setConfig(config.value);garden.onSelect=id=>void select3D(id);hud=new HomeControls(connection,garden,select,text=>{const toast=$('toast');toast.textContent=text;toast.hidden=false;setTimeout(()=>toast.hidden=true,5000);},config);
+ const initialView=new URLSearchParams(location.search).get('view');const disposeV2=homeV2(config,connection,garden);
  garden.models.onStatus=()=>{$('model-status').textContent=garden.models.status;$('model-status').hidden=!garden.models.loading&&!garden.models.status.includes('kunde inte');};
  markers.innerHTML=config.value.objects.filter(o=>!['surface','parking','occluder'].includes(o.type)).map(o=>`<button class="device-marker" data-object="${esc(o.id)}" aria-label="${esc(o.name)}"><span>${o.type==='light'?'✦':o.type==='car'?'▰':o.type==='solar'?'☀':o.type==='mower'?'◆':o.type==='energy'?'ϟ':'◉'}</span><small>${esc(o.name)}</small></button>`).join('');
  markers.addEventListener('pointerdown',e=>{const marker=(e.target as HTMLElement).closest<HTMLElement>('[data-object]');if(marker)garden.forwardMarkerPointer(e,marker.dataset.object!);});
  markers.onclick=e=>{if(e.detail!==0)return;const marker=(e.target as HTMLElement).closest<HTMLElement>('[data-object]');if(marker)garden.activateMarker(marker.dataset.object!);};
- $('list-button').onclick=()=>{selected=undefined;showList=false;panel();hud.setListMode(!document.body.classList.contains('home-list'));};$('close-panel').onclick=()=>{selected=undefined;showList=false;panel();};$('reset-button').onclick=()=>garden.reset();skyButton.onclick=()=>garden.lookAtSky();
+ $('list-button').onclick=()=>{selected=undefined;showList=false;panel();hud.setListMode(!document.body.classList.contains('home-list'));};$('close-panel').onclick=()=>{selected=undefined;showList=false;panel();};$('reset-button').onclick=()=>garden.reset();$('reset-button').onpointerdown=e=>{if(e.isPrimary&&e.button===0)garden.reset();};skyButton.onclick=()=>garden.lookAtSky();
  $('panel-body').onclick=async e=>{const button=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!button)return;if(button.dataset.object){select(button.dataset.object);return;}const o=config.value.objects.find(o=>o.id===selected);if(!o||!button.dataset.command||busy)return;busy=true;panel();try{if(button.dataset.command==='light')await connection.toggle(o.entityId,'live');else await connection.command(o,button.dataset.command);pendingError.delete(o.id);}catch(error){pendingError.set(o.id,error instanceof Error?error.message:String(error));}finally{busy=false;panel();}};
  let panelTimer=0;connection.addEventListener('state',()=>{if(!panelTimer)panelTimer=window.setTimeout(()=>{panelTimer=0;update();panel();},250);});connection.addEventListener('connection',()=>{update();panel();});
  window.addEventListener('keydown',e=>{if(e.key==='Escape'){selected=undefined;showList=false;panel();}});
+ if(initialView==='list')hud.setListMode(true);
  update();void connection.start();setInterval(update,1000);
  const markerEls=[...markers.querySelectorAll<HTMLElement>('[data-object]')];let frame=0;
- const animate=()=>{if(target)garden.frame(target,connection.states,connection.connected,new Map(),false);$('garden').dataset.renderFrames=String(++frame);if(frame%3===0){const occupied:{x:number;y:number}[]=[];for(const el of markerEls){const p=garden.screenPosition(el.dataset.object!);el.hidden=!p||p.z>1||p.z< -1||p.x<0||p.x>innerWidth||p.y<0||p.y>innerHeight||p.occluded;if(p&&!p.occluded){el.classList.toggle('far',p.distance>95);let y=p.y;for(let attempt=0;attempt<8&&occupied.some(o=>Math.hypot(o.x-p.x,o.y-y)<33);attempt++)y-=32;occupied.push({x:p.x,y});el.style.transform=`translate(${p.x}px,${y}px) translate(-50%,-50%)`;el.style.setProperty('--leader',`${p.y-y}px`);}}}};hud.onViewChange=list=>{$('garden').dataset.camera=JSON.stringify(garden.camera.position.toArray());garden.renderer.setAnimationLoop(list?null:animate);markers.hidden=list;};garden.renderer.setAnimationLoop(animate);
+ const animate=()=>{if(target)garden.frame(target,connection.states,connection.connected,new Map(),false);$('garden').dataset.renderFrames=String(++frame);if(frame%3===0){const occupied:{x:number;y:number}[]=[];for(const el of markerEls){const p=garden.screenPosition(el.dataset.object!);el.hidden=!p||p.z>1||p.z< -1||p.x<0||p.x>innerWidth||p.y<0||p.y>innerHeight||p.occluded;if(p&&!p.occluded){el.hidden=el.hidden||p.distance>160;el.classList.toggle('far',p.distance>95);if(config.value.labels!==false){const o=config.value.objects.find(o=>o.id===el.dataset.object),s=o?connection.states.get(o.entityId):undefined;const label=el.querySelector('small');if(label&&o)label.textContent=o.name+(o.type==='solar'?' · '+fmt(reading(o,connection.states,'production_kw','state'),'kW'):o.type==='car'?' · '+fmt(reading(o,connection.states,'battery_level','state'),'%'):o.type==='mower'?' · '+(s?.state??'Saknar data'):'');}let y=p.y;for(let attempt=0;attempt<8&&occupied.some(o=>Math.hypot(o.x-p.x,o.y-y)<33);attempt++)y-=32;occupied.push({x:p.x,y});el.style.transform=`translate(${p.x}px,${y}px) translate(-50%,-50%)`;el.style.setProperty('--leader',`${p.y-y}px`);}}}};hud.onViewChange=list=>{$('garden').dataset.camera=JSON.stringify(garden.camera.position.toArray());garden.renderer.setAnimationLoop(list?null:animate);markers.hidden=list;};garden.renderer.setAnimationLoop(animate);
  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
- window.addEventListener('pagehide',()=>{connection.stop();hud.dispose();garden.dispose();},{once:true});
+ window.addEventListener('pagehide',()=>{disposeV2();connection.stop();hud.dispose();garden.dispose();},{once:true});
  }catch(error){$('model-status').textContent=error instanceof Error?error.message:String(error);}}
 void start();
