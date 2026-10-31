@@ -21,3 +21,7 @@ Läs `docs/PROJECT_MEMORY.md` i början av varje ny session. Uppdatera dokumente
 - Avsluta koduppgifter med git status, kontroll av att hemligheter och personlig konfiguration inte inkluderas, samt relevanta tester. Committa endast egna ändringar och pusha aktuell arbetsgren till GitHub. Använd aldrig force-push. Bekräfta pushens resultat och rapportera commit och gren; redovisa eventuella fel.
 - Starta eller behåll `npm run dev` och lämna den igång. Kontrollera att localhost-adresserna faktiskt svarar. Redovisa verklig port eller varför start misslyckades och hur appen startas.
 - Slutrapporten ska kort beskriva ändringar, tester och resultat, commit/push och fungerande adresser för Hemstyrning, /control och /dev/screens.
+
+## Full testsvit efter större ändringar
+- Efter varje större ändring: kör hela enhets-/integrationssviten (`npm test`), samtliga Playwright-tester (`npm run test:e2e`), TypeScript-kontrollen (`npm run typecheck`) och produktionsbygget (`npm run build:web`). Ett urval av regressionstester ersätter inte hela sviten.
+- Kör webbläsartester endast mot simulatorn. Redovisa faktiska resultat, inklusive misslyckade eller överhoppade tester; hävda inte att hela sviten passerar efter enbart riktade körningar.

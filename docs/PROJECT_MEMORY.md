@@ -355,3 +355,8 @@ Se `docs/FEATURE_STATUS.md` och den senare `docs/UI_SKY_AND_CALENDAR.md` för f�
 - Ny separat `design-language.css` efter v2.css: kol-/olivgröna tekniska paneler, tunna konturer, diskreta hörnmarkeringar, rakare hörn och tydligare numerisk typografi. Startskärmen använder mörkgrönt glas över 3D. Belysningskortens individuella färgfält och animationer bevaras.
 - Energisidans diagram har diskreta horisontella stödlinjer och periodknappar med aktiv markering. Samma periodval och HA-historiklogik används; ingen databeräkning, behörighet eller styrning ändrades. Musikens spelare och färgbakgrund bevaras med gemensamma paneldetaljer.
 - Verifierat: TypeScript och produktionsbygge, responsiv granskning desktop/surfplatta/mobil och Playwright för sidor, musik/Jam och startskärm. Två initiala prov avbröts under hög bakgrundslast; båda passerade vid separat omkörning.
+
+## Permanent full testkörning – 2026-10-31
+- Efter varje större ändring ska hela npm test och hela npm run test:e2e köras, plus typecheck och build:web. Regeln är sparad i rotens AGENTS.md.
+- Full körning mot 138b50f: 142 enhets-/integrationstester godkända, typkontroll och bygge godkända. Playwright körde samtliga 49 fall: 38 godkända, 11 misslyckade, inga överhoppade. Se docs/FULL_TEST_REPORT_2026-10-31.md. Sviten är inte helt grön; tidigare riktade körningar får inte beskrivas som hela sviten.
+- Fel inkluderar föråldrade hero-/mobil-/fotostartförväntningar, en Windows/Vite-modulsökväg, LUBA-zoomvillkor och atmosfärtimeout. Inga testförväntningar ändrades i denna körning. Scenkonfigurationen återställdes från säkerhetskopia.
