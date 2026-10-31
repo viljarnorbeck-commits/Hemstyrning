@@ -1,0 +1,48 @@
+HOME ASSISTANT – FUNKTIONSINVENTERING
+Datum: 2026-10-31
+Status: OFULLSTÄNDIG – autentisering saknas.
+
+MÅL
+Inventera funktionerna i den verkliga Home Assistant-installationen på
+http://192.168.0.130:8123/lovelace/default_view.
+Denna rapport gäller Home Assistant, inte Hemstyrnings källkodsfunktioner.
+
+VERIFIERAT
+- Home Assistant-frontend svarar med HTTP 200 på port 8123.
+- GET /api/ svarar med HTTP 401 Unauthorized utan autentisering.
+- Ingen HA_TOKEN eller HA_REAL_TOKEN finns angiven i projektets lokala .env.
+- Inga verkliga enheter har styrts under inventeringen.
+
+FUNKTIONER SOM ÅTERSTÅR ATT INVENTERA
+Samtliga nedanstående kategorier är okända. Listan anger inventeringens
+omfattning, inte funktioner som har bekräftats i installationen.
+
+1. Integrationer och installerade komponenter.
+2. Enheter, entiteter, områden och deras kopplingar.
+3. Entiteternas funktioner, tillgänglighet, enheter och stödda egenskaper.
+4. Tillgängliga tjänster/åtgärder och deras parametrar.
+5. Automationer, utlösare, villkor och åtgärder.
+6. Skript, scener och hjälpare.
+7. Lovelace-dashboardar, vyer, kort och kopplade entiteter.
+8. Energi, solproduktion, förbrukning och prisdata.
+9. Belysning, klimat, bilar, laddning, robotar och mediaspelare.
+10. Övriga installerade funktioner och relevanta kopplingar till Hemstyrning.
+
+En tom eller okänd kategori betyder inte att funktionen saknas.
+Vissa detaljer kräver ytterligare behörighet eller manuell export från HA;
+en lista över entitetstillstånd ger inte en komplett automationsinventering.
+
+NÄSTA STEG FÖR EN FULLSTÄNDIG INVENTERING
+1. Kör från repots rot: python3 scripts/configure-ha.py
+   Ange token vid dold terminalinmatning. Skicka inte token i chatten.
+   Skriptet sparar serverkonfiguration i Git-ignorerad .env med rättighet 600
+   och stänger av verklig styrning med HA_ALLOW_CONTROL=false.
+2. Läs installationens konfiguration, entiteter och tjänstebeskrivningar
+   skrivskyddat. Kör inga tjänster, scener, skript eller automationer.
+3. Läs tillgängliga register och dashboard-/automationskonfigurationer med
+   behörig åtkomst. Redovisa saknade behörigheter uttryckligen.
+4. Ersätt de okända kategorierna ovan med verifierade funktioner och antal.
+   Publicera inte tokens, lösenord, privata länkar eller känsliga attribut.
+
+Anslutningsguide: docs/HOME_ASSISTANT_CONNECTION.md
+Projektets samlade historik: docs/PROJECT_MEMORY.md

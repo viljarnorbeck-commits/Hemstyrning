@@ -2,6 +2,12 @@
 
 Senast uppdaterad: 2026-10-30
 
+## Inventering av verklig Home Assistant – 2026-10-31
+
+- Rotfilen `HOME_ASSISTANT_INVENTERING.txt` samlar status och omfattning för den efterfrågade funktionsinventeringen av `192.168.0.130:8123/lovelace/default_view`.
+- Frontend svarar HTTP 200; ny skrivskyddad kontroll av `/api/` gav 401. Lokal `.env` saknar HA_TOKEN/HA_REAL_TOKEN. Fullständig inventering är därför inte genomförd; inga entiteter, tjänster eller automationer påstås vara verifierade.
+- Nästa steg är dold tokeninmatning via `python3 scripts/configure-ha.py`, därefter skrivskyddad inventering och uppdatering av rotfilen. Ingen verklig styrning utförd.
+
 ## Spotify Connect i webbläsaren – 2026-10-30
 
 - User-approved: registrera fliken automatiskt utan att ta över musik; ingen permanent Spela här-knapp. Spotify Connect-enheter visas nu som en lista med namn/typ, Spotify-bekräftad aktiv markering, begränsningar och den här webbläsaren. Enhetsval bevarar paus/spelstatus. Listan hämtar bara enheter som Spotify rapporterar, med befintlig servercache.
