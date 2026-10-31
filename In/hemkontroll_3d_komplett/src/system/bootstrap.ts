@@ -3,6 +3,7 @@ import{platformSetup}from'./client-platform';
 platformSetup();
 import './style.css';
 import './v2.css';
+import './design-language.css';
 async function boot(){try{const r=await fetch('/app-api/info');if(r.ok){const info=await r.json();if(info.protocol!==1){document.body.textContent='Appen och servern använder inkompatibla versioner. Uppdatera appen eller servern.';return;}document.body.dataset.serverVersion=info.version;}}catch{}
 startNavigation();
 if(location.pathname==='/dev/screens')void import('./screen-demo');
