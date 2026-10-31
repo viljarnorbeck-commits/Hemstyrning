@@ -62,3 +62,11 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Gemensamma panelvariabler använder mörkgrått transparent material. Bakgrundsrendering på funktionssidor begränsas till 8 fps.
 - Android anger sensorLandscape, PWA-manifest landscape. Webbläsare får diskret rotationsuppmaning; orienteringslås begärs bara i standalone/helskärm och avslag hanteras.
 - VIKTIGT: användaren har uttryckligen bett att vänta med testkörningarna. Resultaten ovan gäller föregående commit, inte dessa designändringar. TypeScript, tester, bygge och visuell verifiering återstår för designuppdateringen.
+
+## Gemensamma knappar
+
+- moving-border.css är den gemensamma knappytan, importerad sist i bootstrap. Mörkgrå glasbakgrund, 38 px desktop/44 px touch, 9 px radie och en maskad 1 px konisk kantaccent som rör sig på 5,5 sekunder. Inga nya beroenden eller JS-timers.
+- Primär/sekundär/ikon/aktiv/inaktiv/farlig variant väljs med hem-button--* eller data-button-variant; befintliga primary/aria-pressed/disabled och upplåsningsknappar mappas också. Lampbrytare, dimrar, objektramar och färgade valkort undantas.
+- Kontinuerlig rörelse begränsas till primär/aktiv knapp. Kort får bara hover/fokus. Rörelsen stängs av för coarse pointer, TV och reduced-motion.
+- Inspiration: https://ui.aceternity.com/components/moving-border och officiellt registry/moving-border.json. Implementationen är egen CSS, utan React/Tailwind/Motion.
+- Inga testsviter eller Playwright-körningar utförda enligt användarens uttryckliga instruktion för detta designuppdrag.

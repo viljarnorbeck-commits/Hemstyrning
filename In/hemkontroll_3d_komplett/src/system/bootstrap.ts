@@ -7,6 +7,7 @@ import './design-language.css';
 import './navigation.css';
 import './control.css';
 import './app-shell.css';
+import './moving-border.css';
 async function boot(){try{const r=await fetch('/app-api/info');if(r.ok){const info=await r.json();if(info.protocol!==1){document.body.textContent='Appen och servern använder inkompatibla versioner. Uppdatera appen eller servern.';return;}document.body.dataset.serverVersion=info.version;document.body.dataset.serverRole=info.role;}}catch{}
 startNavigation();
 if(location.pathname==='/dev/screens')void import('./screen-demo');
