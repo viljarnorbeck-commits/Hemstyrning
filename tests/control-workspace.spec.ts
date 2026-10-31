@@ -7,7 +7,7 @@ test('discovered lamp requires persistence, then confirms switch and dimmer thro
  try{
   await request.put('/workspace-api/scene',{data:{...original,objects:original.objects.filter((o:any)=>o.id!==lamp.id)}});
   await page.goto('/control');await expect(page.locator('#control-status')).toContainText('Ansluten');
-  const id='ha-'+lamp.entityId,card=page.locator(`[data-card="${id}"]`);
+  const id='ha-'+lamp.entityId,card=page.locator(`#control-lights [data-card="${id}"]`);
   await card.locator('.device-select').click();await expect(page.locator('#control-details h1')).toHaveText(lamp.name);
   await expect(card.locator('[role=switch]')).toBeDisabled();
   expect((await request.post('/connection-api/light',{headers:{'X-Hemkontroll-Mode':'live'},data:{object_id:id,on:true}})).status()).toBe(403);
@@ -62,7 +62,7 @@ test('neutral theme, compact lamps and mobile page reachability at all requested
   expect(await card.innerText()).not.toMatch(/Ej områdesplacerad|\bAV\b|\bPÅ\b/);
   expect(await card.evaluate(e=>e.getBoundingClientRect().height)).toBeLessThan(110);
   expect(await page.locator('.app-sidebar').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(25, 27, 31)');
-  expect(await page.locator('.control-page').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(16, 17, 20)');
+  expect(await page.locator('.control-page').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(51, 52, 58)');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   if(width===390){await page.locator('#control-presets').scrollIntoViewIfNeeded();await expect(page.locator('#control-presets')).toBeInViewport();}
   await page.screenshot({path:`test-results/corrected-control-${width}x${height}.png`});
@@ -84,4 +84,18 @@ test('every function page and settings can reach the final content with native p
   const end=main.locator(':scope > *').last();await end.scrollIntoViewIfNeeded();await expect(end).toBeInViewport();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),path).toBe(true);
  }
+});
+
+test('right room lamp confirms two toggles and dimming in simulator',async({page,request})=>{
+ await page.goto('/control');await expect(page.locator('#control-status')).toContainText('Ansluten');
+ const card=page.locator('#room-lights .lamp-card').first(),toggle=card.locator('[role=switch]');
+ const before=await toggle.getAttribute('aria-checked');
+ for(const expected of [before==='true'?'false':'true',before]){
+  const command=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().includes('/connection-api/'));
+  await toggle.click();expect((await command).ok()).toBe(true);await expect(toggle).toHaveAttribute('aria-checked',expected!);
+  await expect(page.locator('#control-lights .lamp-card').first().locator('[role=switch]')).toHaveAttribute('aria-checked',expected!);
+ }
+ const slider=card.locator('[data-dim]'),box=(await slider.boundingBox())!;
+ await slider.click({position:{x:box.width*.6,y:box.height/2}});await expect(page.locator('#control-error')).toContainText('Bekräftat');
+ await expect(page.locator('#control-lights .lamp-card').first().locator('[data-dim]')).toHaveValue(await slider.inputValue());
 });
