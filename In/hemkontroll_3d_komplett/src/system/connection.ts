@@ -41,7 +41,7 @@ export class Connection extends EventTarget {
           for (const state of msg.result as HassState[]) this.accept(state);
           this.connected = true;this.lastPong=Date.now();
           clearInterval(this.heartbeat);this.heartbeat=setInterval(()=>{if(Date.now()-this.lastPong>30000){ws.close();return;}ws.send(JSON.stringify({id:99,type:'ping'}));},15000);
-          this.dispatchEvent(new Event('connection'));
+          this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source}}));
         }
         if (msg.type === 'event' && msg.event?.event_type === 'state_changed') {
           const data = msg.event.data;
@@ -66,7 +66,7 @@ export class Connection extends EventTarget {
     this.connected = false;
     for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(new Error('Anslutningen bröts')); }
     this.pending.clear();
-    this.dispatchEvent(new Event('connection'));
+    this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source}}));
     clearTimeout(this.retry);
     if (!this.stopped) this.retry = setTimeout(() => void this.start(), 1500);
   }

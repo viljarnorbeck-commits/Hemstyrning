@@ -106,7 +106,31 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     else await callService(store,{domain:'light',service,serviceData:{entity_id:ids}},delay);
     res.json({accepted:true});
   });
-  router.get('/history',async(req,res)=>{const id=String(req.query.entity_id??'');if(!/^[a-z_]+\.[a-z0-9_]+$/.test(id)){res.sendStatus(400);return;}if(!live){res.json(store.history([id]));return;}const start=new Date(Date.now()-86400000).toISOString();res.json(await read(`history/period/${start}?filter_entity_id=${encodeURIComponent(id)}`));});
+  router.get('/history',async(req,res)=>{
+    const id=String(req.query.entity_id??''),end=req.query.end?Date.parse(String(req.query.end)):Date.now(),start=req.query.start?Date.parse(String(req.query.start)):end-86400000;
+    if(!/^[a-z_]+\.[a-z0-9_]+$/.test(id)||!Number.isFinite(start)||!Number.isFinite(end)||end<=start||end-start>31*86400000||end>Date.now()+60000){res.sendStatus(400);return;}
+    try{if(!live){res.json(store.history([id],start).map(rows=>rows.filter(s=>Date.parse(s.last_updated)<=end)));return;}res.json(await read(`history/period/${new Date(start).toISOString()}?filter_entity_id=${encodeURIComponent(id)}&end_time=${encodeURIComponent(new Date(end).toISOString())}`));}catch{res.status(503).json({message:'Historik kunde inte hämtas från Home Assistant'});}
+  });
+  // Explicit inventory allowlist. Existing live control lock and role middleware apply.
+  router.post('/equipment',async(req,res)=>{
+    if(res.locals.hemRole==='viewer'||req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
+    const id=req.body?.entity_id,action=req.body?.action,value=req.body?.value;
+    const isLock=['lock.entredorr_2','lock.verkstadsentre_2'].includes(id),isSwitch=id==='switch.vvb_kallaren_on_off',isClimate=['climate.vvb_kallaren_termostat','climate.vvb_lower_threshold'].includes(id);
+    if(!(isLock&&['lock','unlock'].includes(action)||isClimate&&['mode','temperature','range'].includes(action)||isSwitch&&['turn_on','turn_off'].includes(action))||action==='unlock'&&req.body.confirmed!==true){res.sendStatus(403);return;}
+    try{
+      const state=(await read('states')as {entity_id:string;state:string;attributes:Record<string,unknown>}[]).find(s=>s.entity_id===id);
+      if(!available(state)){res.status(409).json({message:'Enheten är otillgänglig'});return;}
+      const data:Record<string,unknown>={entity_id:id};let service=action;
+      if(isLock&&!['locked','unlocked'].includes(state!.state)){res.status(409).json({message:'Låset har inget säkert känt tillstånd'});return;}
+      if(isClimate&&action==='mode'){if(!Array.isArray(state!.attributes.hvac_modes)||!state!.attributes.hvac_modes.includes(value)){res.sendStatus(400);return;}service='set_hvac_mode';data.hvac_mode=value;}
+      if(isClimate&&action==='temperature'){const a=state!.attributes;if(!(Number(a.supported_features)&1)||typeof value!=='number'||!Number.isFinite(value)||typeof a.min_temp!=='number'||typeof a.max_temp!=='number'||value<a.min_temp||value>a.max_temp){res.sendStatus(400);return;}service='set_temperature';data.temperature=value;}
+      if(isSwitch){if(!['on','off'].includes(state!.state)){res.sendStatus(409);return;}}
+      if(isClimate&&action==='range'){const a=state!.attributes,low=value?.low,high=value?.high;if(!(Number(a.supported_features)&2)||typeof low!=='number'||typeof high!=='number'||!Number.isFinite(low)||!Number.isFinite(high)||typeof a.min_temp!=='number'||typeof a.max_temp!=='number'||low<a.min_temp||high>a.max_temp||low>high){res.sendStatus(400);return;}service='set_temperature';data.target_temp_low=low;data.target_temp_high=high;}
+      if(live){const response=await fetch(`${live.url}/api/services/${isLock?'lock':isSwitch?'switch':'climate'}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(10000)});if(!response.ok){res.status(502).json({message:'Home Assistant avvisade kommandot'});return;}}
+      else{await new Promise(r=>setTimeout(r,delay));store.set(id,isLock?(action==='lock'?'locked':'unlocked'):isSwitch?(action==='turn_on'?'on':'off'):action==='mode'?String(value):state!.state,action==='temperature'?{temperature:value}:action==='range'?{target_temp_low:value.low,target_temp_high:value.high}:{});}
+      res.json({accepted:true,confirmed:false});
+    }catch{res.status(502).json({message:'Datakällan kunde inte nås'});}
+  });
   router.post('/commands',async(req,res)=>{
     if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
     const scene=await load(),object=scene.objects.find(o=>o.id===req.body.object_id);if(!object){res.sendStatus(403);return;}

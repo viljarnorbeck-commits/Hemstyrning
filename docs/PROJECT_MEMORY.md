@@ -321,3 +321,32 @@ Använd en separat och helst begränsad utvecklingsidentitet/token för fortsatt
 5. Verkliga tariff-/prisupplösningar, långtidsrecorder, produktionsautentisering och specifika bilmärkes-/LUBA-integrationer återstår. Den lokala simulatorn ersätter inte denna verifiering.
 
 Se `docs/FEATURE_STATUS.md` och den senare `docs/UI_SKY_AND_CALENDAR.md` för färdig-/begränsningslista och modellanalys.
+
+## Färgstark kontrollpanel – 2026-10-31
+- `/control` har stabila ID-baserade färgpaletter, radialgradienter och 24s transformanimationer, reduced-motion, större kort och responsivt rutnät. Sparad scenaccent bevaras; Halloween får orange/lila/magenta.
+- Kort uppdateras på plats via `card-design.ts`; DOM-identitet och pågående färganimationer bevaras vid telemetri. Befintliga HA-kommandon och bekräftelser återanvänds. Musikpanelen återanvänds även i kontrollpanelen och behåller fokus vid widgetuppdatering.
+- Befintlig Spotify-koppling går fortfarande via konfigurerad HA media_player och serverproxy, inte direkt Spotify Web API. Ingen ny Spotify-autentisering infördes i designuppdraget.
+- Windows-typkontroll använder `tsconfig.legacy.json` för JS-filer i stället för skalexpansion av `src/*.js`. Lokal npm 10.9.2 hämtades till ignorerade `.build-tools/package`; `.build-tools/npm.cmd` startar den. Lägg `.build-tools` i PATH om npm saknas, kör sedan `npm run dev`.
+- 127 enhets-/integrationstester passerade. Typkontroll och produktionsbygge passerade; befintliga stora bundle-varningar kvar. Tio befintliga Playwright-flöden för musik, skärmar, editor och PWA passerade. Nytt designprov verifierar brytare, script start/stopp, animationsidentitet, reduced motion och tre skärmstorlekar. Inga verkliga enheter/konton testade.
+
+## Etapp 1 – navigation och kontrollpanel, 2026-10-31
+- Gemensam `app-navigation.ts` monteras från bootstrap och överlever befintliga sidors omrendering. SVG-ikoner, aktiv sida, sparad minimering, mobilmeny/Escape och HA-status via befintliga Connection-händelser. TV/ren 3D döljer menyn. Editor och utvecklingsverktyg behåller sin specialnavigation.
+- `/control` har en enradig lampkarusell med pilar, hjul, tangentbord, native touch, snapping och bevarade kort/animationer. Detaljer och scener får större yta. Gemensamma action-button-klasser ger robot-/bilkontroller plats att radbryta utan bokstavsbrytning.
+- `/energy`, `/cars`, `/climate`, `/lights`, `/mower` återanvänder samma konfiguration, Connection, bekräftelser och kontroller med kategoriurval. `/security` visar uttryckligen att integration inte konfigurerats. `/music` återanvänder MusicPanel; widgeten är borttagen från kontrollpanelen.
+- Spotify-kopplingen är fortfarande den befintliga HA media_player-/proxykopplingen. Direkt Spotify Web API fanns inte i repot och har inte införts i denna navigationsetapp. Inga autentiseringsuppgifter ändrades.
+- Verifierat: 127 enhets-/integrationstester, TypeScript och produktionsbygge. Sju Playwright-flöden för kontrollkort/navigation/multi-screen/PWA/editor passerade; extra touch-/responsivitetstest körs separat. Visuell kontroll i Chromium desktop/surfplatta/mobil. Produktionsbygget har kvar befintlig varning om stora grafikbundles.
+- Extra slutprov passerade: två navigationsprov inklusive native touchsvepning, mus, tangentbord, mobilmeny och alla nya sidvägar. Den visuella surfplattegranskningen upprepades efter knappjusteringen.
+
+## Ny startskärm, etapp 2 – 2026-10-31
+- Senaste GitHub main 607504d sammanförd med lokal etapp 1. Senaste direkta Spotify-/Web Playback-koden bevarad, liksom energinät, editor och /dev/screens. Inga .env- eller autentiseringsuppgifter ändrade.
+- Tio informationsgrupper i `home-overview.ts`, central layout i `overview-layout.ts` och databindningar/periodfunktioner i `overview-data.ts`. Gamla hero-, energi-, fordons- och hjälppaneler döljs på normal start; 3D, kamera, fri 3D och skärmparkoppling kvar. Normal start visar levande 3D även om en äldre startbild är sparad.
+- Verifierade entity_id från inventeringen; inga fabricerade bil-/LUBA-/kostnadsvärden. Ferroamps installerade teckenkonvention är inte styrkt och riktning visas därför som overifierad. Dagens kostnad och snittpris saknar rätt tidsunderlag och visas som Saknar data. Se docs/START_SCREEN_STAGE2.md.
+- 138 enhets-/integrationstester passerade. TypeScript och produktionbygge passerade med befintlig storleksvarning. Read-only Playwright-startprov verifierar tio grupper, desktop/tablet/mobile/TV, frånvaro av HA-POST och fri 3D. Visuellt granskat inklusive befintlig riktig GLB. POSIX-filmodstest körs enbart på POSIX; Windows ACL-säkerhet verifieras inte av chmod-testet, övriga Spotify-isoleringstester körs på Windows.
+
+## Funktionssidor och Spotify-design – etapp 3, 2026-10-31
+- GitHub origin/main 607504d kontrollerad; lokal etapp 1–2 är bevarad. Funktionssidor för energi/bilar/klimat/LUBA/säkerhet, återanvänd lampdesign med grupper/filter, och inbäddad responsiv Spotify-spelare. Se docs/FUNCTION_PAGES_STAGE3.md för bindningar, dataperioder och begränsningar.
+- Ny bounded history start/end-proxy (högst 31 dagar) hämtar HA recorderdata. Simulatorn har markerade inventeringsformade mätare/laddboxar, lås och termostat för utveckling. Ingen påstådd 30-dagarshistorik genereras i frontend.
+- Begränsad equipment-endpoint för inventerade lås/VVB, befintligt roll-/Origin-/live-control-skydd, separat upplåsningsbekräftelse och state-bekräftelser. Tester täcker främmande entity, bekräftelsekrav, viewer, temperaturgränser och intervall.
+- Bil/box-kopplingar kan ändras per skärm utan källkodsändring; osäkra bilsensorer förblir tomma tills de uttryckligen kopplats. LUBA har separat mätadapter/MowerTrackingService och ingen Husqvarna-fallback. Kameror är förberedda men inga obekräftade streams aktiveras.
+- Spotify behåller direkt Web API/SDK/OAuth och Jam. Sökning, spellistor, kövisning, enhetsval, volym och stora kontroller återanvänds; mobilflikar, långsam bakgrund och reduced-motion. Paletten bygger på albumnamn, inte faktisk omslagsanalys. Fokus bevaras genom DOM-uppdatering på plats.
+- Verifiering: typkontroll, enhets-/integrationstester och produktionsbygge; 11 Playwright-regressioner passerade med stabil server (funktionssidor, Spotify inklusive SDK/behörigheter/Jam, och skärmparkoppling/PWA/editor). Visuell Chromium-granskning i desktop-, surfplatte- och mobilstorlek. Inga verkliga HA-kommandon eller verklig Spotify-uppspelning under tester.

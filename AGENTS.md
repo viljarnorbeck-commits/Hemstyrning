@@ -15,3 +15,9 @@ Läs `docs/PROJECT_MEMORY.md` i början av varje ny session. Uppdatera dokumente
 - Kontrollera `GET /health` efter start innan simulatorn betraktas som tillgänglig.
 - Anslut aldrig simulatorn till verkliga enheter och lägg aldrig verkliga Home Assistant-token i repot.
 - Bygg relevanta enhets-, integrations- och regressionstester löpande med funktionaliteten.
+
+## Permanenta regler för utvecklingsuppdrag
+- Arbeta i befintlig Windows-miljö med PowerShell, Node.js/npm och projektets ordinarie skript.
+- Avsluta koduppgifter med git status, kontroll av att hemligheter och personlig konfiguration inte inkluderas, samt relevanta tester. Committa endast egna ändringar och pusha aktuell arbetsgren till GitHub. Använd aldrig force-push. Bekräfta pushens resultat och rapportera commit och gren; redovisa eventuella fel.
+- Starta eller behåll `npm run dev` och lämna den igång. Kontrollera att localhost-adresserna faktiskt svarar. Redovisa verklig port eller varför start misslyckades och hur appen startas.
+- Slutrapporten ska kort beskriva ändringar, tester och resultat, commit/push och fungerande adresser för Hemstyrning, /control och /dev/screens.

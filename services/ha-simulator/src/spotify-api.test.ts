@@ -65,7 +65,7 @@ it('restores login after restart, refreshes SDK access privately and restricts t
   expect((await fetch(base+'/sdk-token',{method:'POST',headers:{...headers,origin:'https://attacker.invalid'},body:'{}'})).status).toBe(403);
   const result=await fetch(base+'/sdk-token',{method:'POST',headers,body:'{}'});expect(result.status).toBe(200);expect(result.headers.get('cache-control')).toContain('no-store');expect(await result.json()).toMatchObject({accessToken:'sdk-ephemeral'});expect(refreshes).toBe(1);
   const status=await fetch(base+'/status',{headers:{'x-role':'viewer'}}).then(r=>r.json());expect(status).toMatchObject({connected:true,webPlaybackAuthorized:true});expect(JSON.stringify(status)).not.toMatch(/sdk-ephemeral|private-refresh/);
-  expect((await stat(join(directory,'spotify-account.json'))).mode&0o777).toBe(0o600);
+  if(process.platform!=='win32')expect((await stat(join(directory,'spotify-account.json'))).mode&0o777).toBe(0o600);
   await stop();await start();expect((await fetch(base+'/status',{headers}).then(r=>r.json())).connected).toBe(true);
   expect((await fetch(base+'/sdk-token',{method:'POST',headers,body:'{}'})).status).toBe(200);expect(refreshes).toBe(1);
   expect((await fetch(base+'/command',{method:'POST',headers,body:JSON.stringify({action:'transfer',deviceId:'browser-new',play:true})})).status).toBe(200);expect(calls.at(-1)).toMatchObject({device_ids:['browser-new'],play:true});

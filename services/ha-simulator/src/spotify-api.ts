@@ -112,6 +112,9 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
    res.json(await playbackPromise);
   }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify är tillfälligt otillgängligt.');}
  });
+ router.get('/queue',async(req,res)=>{if(!requireRole(req,res))return;await load();if(!tokens){res.json({queue:[]});return;}
+  try{const data=await spotify('/me/player/queue');res.json({queue:(Array.isArray(data?.queue)?data.queue:[]).slice(0,50).map((t:any)=>({name:String(t.name??''),uri:typeof t.uri==='string'?t.uri:'',artist:Array.isArray(t.artists)?t.artists.map((a:any)=>String(a.name??'')).join(', '):''}))});}catch{res.status(502).json({message:'Spotify-kön kunde inte hämtas'});}
+ });
  router.get('/devices',async(req,res)=>{if(!requireRole(req,res))return;await load();if(!tokens){res.json({devices:[]});return;}
   try{if(devicesCache&&Date.now()<devicesCache.until){res.json(devicesCache.data);return;}
    if(!devicesPromise)devicesPromise=spotify('/me/player/devices').then(data=>{const devices=(Array.isArray(data?.devices)?data.devices:[]).filter((d:any)=>typeof d.id==='string'&&d.id.length>0).map((d:any):SpotifyDevice=>({id:d.id,name:String(d.name??'Spotify-enhet'),type:String(d.type??''),is_active:d.is_active===true,is_restricted:d.is_restricted===true,supports_volume:d.supports_volume===true,volume_percent:typeof d.volume_percent==='number'?d.volume_percent:null}));const output={devices};devicesCache={data:output,until:Date.now()+15000};return output;}).finally(()=>devicesPromise=null);

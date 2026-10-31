@@ -1,0 +1,11 @@
+# Startskärm etapp 2
+
+Databindningar: `src/system/overview-data.ts` (`overviewBindings`). Placering, ordning, accent och minsta storlek: `overview-layout.ts`. Rendering: `home-overview.ts`. CSS hanterar perimeterområden på dator/TV och separat rullbar yta på mobil. Ändra dessa oberoende. LUBA:s tomma bindning betyder uttryckligen Inte ansluten. Rumsgivare är en explicit lista, inte en automatisk sökning efter alla temperaturer.
+
+Ferroamp-inventeringen verifierar entity_id och W, men ingen teckenkonvention. Källan https://github.com/henricm/ha-ferroamp/blob/master/custom_components/ferroamp/sensor.py mappar Grid Power till pext; Ferroamps API beskriver pext som nätets aktiva effekt, men underlaget bevisar inte den installerade sensorns orientering. `gridPositive` förblir `unverified`. Ställ först till import/export när installationens riktning bekräftats med känt flöde. Nollflöde är neutralt. Inga verkliga kommandon skickades för att verifiera riktning.
+
+Kostnad: inventeringen anger monthly_cost som månadskostnad, electricity_price som aktuellt pris och external_energy_consumed_cost som totalräknare. Inget av dessa används som dagens kostnad/snittpris. Dagsbindningarna är därför tomma. `periodCost` kräver verifierade periodgränser och avvisar reset. `averagePrice` beräknar förbrukningsviktat snitt från samma periods kostnad och energi. Metoderna kan återanvändas på energisidan; historiken har inte automatiskt tillräckligt underlag för en sann dagsdifferens. Dygnsgränser ska hämtas i anläggningens tidszon. Inga månads-/timvärden maskeras som dagsvärden.
+
+EV6-batteri och räckvidd visas först efter explicit bindning av aktuella bilsensorer och tillförlitlig anslutningsindikator. e-Golf har inga bilvärden. Easee-boxarnas effekt och status visas separat. Mätningar kräver uttrycklig enhet och färska tidsstämplar; oförändrade uppgifter kan därför märkas Gammal mätning om källan inte levererar last_reported. Inga okända mätvärden ersätts med noll.
+
+Kalender använder befintlig Connection.calendar och normalisering, med högst en hämtning per minut för explicit konfigurerade kalendrar. Kortet öppnar befintlig kalendervy. Gamla händelser döljs vid frånkoppling. Visuella tester använde simulator, tydligt märkt. Modellgranskning gjordes både med lätt testgeometri och verklig befintlig GLB.

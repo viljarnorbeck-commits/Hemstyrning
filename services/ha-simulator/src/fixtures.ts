@@ -32,6 +32,12 @@ const lightNames = [
 export function createInitialStates(): HassState[] {
   const track=demoTracks[0]!;
   return [
+    state("switch.vvb_kallaren_on_off","on",{simulated:true}),
+    state("lock.entredorr_2","locked",{friendly_name:"Entrédörr · simulerad",battery_level:85,simulated:true}),
+    state("lock.verkstadsentre_2","locked",{friendly_name:"Verkstadsdörr · simulerad",battery_level:65,simulated:true}),
+    state("binary_sensor.entredorr_door","off",{simulated:true}),
+    state("binary_sensor.verkstadsentre_door","off",{simulated:true}),
+    state("climate.vvb_kallaren_termostat","heat",{friendly_name:"VVB · simulerad",supported_features:385,hvac_modes:["off","heat"],min_temp:30,max_temp:75,target_temp_step:.5,temperature:55,hvac_action:"idle",simulated:true}),
     ...demoScenes.map(([id,name])=>state(id,id.startsWith('script.')?'off':'unknown',{friendly_name:name,simulated:true})),
     state(simulatedSpotifyId,'paused',{friendly_name:'Spotify · lokalt testkonto',app_id:'spotify',app_name:'Spotify',simulated:true,supported_features:simulatedFeatures,media_title:track.title,media_artist:track.artist,media_album_name:track.album,entity_picture:track.cover,media_duration:track.duration,media_position:32,media_position_updated_at:new Date().toISOString(),volume_level:.35,source:'Vardagsrum',source_list:['Vardagsrum','Kök','Mobil'],track_index:0}),
     ...lightNames.map(([entityId, friendlyName], index) =>

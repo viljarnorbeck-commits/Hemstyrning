@@ -83,6 +83,7 @@ async function start(){try{
  await config.load();garden=new GardenScene($('garden') as HTMLCanvasElement);garden.setConfig(config.value);garden.onSelect=id=>void select3D(id);hud=new HomeControls(connection,garden,select,text=>{const toast=$('toast');toast.textContent=text;toast.hidden=false;setTimeout(()=>toast.hidden=true,5000);},config);
  document.addEventListener('hem-clear-selection',()=>{selected=undefined;showList=false;garden.select();panel();});
  document.addEventListener('hem-focus-object',event=>{const id=(event as CustomEvent).detail?.id;if(typeof id==='string')select(id);});
+ if(new URLSearchParams(location.search).has('calendar'))document.querySelector<HTMLButtonElement>('.mobile-home-nav [data-view=calendar]')?.click();
  const initialView=new URLSearchParams(location.search).get('view');const disposeV2=homeV2(config,connection,garden);
  garden.models.onStatus=()=>{$('model-status').textContent=garden.models.status;$('model-status').hidden=!garden.models.loading&&!garden.models.status.includes('kunde inte');};
  markers.innerHTML=config.value.objects.filter(o=>!['surface','parking','occluder'].includes(o.type)).map(o=>`<button class="device-marker" data-object="${esc(o.id)}" aria-label="${esc(o.name)}"><span>${o.type==='light'?'✦':o.type==='car'?'▰':o.type==='solar'?'☀':o.type==='mower'?'◆':o.type==='energy'?'ϟ':'◉'}</span><small>${esc(o.name)}</small></button>`).join('');

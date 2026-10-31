@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json && tsc --noEmit --allowJs --checkJs --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler src/*.js"
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.legacy.json"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",
