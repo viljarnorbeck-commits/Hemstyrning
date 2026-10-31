@@ -5,8 +5,8 @@ export class Connection extends EventTarget {
   constructor(private base='/connection-api',private socketPath='/connection-ws'){super();}
   states = new Map<string, HassState>();
   connected = false;
-  source = 'simulator';
-  commandsEnabled=true;
+  source = 'unknown';
+  commandsEnabled=false;
   private socket?: WebSocket;
   private stopped = false;
   private retry?: ReturnType<typeof setTimeout>;

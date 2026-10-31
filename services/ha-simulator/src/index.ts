@@ -15,7 +15,7 @@ const live = mode === 'real' ? {
   url: new URL(realUrl!).href.replace(/\/$/, ''), token: realToken!,
   commandsEnabled: process.env.HA_ALLOW_CONTROL === 'true',
 } : undefined;
-const { server, webSockets, simulation, stopScreens } = createSimulator({ token, commandDelayMs, ...(live ? { live } : {}) });
+const { server, webSockets, simulation, stopScreens } = createSimulator({ token, commandDelayMs, ...(process.env.HA_DATA_DIRECTORY ? {dataDirectory:process.env.HA_DATA_DIRECTORY} : {}), ...(live ? { live } : {}) });
 server.listen(port, host, () => {
   console.log(`Home Assistant simulator: http://${host}:${port}`);
   console.log(`WebSocket API: ws://${host}:${port}/api/websocket`);

@@ -8,6 +8,7 @@ const grade=z.object({warmth:finite.min(-.2).max(.2),saturation:finite.min(.5).m
 const modelUrl = z.string().regex(/^\/(?:models\/[\w.-]+\.glb|workspace-api\/models\/[a-f0-9]{64}\.glb)$/);
 export const sceneSchema = z.object({
   version: z.literal(1),
+  sensorBindings:z.record(z.string().regex(/^(?:\$[a-zA-Z][a-zA-Z0-9]*|[a-z_]+\.[a-z0-9_]+)$/),z.string().regex(/^(?:[a-z_]+\.[a-z0-9_]+)?$/)).refine(v=>Object.keys(v).length<=200,'Högst 200 sensorkopplingar').default({}),
   startView:z.object({position:vector,target:vector,zoom:finite.min(.1).max(10),fov:finite.min(20).max(90)}).optional(),
   startMode:z.enum(['live','photo']).default('live'),
   startPhoto:z.object({url:z.string().regex(/^\/workspace-api\/start-images\/[a-f0-9]{64}\.png$/),signature:z.string().min(1).max(20000),createdAt:z.string().datetime(),width:finite.int().min(320).max(4096),height:finite.int().min(240).max(4096),view:z.object({position:vector,target:vector,zoom:finite.min(.1).max(10),fov:finite.min(20).max(90)})}).optional(),
