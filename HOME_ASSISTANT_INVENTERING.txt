@@ -1,4 +1,8 @@
 HOME ASSISTANT – FUNKTIONSINVENTERING
+ERSATT 2026-10-31: Se HOME_ASSISTANT_INVENTERING.md i repots rot.
+Den nya rapporten innehåller den autentiserade, skrivskyddade inventeringen.
+Texten nedan är en historisk notering från före anslutningen konfigurerades.
+
 Datum: 2026-10-31
 Status: OFULLSTÄNDIG – autentisering saknas.
 

@@ -1,6 +1,15 @@
 # Projektminne – Hemstyrning
 
-Senast uppdaterad: 2026-10-30
+Senast uppdaterad: 2026-10-31
+
+## Genomförd skrivskyddad HA-inventering – 2026-10-31
+
+- `HOME_ASSISTANT_INVENTERING.md` i roten ersätter den tidigare ofullständiga TXT-rapporten. Läsning med lokala HA_URL/HA_TOKEN fungerar; Home Assistant 2026.9.1. Endast GET och uttryckligen läsande WebSocket-frågor användes. Inga enheter styrdes och ingen HA-konfiguration ändrades.
+- Verifierat: 133 enhetsregisterposter, 26 områden, 1 950 registerentiteter och 770 state-entiteter. 31 state-entiteter saknar registerpost: unionen är 1 981. 540 rapporterar tillstånd, 175 är unavailable, 55 unknown, 1 211 avaktiverade utan state. 57 integrationsposter över 36 domäner, 280 laddade komponentidentifierare och 406 registrerade tjänstebeskrivningar. Tjänsterna är inte funktionstestade.
+- Ferroamp, Tibber/Nord Pool, Easee, sex Tibber-kopplade EV6-entiteter och Husqvarna Automower 340x via Robonect hittades. Klipparens GPS-sensorer finns men färskhet/noggrannhet och rörelse har inte verifierats. Ingen LUBA/Mammotion-integration identifierades. Två vacuum-state-entiteter är otillgängliga. Daikin är not_loaded; en Hue-post är setup_retry och en WLED-post setup_error.
+- Register-, områdes-, dashboard- och energiläsningar fungerar, men 55 GET-försök att läsa detaljkonfiguration för 42 automationer och 13 skript gav 401. Fem scener saknade config-ID i state. Två dashboardläsningar gav config_not_found. Innehåll och mål i automationer/scener/skript är inte verifierade.
+- Rapporten listar alla unika entiteter per kategori/område, enhetsnamn, tillgänglighet, säkra attributnamn, annonserade funktionsflaggor och hela tjänstekatalogen. Startskärmsförslag finns; inga nya produktfunktioner har implementerats. Hemligheter, privata länkar, GPS-värden och fria state-/attributvärden exporteras inte. Rådata ligger endast privat i temporära filer utanför repot.
+- Nästa steg: välj verifierade entiteter för startskärmen och bekräfta energins teckenkonventioner, prisets innebörd och datakvalitet innan implementation. Inventeringsuppdraget ger inte tillstånd till verklig styrning.
 
 ## Inventering av verklig Home Assistant – 2026-10-31
 
