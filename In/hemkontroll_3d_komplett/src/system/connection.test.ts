@@ -14,7 +14,7 @@ beforeEach(()=>{Socket.instances=[];vi.stubGlobal('WebSocket',Socket);vi.stubGlo
 afterEach(()=>vi.unstubAllGlobals());
 const state=(value:string)=>({entity_id:'light.test',state:value,attributes:{brightness:200},last_updated:new Date().toISOString()});
 async function connected() {
-  const fetchMock=vi.fn().mockResolvedValue({ok:true,json:async()=>({mode:'simulator'})});vi.stubGlobal('fetch',fetchMock);
+  const fetchMock=vi.fn().mockResolvedValue({ok:true,json:async()=>({mode:'simulator',commandsEnabled:true,controlBlockReason:null})});vi.stubGlobal('fetch',fetchMock);
   const connection=new Connection();await connection.start();const socket=Socket.instances[0];
   socket.emit({type:'auth_ok'});socket.emit({type:'result',id:1,success:true});socket.emit({type:'result',id:2,success:true,result:[state('off')]});
   return {connection,socket,fetchMock};
@@ -56,4 +56,10 @@ it('blocks all control paths locally when the real bridge is read-only',async()=
  await expect(connection.toggle('light.test','live')).rejects.toThrow('skrivskyddad');
  await expect(connection.media('media_player.test','media_play')).rejects.toThrow('skrivskyddad');
  await expect(connection.allLights(true,['light.test'])).rejects.toThrow('skrivskyddad');expect(fetchMock).not.toHaveBeenCalled();connection.stop();
+});
+
+it('keeps commands disabled unless the server explicitly grants control',async()=>{
+ const fetchMock=vi.fn().mockResolvedValue({ok:true,json:async()=>({mode:'home-assistant'})});vi.stubGlobal('fetch',fetchMock);
+ const c=new Connection();await c.start();const ws=Socket.instances[0];ws.emit({type:'auth_ok'});ws.emit({type:'result',id:1,success:true});ws.emit({type:'result',id:2,success:true,result:[state('off')]});
+ expect(c.commandsEnabled).toBe(false);fetchMock.mockClear();await expect(c.toggle('light.test','live')).rejects.toThrow('skrivskyddad');expect(fetchMock).not.toHaveBeenCalled();c.stop();
 });

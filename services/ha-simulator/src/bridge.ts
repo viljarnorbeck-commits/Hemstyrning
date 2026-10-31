@@ -20,7 +20,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     }
     next();
   });
-  router.get('/info', (_req, res) => res.json({ mode: live ? 'home-assistant' : 'simulator', commandsEnabled: res.locals.hemRole!=='viewer'&&(!live||live.commandsEnabled===true) }));
+  router.get('/info', (_req, res) => res.json({ mode: live ? 'home-assistant' : 'simulator', commandsEnabled: res.locals.hemRole!=='viewer'&&(!live||live.commandsEnabled===true),controlBlockReason:res.locals.hemRole==='viewer'?'viewer':live&&live.commandsEnabled!==true?'read-only':null }));
   const read = async (path: string) => {
     if(!live){if(path==='states')return store.all();const scene=await load();return{latitude:scene.location.latitude,longitude:scene.location.longitude,time_zone:scene.location.timeZone};}
     const response = await fetch(`${live.url}/api/${path}`, { headers: { Authorization: `Bearer ${live.token}` }, signal: AbortSignal.timeout(10000) });

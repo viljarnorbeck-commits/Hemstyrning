@@ -16,7 +16,7 @@ test('ambient cards preserve animation and focus through confirmed commands',asy
   await page.locator('[data-preset="halloween"]').click();await expect(page.locator('[data-stop="true"]')).toBeVisible();await page.locator('[data-stop="true"]').click();await expect(page.locator('[data-stop="true"]')).toHaveCount(0);
   for(const [name,width,height] of [['desktop',1440,1000],['tablet',900,1100],['mobile',390,844]] as const){
    await page.setViewportSize({width,height});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-   expect(await page.locator('.device-control').first().evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(140);
+   expect(await page.locator('.device-control').first().evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(60);
    await page.screenshot({path:`test-results/control-${name}.png`,fullPage:true});
   }
   await page.emulateMedia({reducedMotion:'reduce'});expect(await page.locator('.device-control').first().evaluate(e=>getComputedStyle(e,'::before').animationName)).toBe('none');

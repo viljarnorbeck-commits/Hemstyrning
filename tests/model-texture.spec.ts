@@ -46,7 +46,7 @@ test('original UV/PNG samples render identically to the unsimplified reference w
   let sum=0,max=0;for(let i=0;i<original.length;i++){const d=Math.abs(original[i]-reference[i]);sum+=d;max=Math.max(max,d);}
   scene.add(referenceRoot);renderer.render(scene,camera);document.querySelector('#status')!.textContent='Neutral originaltextur · oförenklad referens';
   return{meanDifference:sum/original.length,maxDifference:max,stats,maxTextureSize:renderer.capabilities.maxTextureSize,triangles:renderer.info.render.triangles};
- },'/@fs'+resolve('node_modules/three'));
+ },'/@fs/'+resolve('node_modules/three').replaceAll('\\','/'));
  expect(result.stats).toHaveLength(2);
  for(const material of result.stats){expect(material.size).toEqual([8192,8192]);expect(material.colorSpace).toBe('srgb');expect(material.hasUV).toBe(true);}
  expect(result.meanDifference).toBeLessThan(.05);expect(result.triangles).toBeGreaterThan(3900);expect(errors).toEqual([]);

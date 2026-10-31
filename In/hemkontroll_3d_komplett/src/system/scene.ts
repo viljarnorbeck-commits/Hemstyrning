@@ -169,6 +169,7 @@ export class GardenScene {
     this.assets.reset();this.headlights.clear();this.transform.detach();
     disposeTree(this.objects); this.objects.clear();disposeTree(this.occlusionVolumes);this.occlusionVolumes.clear(); this.renderObjects.clear(); this.lamps.clear();
     for (const item of this.config?.objects ?? []) {
+      if(item.placementConfirmed===false)continue;
       const group = new THREE.Group(); group.userData.id = item.id;group.userData.type=item.type;
       group.position.fromArray(item.position); group.rotation.set(...item.rotation.map(radians) as Vec3); group.scale.fromArray(item.scale);
       const material = new THREE.MeshStandardMaterial({ color: item.color, roughness: item.roughness, metalness: item.metalness, side: THREE.DoubleSide });

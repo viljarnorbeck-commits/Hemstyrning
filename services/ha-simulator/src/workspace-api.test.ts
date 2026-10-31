@@ -28,7 +28,7 @@ describe('persistent workspace and calibrated scene',()=>{
     config.sensorBindings={'sensor.ferroamp_grid_power':'sensor.verified_grid','$luba':'','$ev6Battery':'sensor.actual_battery'};
     config.startView={position:[20,15,30],target:[2,1,3],zoom:1.25,fov:48};
     config.models['winter']!.position=[12,4,19];config.models['winter']!.rotation=[-90,45,0];config.models['winter']!.scale=1.7;
-    config.objects[0]!.position=[3,5,7];config.objects[0]!.angle=35;config.bindings.lux='sensor.custom_lux';
+    config.objects[0]!.placementConfirmed=false;config.objects[0]!.position=[3,5,7];config.objects[0]!.angle=35;config.bindings.lux='sensor.custom_lux';
     expect((await fetch(`${base}/workspace-api/scene`,{method:'PUT',headers:json,body:JSON.stringify(config)})).status).toBe(200);
     await stop();await start();
     expect(await fetch(`${base}/workspace-api/scene`).then(r=>r.json())).toEqual(config);
@@ -60,7 +60,7 @@ describe('shared simulator/live command boundary',()=>{
     expect((await send('light.not_configured','live')).status).toBe(403);
     expect((await send('light.altan','live')).status).toBe(200);
     expect(simulator.store.get('light.altan')!.state).toBe('on');
-    expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'simulator',commandsEnabled:true});
+    expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'simulator',commandsEnabled:true,controlBlockReason:null});
   });
   it('supports environment changes over the shared read-only WebSocket without exposing a token',async()=>{
     const ws=new WebSocket(base.replace('http:','ws:')+'/bridge/ws');
@@ -106,7 +106,7 @@ describe('real HA gateway contract using an isolated HA test double',()=>{
     base=`http://127.0.0.1:${(simulator.server.address() as AddressInfo).port}`;
     let ws: WebSocket | undefined;
     try {
-      expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'home-assistant',commandsEnabled:true});
+      expect(await fetch(`${base}/bridge/api/info`).then(r=>r.json())).toEqual({mode:'home-assistant',commandsEnabled:true,controlBlockReason:null});
       const send=(mode:string)=>fetch(`${base}/bridge/api/services/light/turn_on`,{method:'POST',headers:{...json,'X-Hemkontroll-Mode':mode},body:JSON.stringify({entity_id:'light.altan'})});
       expect((await send('simulation')).status).toBe(403);expect(remote.store.get('light.altan')!.state).toBe('off');
       expect((await send('live')).status).toBe(200);expect(remote.store.get('light.altan')!.state).toBe('on');

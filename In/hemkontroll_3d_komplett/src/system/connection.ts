@@ -7,6 +7,7 @@ export class Connection extends EventTarget {
   connected = false;
   source = 'unknown';
   commandsEnabled=false;
+  controlBlockReason:string|null=null;
   private socket?: WebSocket;
   private stopped = false;
   private retry?: ReturnType<typeof setTimeout>;
@@ -21,7 +22,7 @@ export class Connection extends EventTarget {
     try {
       const info = await fetch(this.base+'/info', { signal: AbortSignal.timeout(10000) }).then(check).then(r => r.json());
       if (serial !== this.serial || this.stopped) return;
-      this.source = info.mode;this.commandsEnabled=info.commandsEnabled!==false;
+      this.source = info.mode;this.commandsEnabled=info.commandsEnabled===true;this.controlBlockReason=info.controlBlockReason??null;
       const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}${this.socketPath}`);
       this.socket = ws;
       ws.onmessage = event => {
@@ -41,7 +42,7 @@ export class Connection extends EventTarget {
           for (const state of msg.result as HassState[]) this.accept(state);
           this.connected = true;this.lastPong=Date.now();
           clearInterval(this.heartbeat);this.heartbeat=setInterval(()=>{if(Date.now()-this.lastPong>30000){ws.close();return;}ws.send(JSON.stringify({id:99,type:'ping'}));},15000);
-          this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source}}));
+          this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source,commandsEnabled:this.commandsEnabled}}));
         }
         if (msg.type === 'event' && msg.event?.event_type === 'state_changed') {
           const data = msg.event.data;
@@ -66,7 +67,7 @@ export class Connection extends EventTarget {
     this.connected = false;
     for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(new Error('Anslutningen bröts')); }
     this.pending.clear();
-    this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source}}));
+    this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source,commandsEnabled:this.commandsEnabled}}));
     clearTimeout(this.retry);
     if (!this.stopped) this.retry = setTimeout(() => void this.start(), 1500);
   }

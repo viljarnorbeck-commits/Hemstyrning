@@ -5,6 +5,7 @@ export type ObjectKind = 'light' | 'car' | 'parking' | 'solar' | 'mower' | 'surf
 export interface ObjectAsset {url:string;rotation:Vec3;origin:Vec3;scale:number;groundOffset:number}
 export interface Panorama {temporary?:boolean;followSun?:boolean;source?:string;fadeAtNight?:boolean;id:string;name:string;url:string;north:number;capturedAt:string;exposure:number;saturation:number;minElevation:number;maxElevation:number;minCloud:number;maxCloud:number;containsSun:boolean;sunAzimuth:number;sunElevation:number;maskRadius:number}
 export interface SceneObject {
+  placementConfirmed?:boolean;
   asset?:ObjectAsset;presence?:'auto'|'home'|'away';zone?:'lawn'|'mowing'|'transit'|'passage'|'forbidden'|'obstacle'|'ground';footprint?:{width:number;length:number};trackingOffset?:Vec3;classification?:{origin:'automatic'|'manual';status:'proposed'|'approved'|'rejected';analysisKey:string;proposalId:string;confidence:number};
   headlight?:{enabled:boolean;estimate:boolean;luxThreshold:number;lumens:number;angle:number;kelvin:number;position:Vec3};
   representation?: 'embedded'|'standalone';

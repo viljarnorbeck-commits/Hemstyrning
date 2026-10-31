@@ -25,9 +25,9 @@ export class MusicPanel{
  readonly root=document.createElement('aside');
  private dialog=document.createElement('dialog');private embedded=false;private queue:SpotifyItem[]=[];
  private state:Player=blank;private setup:Setup={configured:false,connected:false,canControl:false,canConfigure:false,message:'Ansluter till Spotify…'};
- private devices:Device[]=[];private busy=false;private feedback='';private open=false;private qr='';private qrLabel='';private timer:ReturnType<typeof setInterval>;
+ private devices:Device[]=[];private busy=false;private commandError=false;private feedback='';private open=false;private qr='';private qrLabel='';private timer:ReturnType<typeof setInterval>;
  private speaker=new BrowserSpeaker();private speakerEnabled=false;private readyDevice='';private deviceLoading=false;private sdkRefreshAt=0;
- private loading=false;private stopped=false;private lastRefresh=0;
+ private refreshInFlight?:Promise<void>;private loading=false;private stopped=false;private lastRefresh=0;
  private searchTerm='';private results:SpotifyItem[]=[];private playlists:SpotifyItem[]=[];
  onVisibilityChange:(open:boolean)=>void=()=>{};
  constructor(_connection:Connection,private config:Configuration,private notify:(message:string)=>void){
@@ -87,14 +87,19 @@ export class MusicPanel{
   const allow=this.setup.connected&&this.setup.canControl&&!this.busy;
   return [['previous','Föregående låt',icon('left')],[this.state.playing?'pause':'play',this.state.playing?'Pausa musik':'Spela musik',icon(this.state.playing?'pause':'play')],['next','Nästa låt',icon('right')]].map(([action,label,icon])=>`<button type="button" data-spotify="${action}" aria-label="${label}" ${allow?'':'disabled'}>${icon}</button>`).join('');
  }
- private async refresh(){
+ private refresh(afterCurrent=false):Promise<void>{
+  if(this.stopped)return Promise.resolve();
+  if(this.refreshInFlight)return afterCurrent?this.refreshInFlight.then(()=>this.refresh()):this.refreshInFlight;
+  const task=this.readPlayback();this.refreshInFlight=task;return task.finally(()=>{if(this.refreshInFlight===task)this.refreshInFlight=undefined;});
+ }
+ private async readPlayback(){
   if(this.loading||this.stopped)return;this.loading=true;
   try{
    const wasConnected=this.setup.connected;const setup=await api<Setup>('/status');this.setup=setup;
    this.state=setup.connected?await api<Player>('/playback'):blank;
    const enable=setup.connected&&setup.canControl&&setup.webPlaybackAuthorized===true;if(enable){this.speakerEnabled=true;void this.speaker.enable();}else if(this.speakerEnabled){this.speakerEnabled=false;this.speaker.disable();}
    if(!setup.connected)this.devices=[];else if(this.open&&!wasConnected){void this.loadDevices();void this.loadPlaylists();}
-   this.feedback='';this.lastRefresh=Date.now();
+   if(!this.commandError)this.feedback='';this.lastRefresh=Date.now();
   }catch(error){this.feedback=error instanceof Error?error.message:'Spotify går inte att nå.';}
   finally{this.loading=false;this.update();}
  }
@@ -179,9 +184,14 @@ export class MusicPanel{
  private report(text:string){this.feedback=text;this.notify(text);if(this.open)this.renderDialog();}
  private async command(action:string,data:Record<string,unknown>={}){
   if(this.busy||!this.setup.canControl||!this.setup.connected)return;
-  this.busy=true;this.update();
-  try{await api('/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data})});await new Promise(r=>setTimeout(r,500));await this.refresh();if(action==='transfer')await this.loadDevices();}
-  catch(e){this.report(e instanceof Error?e.message:String(e));}
+  this.commandError=false;this.feedback='';this.busy=true;this.update();
+  try{await api('/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data})});await this.refresh(true);if(action==='transfer'){
+    const deadline=Date.now()+10000;
+    while(this.state.device?.id!==data.deviceId&&Date.now()<deadline){await new Promise(r=>setTimeout(r,1000));await this.refresh(true);}
+    if(this.state.device?.id!==data.deviceId)throw new Error('Spotify bekräftade inte enhetsbytet. Försök igen.');
+    await this.loadDevices();
+   }}
+  catch(e){this.commandError=true;this.report(e instanceof Error?e.message:String(e));}
   finally{this.busy=false;this.update();}
  }
  private async disconnect(){try{await api('/disconnect',{method:'POST'});this.state=blank;this.speaker.disable();this.speakerEnabled=false;await this.refresh();}catch(e){this.report(e instanceof Error?e.message:String(e));}}

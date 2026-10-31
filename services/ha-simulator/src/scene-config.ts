@@ -39,6 +39,7 @@ export const sceneSchema = z.object({
     points: z.array(vector).max(100),
     representation:z.enum(['embedded','standalone']).default('standalone'),
     asset:z.object({url:modelUrl,rotation:vector.default([0,0,0]),origin:vector.default([0,0,0]),scale:finite.positive().max(1000).default(1),groundOffset:finite.min(-20).max(20).default(0)}).optional(),
+    placementConfirmed:z.boolean().optional(),
     presence:z.enum(['auto','home','away']).default('auto'),
     zone:z.enum(['lawn','mowing','transit','passage','forbidden','obstacle','ground']).optional(),
     headlight:z.object({enabled:z.boolean().default(false),estimate:z.boolean().default(true),luxThreshold:finite.nonnegative().max(10000).default(30),lumens:finite.min(0).max(5000).default(180),angle:finite.min(5).max(140).default(65),kelvin:finite.min(2000).max(9000).default(4500),position:vector.default([0,.2,-.35])}).optional(),
