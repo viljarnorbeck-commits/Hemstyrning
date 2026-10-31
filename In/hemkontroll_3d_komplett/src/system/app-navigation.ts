@@ -5,6 +5,7 @@ export function startNavigation(){
  if(location.pathname.startsWith('/dev/')||location.pathname.startsWith('/editor'))return;
  const nav=document.createElement('aside');nav.className='app-sidebar';nav.setAttribute('aria-label','Hemstyrning');
  nav.innerHTML=`<a class="app-brand" href="/">${icon('home')}<span>HEMSTYRNING<small>DITT UPPKOPPLADE HEM</small></span></a><button class="nav-collapse" aria-label="Minimera menyn" aria-expanded="true">${icon('menu')}<span>Meny</span></button><nav aria-label="Huvudnavigation">${items.map(([url,label,key])=>`<a href="${url}" title="${label}" ${location.pathname===url?'aria-current="page"':''}>${icon(key!)}<span>${label}</span></a>`).join('')}</nav><p class="nav-ha" role="status"><i></i><span>Home Assistant · ansluter</span></p>`;
+  nav.addEventListener('click',e=>{const a=(e.target as HTMLElement).closest<HTMLAnchorElement>('a[href="/"]');if(!a)return;if(location.pathname==='/'){e.preventDefault();document.dispatchEvent(new Event('hem-request-home'));close();}else{e.preventDefault();sessionStorage.setItem('hem-home-request','1');location.assign('/?native=home');}});
  const trigger=document.createElement('button');trigger.className='nav-mobile';trigger.innerHTML=icon('menu');trigger.setAttribute('aria-label','Öppna meny');trigger.setAttribute('aria-expanded','false');
  function close(){document.body.classList.remove('nav-open');trigger.setAttribute('aria-expanded','false');}
  trigger.onclick=()=>{const open=document.body.classList.toggle('nav-open');trigger.setAttribute('aria-expanded',String(open));};

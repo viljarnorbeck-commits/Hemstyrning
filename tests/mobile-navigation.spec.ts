@@ -1,4 +1,4 @@
-import {test,expect,type Page,type CDPSession} from '@playwright/test';
+import {test,expect,type Page,type CDPSession} from './test';
 import {fixture} from './fixtures';
 
 async function setup(page:Page,objects=false){

@@ -6,7 +6,7 @@ Hemstyrning är en interaktiv 3D-klient som drivs av en lokal [Home Assistant-si
 
 Hem är nu en levande 3D-startvy med energikort och sparad kamera. **Öppna 3D**
 ger fri navigering. **Lista** behåller hela hemöversikten och pausar GPU-rendering.
-`/control` är en separat modellfri kontrollpanel med parkoppling till en vald skärm.
+`/control` är en separat modellfri kontrollpanel med automatisk gemensam visning för anslutna hemskärmar.
 `/settings` kopplar energimätare och färgkodade HA-scener/skript. `/install` visar
 PWA-installation och bara verkligt byggda paket.
 

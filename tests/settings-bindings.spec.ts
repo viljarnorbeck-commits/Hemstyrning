@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 test('shared sensor picker searches, saves, survives reload, drives cards and resets',async({page,request})=>{
  const original=await request.get('/workspace-api/scene').then(r=>r.json());
  try{

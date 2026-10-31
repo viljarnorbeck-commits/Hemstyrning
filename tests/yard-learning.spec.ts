@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 import {fixture} from './fixtures';
 for(const viewport of [{width:1440,height:960},{width:390,height:844}]){
  test(`yard analysis and LUBA history are accessible in the editor ${viewport.width}`,async({page})=>{

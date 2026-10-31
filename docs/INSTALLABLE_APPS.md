@@ -78,10 +78,10 @@ För en fysisk enhet behövs serverdrift via exempelvis Caddy:
 Proxyhemligheten måste finnas för alla HTTP- och WebSocket-anrop i distributions-
 läge; den skickas inte till frontend. Sessioner gäller7 dagar och sparas hashade i en privat600-fil bredvid användarfilen.
 De överlever serveromstart, men ändrat lösenord/roll eller utgången giltighet kräver
-ny inloggning. Roll/URL/parkopplingsregister finns kvar.
+ny inloggning. Roll och server-URL finns kvar. Visningsläge börjar på HOME efter serveromstart.
 Viewer får läsa och registrera visningsskärm, controller får kontrollerade
-HA-kommandon och styra parkopplad skärm, admin får även konfigurera/developera.
-Parkopplingskod ersätter aldrig inloggning eller `HA_ALLOW_CONTROL`-spärren.
+HA-kommandon och styra gemensam visning, admin får även konfigurera/developera.
+Visningskanalen använder inloggning och roller, och ger ingen alternativ HA-styrning.
 
 HTTPS-servern fungerar på LAN utan Nabu Casa eller publik internetåtkomst.
 Ett Avahi-exempel finns i `deployment/hemstyrning.service`; justera värdnamnet
@@ -208,8 +208,10 @@ nycklar eller datafiler. Kontrollera versionssamstämmighet med `npm run check:v
 Alla35 Playwright-flöden passerade tillsammans; därefter5 riktade appflöden efter
 sista mobila visningsrättningen. PWA-manifest/ikoner och aktiv service worker har
 verifierats i produktionsservern via Chromium. Två separata browserkontexter
-verifierar parkoppling, bilfokus, klimatisering, LUBA-follow, Halloween/stopp och
+verifierar gemensam visning, bilfokus, klimatisering, LUBA-follow, Halloween/stopp och
 återgång till standardvyn. Hublagring samt hashade sessionsinloggningar återläses
 över instans-/serveromstart i tester. Androidpaketen är byggda och apksigner-
 verifierade. Inga Android/TV-enheter eller emulatorer hittades av adb. Windows-,
 iOS- och fysisk TV-testning är alltså uttryckligen inte redovisad som utförd.
+
+Aktuell visningsarkitektur och TV-start beskrivs i [SHARED_VIEW.md](SHARED_VIEW.md). Parkopplingskoder är avvecklade.

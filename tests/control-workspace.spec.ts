@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 import {fixture} from './fixtures';
 
 test('discovered lamp requires persistence, then confirms switch and dimmer through the protected API',async({page,request})=>{

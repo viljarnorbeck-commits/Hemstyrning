@@ -6,8 +6,8 @@
 .control-permission:empty,#control-error:empty{display:none}
 .control-permission{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid #c9935060;background:#bf8c3410;border-radius:6px;padding:10px 14px;font-size:12px;flex-shrink:0}
 .control-permission strong{color:#f0c98a}.control-permission span{color:var(--text-muted)}.control-permission .action-button{margin-left:auto;min-height:32px;padding:5px 10px}
-.control-layout .screen-pair{position:static;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;padding:8px 0;border-bottom:1px solid var(--panel-edge);flex-shrink:0}
-.screen-pair label{display:flex;align-items:center;gap:8px}.screen-pair input{width:105px}.screen-pair #pair-status{color:var(--text-muted)}
+.control-layout .shared-view-controls{position:static;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;padding:8px 0;border-bottom:1px solid var(--panel-edge);flex-shrink:0}
+.shared-view-controls label{display:flex;align-items:center;gap:8px}.shared-view-controls input{width:105px}.shared-view-controls #view-status{color:var(--text-muted)}
 .control-layout #control-error{font-size:12px;margin:0;min-height:18px;flex-shrink:0}
 .control-workspace{display:grid;grid-template-columns:minmax(250px,28%) minmax(0,1fr);gap:24px;flex:1;min-height:0}
 .lights-section{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0;overflow:hidden}
@@ -36,7 +36,7 @@
 .control-layout [hidden]{display:none!important}.control-layout .robot-actions{display:flex;flex-wrap:wrap;gap:6px}.control-layout .robot-actions button{flex:1 1 120px}.control-layout .action-button{margin:5px 5px 5px 0}
 @media(min-width:1700px){.control-workspace{grid-template-columns:minmax(300px,27%) minmax(0,1fr);gap:30px}.lamp-card{min-height:76px}.lamp-card .device-select b{font-size:14px}}
 @media(max-width:1000px) and (min-width:701px){.control-workspace{grid-template-columns:minmax(220px,30%) minmax(0,1fr);gap:16px}.control-layout .control-page{padding:18px}.control-right>section,.control-right .preset-panel{padding:18px}}
-@media(max-width:700px){body.control-layout{overflow-y:auto}.control-layout .control-page{height:auto;min-height:100dvh;overflow:visible;padding:24px 14px 90px}.control-workspace{display:flex;flex-direction:column;min-height:auto;gap:20px}.lights-section{overflow:visible;min-height:0}#control-lights{max-height:42dvh;flex:none;min-height:140px}.control-layout .control-right{overflow:visible;padding:0;min-height:auto}.control-right>section,.control-right .preset-panel{padding:18px}.control-layout .v2-heading{padding-right:44px!important}.screen-pair{gap:6px}.screen-pair button{font-size:11px}.control-permission .action-button{margin-left:0}.detail-controls{grid-template-columns:1fr}.control-layout #control-devices{display:flex}.device-control .robot-actions{width:100%}}
+@media(max-width:700px){body.control-layout{overflow-y:auto}.control-layout .control-page{height:auto;min-height:100dvh;overflow:visible;padding:24px 14px 90px}.control-workspace{display:flex;flex-direction:column;min-height:auto;gap:20px}.lights-section{overflow:visible;min-height:0}#control-lights{max-height:42dvh;flex:none;min-height:140px}.control-layout .control-right{overflow:visible;padding:0;min-height:auto}.control-right>section,.control-right .preset-panel{padding:18px}.control-layout .v2-heading{padding-right:44px!important}.shared-view-controls{gap:6px}.shared-view-controls button{font-size:11px}.control-permission .action-button{margin-left:0}.detail-controls{grid-template-columns:1fr}.control-layout #control-devices{display:flex}.device-control .robot-actions{width:100%}}
 @media(prefers-reduced-motion:reduce){.device-control::before,.preset-card::before{animation:none}.device-switch span,.lamp-card{transition:none}}
 
 /* Continuous room surface and compact reference tiles. */
@@ -47,4 +47,4 @@
 #room-lights .device-select{display:flex;flex-direction:column;text-align:center;flex:1;gap:8px}#room-lights .device-select b{font-size:11px}#room-lights .light-dimmer{width:100%}
 .control-layout .preset-panel .section-heading h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase}.control-layout .preset-panel .section-heading small{display:none}
 @media(max-width:700px){.control-layout .control-right{padding:18px}.room-heading h1{font-size:28px}}
-.control-layout .v2-heading{background:transparent}.control-layout .v2-heading h1{font-size:20px}.control-layout .screen-pair{font-size:10px}.control-layout .screen-pair button{min-height:32px;padding:6px 10px}.room-heading{position:static;background:transparent}.control-layout .device-switch:not(.active) span{background:#e3e0d6;opacity:.65}
+.control-layout .v2-heading{background:transparent}.control-layout .v2-heading h1{font-size:20px}.control-layout .shared-view-controls{font-size:10px}.control-layout .shared-view-controls button{min-height:32px;padding:6px 10px}.room-heading{position:static;background:transparent}.control-layout .device-switch:not(.active) span{background:#e3e0d6;opacity:.65}

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 import {fixture} from './fixtures';
 import sharp from 'sharp';
 import jsQR from 'jsqr';

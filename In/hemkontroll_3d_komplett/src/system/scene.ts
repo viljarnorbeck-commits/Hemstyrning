@@ -43,6 +43,7 @@ export class GardenScene {
   private occlusionVolumes=new THREE.Group();
   private moon=new THREE.DirectionalLight('#b8cdf3',0);
   private animation:(()=>void)|null=null;
+  pauseRendering(paused:boolean){this.renderer.setAnimationLoop(paused?null:this.animation);}
   setAnimationLoop(callback:(()=>void)|null){this.animation=callback;this.renderer.setAnimationLoop(callback);}
   readonly energyNetwork=new EnergyNetwork();private visualStates=new Map<string,HassState>();
   private followId?:string;

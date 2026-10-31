@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 import {fixture} from './fixtures';
 test('live start overview keeps honest telemetry, navigation and free 3D without issuing commands',async({page})=>{
  await fixture(page);let commands=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/connection-api/'))commands++;});

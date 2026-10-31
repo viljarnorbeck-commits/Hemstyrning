@@ -1,4 +1,4 @@
-import{test,expect}from'@playwright/test';import{fixture}from'./fixtures';
+import{test,expect}from'./test';import{fixture}from'./fixtures';
 test('editor generates a real high-resolution photo, saves routes, supports undo and enters live energy view',async({page,request})=>{
  const original=await request.get('/workspace-api/scene').then(r=>r.json()),settings=await request.get('/dev-api/settings').then(r=>r.json());
  try{await request.put('/workspace-api/scene',{data:{...original,energyRoutes:[]}});await request.put('/dev-api/settings',{data:{...settings.settings,running:false,timeScale:1}});await fixture(page);await page.goto('/editor');await expect(page.locator('#model-status')).not.toContainText('Laddar');

@@ -1,4 +1,4 @@
-import{test,expect}from'@playwright/test';import{fixture}from'./fixtures';import{temporarySkies}from'../In/hemkontroll_3d_komplett/src/system/temporary-skies';
+import{test,expect}from'./test';import{fixture}from'./fixtures';import{temporarySkies}from'../In/hemkontroll_3d_komplett/src/system/temporary-skies';
 test('local photographic skies, moon map and weather shaders work through day, night and storm',async({page,request})=>{
  await fixture(page);const initial=await request.get('/dev-api/settings').then(r=>r.json()),scene=await request.get('/workspace-api/scene').then(r=>r.json()),errors:string[]=[],loaded:string[]=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.status()===200&&r.url().includes('/textures/'))loaded.push(r.url());});

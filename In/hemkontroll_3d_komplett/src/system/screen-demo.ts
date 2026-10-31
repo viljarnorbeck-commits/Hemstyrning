@@ -6,9 +6,9 @@ if (!local) {
  document.body.replaceChildren(document.createTextNode('Testvyn är endast tillgänglig via localhost.'));
 } else {
  const screens=[
-  {id:'tv',title:'TV · Vardagsrum',tag:'VISNINGSSKÄRM',description:'3D-gården i TV-profil. Visar parkopplingskoden och tar emot kamerakommandon.',route:'/?profile=tv&screen=Vardagsrum&preview=1',color:'#9bff4d',hint:'Testa piltangenterna och Enter som fjärrkontroll.'},
-  {id:'desk',title:'Dator · Arbetsrum',tag:'ÖVERSIKT',description:'Den fullständiga listan med energi, sol, bilar och enheter. Ingen tung 3D-modell laddas.',route:'/?view=list&profile=standard&screen=Arbetsrum&preview=1',color:'#36e4ee',hint:'Kan ligga öppen samtidigt som TV:n.'},
-  {id:'pad',title:'Surfplatta · Kontrollpanel',tag:'FJÄRRKONTROLL',description:'Lampornas skjutbrytare, bilvärme, robotar, detaljer och scener. Parkoppla denna med TV-fliken.',route:'/control?profile=standard&preview=1',color:'#75aaff',hint:'Välj objektets namn för att flytta kameran på TV:n.'},
+  {id:'tv',title:'TV · Vardagsrum',tag:'VISNINGSSKÄRM',description:'3D-gården i TV-profil. Följer automatiskt serverns gemensamma visning.',route:'/?profile=tv&screen=Vardagsrum&preview=1',color:'#9bff4d',hint:'Testa piltangenterna och Enter som fjärrkontroll.'},
+  {id:'desk',title:'Dator · Arbetsrum',tag:'ÖVERSIKT',description:'Hemskärmen med 3D och samma gemensamma visning som TV:n.',route:'/?profile=standard&screen=Arbetsrum&preview=1',color:'#36e4ee',hint:'Kan ligga öppen samtidigt som TV:n.'},
+  {id:'pad',title:'Surfplatta · Kontrollpanel',tag:'FJÄRRKONTROLL',description:'Lampornas skjutbrytare, bilvärme, robotar, detaljer och scener. Objektval uppdaterar alla anslutna hemskärmar.',route:'/control?profile=standard&preview=1',color:'#75aaff',hint:'Välj objektets namn för att flytta kameran på TV:n.'},
   {id:'phone',title:'Mobil · Hem',tag:'MOBILVY',description:'Hemstarten med samma livevärden. Aktivera mobilstorlek i Chromes enhetsverktyg.',route:'/?profile=mobile&screen=Mobil&preview=1',color:'#bd94ff',hint:'DevTools → Ctrl+Shift+M → välj telefonformat.'}
  ];
  const css=`
@@ -38,15 +38,15 @@ if (!local) {
  document.body.innerHTML=`<main class="demo-wrap">
  <span class="demo-kicker">HEMSTYRNING · LOKALT TEST</span>
  <h1>Fyra skärmar. Ett hem.</h1>
- <p class="demo-intro">Öppna varje enhet i en <strong>ny Chrome-flik</strong>. Alla ansluter till samma Home Assistant-simulator på din dator. Det behövs inte fyra localhost-servrar. Testet är gjort för att fungera utan riktiga TV-apparater eller mobiler.</p>
+ <p class="demo-intro">Öppna varje enhet i en <strong>ny Chrome-flik</strong>. Alla ansluter till samma Hemstyrning-server på din dator. Det behövs inte fyra localhost-servrar. Testet är gjort för att fungera utan riktiga TV-apparater eller mobiler.</p>
  <div class="demo-grid">${screens.map(s=>`<section class="demo-card" style="--card-accent:${s.color}"><small>${s.tag}</small><h2>${s.title}</h2><p>${s.description}</p><p class="demo-hint">${s.hint}</p><a href="${s.route}" target="_blank" rel="noopener noreferrer">Öppna ${s.id==='tv'?'TV':s.id==='desk'?'dator':s.id==='pad'?'surfplatta':'mobil'} i ny flik ↗</a></section>`).join('')}</div>
- <section class="demo-guide"><h2>Testa kommunikationen</h2><ol>
+ <section class="demo-guide"><p><a href="/?viewer=simulated-camera&amp;viewerKind=mower" target="_blank" rel="noopener">Öppna simulerat permanent kameratittarläge</a> · Kräver simulatorn. Ingen verklig videoström visas.</p><h2>Testa kommunikationen</h2><ol>
  <li>Öppna <strong>TV</strong> och <strong>Surfplatta</strong> ovan.</li>
- <li>På TV-fliken: öppna <strong>Visningsskärm</strong> och kopiera den sexsiffriga koden.</li>
- <li>På surfplattefliken: skriv koden under <strong>Styr skärm</strong> och klicka <strong>Parkoppla</strong>.</li>
+ <li>Öppna även datorns hemskärm. Alla ansluter automatiskt till samma visningsläge.</li>
+ <li>Ingen kod eller särskild TV behöver väljas.</li>
  <li>Välj exempelvis <strong>LUBA</strong> eller en bil genom att trycka på namnet. TV-flikens kamera ska flytta sig. En skjutbrytare styr enheten separat.</li>
  <li>Tryck på <strong>Visa hela gården</strong> för att återgå till TV:ns startvy.</li></ol>
- <p>Flikarna har egna skärmsessioner, men delar simulerade enhetstillstånd. Öppna nya flikar med länkarna här (använd inte Chromes <em>Duplicera flik</em>). För mobiltest: använd Chromes enhetsverktyg <code>F12</code> → <code>Ctrl+Shift+M</code>. Detta testar webbgränssnitt och skärmsynkronisering, inte prestanda hos en fysisk Google TV.</p></section>
+ <p>Tillfälligt fokus återgår till Hem efter fem minuters inaktivitet. Hem återställer alla följande skärmar direkt. Permanenta kameravyer lämnas lokalt. Flikarna delar samma datakälla; kontrollera simulatorläge före styrtester. Öppna nya flikar med länkarna här (använd inte Chromes <em>Duplicera flik</em>). För mobiltest: använd Chromes enhetsverktyg <code>F12</code> → <code>Ctrl+Shift+M</code>. Detta testar webbgränssnitt och skärmsynkronisering, inte prestanda hos en fysisk Google TV.</p></section>
  </main>`;
 }
 

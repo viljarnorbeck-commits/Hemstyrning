@@ -1,3 +1,4 @@
+import {ViewCoordinator} from './view-coordinator.js';
 import{readFile,stat}from'node:fs/promises';
 import {createAccess} from './access.js';
 import {screenHub} from './screens.js';
@@ -130,7 +131,13 @@ export function createSimulator(options: SimulatorOptions) {
     res.json(store.set(entityId, body.state, asObject(body.attributes)));
   });
 
-  const hub=screenHub(access.role,async id=>(await workspace.load()).objects.some(o=>o.id===id),process.env.VITEST&&!options.dataDirectory?undefined:resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),options.live?'screens-real.json':'screens-simulator.json'));
+  let viewOffset=0;
+  const viewCoordinator=new ViewCoordinator({now:()=>Date.now()+viewOffset,set:(fn,ms)=>setTimeout(fn,ms),clear:t=>clearTimeout(t as ReturnType<typeof setTimeout>)});
+  const hub=screenHub(access.role,async id=>(await workspace.load()).objects.some(o=>o.id===id&&o.placementConfirmed!==false),async ref=>!options.live&&ref==='simulated-camera',viewCoordinator);
+  if(!options.live&&process.env.HEM_VIEW_TEST_CLOCK==='true'){
+   dev.post('/view-clock',(req,res)=>{const ms=req.body?.advanceMs;if(!Number.isFinite(ms)||ms<0||ms>3600000){res.sendStatus(400);return;}viewOffset+=ms;res.json(viewCoordinator.snapshot());});
+   dev.post('/view-disconnect',(_req,res)=>{for(const ws of hub.wss.clients)ws.close(1012);res.json({ok:true});});
+  }
   notifyConfig=hub.broadcast;
   app.get('/app-api/releases',async(_req,res)=>{try{const dir=resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),'releases'),list=JSON.parse(await readFile(resolve(dir,'index.json'),'utf8'));const valid=[];for(const r of list){if(/^[a-zA-Z0-9_.-]+\.(apk|exe|msi|ipa)$/.test(r.file)){try{if((await stat(resolve(dir,r.file))).isFile())valid.push(r);}catch{}}}res.json(valid);}catch{res.json([]);}});
   app.get('/downloads/:file',(req,res)=>{if(!/^[a-zA-Z0-9_.-]+\.(apk|exe|msi|ipa)$/.test(req.params.file)){res.sendStatus(404);return;}res.download(resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),'releases',req.params.file));});

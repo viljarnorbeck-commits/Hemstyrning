@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 import {fixture} from './fixtures';
 
 test('actual scan, atmospheric surroundings and full-screen controls render without errors',async({page})=>{

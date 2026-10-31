@@ -1,4 +1,4 @@
-import {test,expect}from'@playwright/test';
+import {test,expect}from'./test';
 import {fixture,planeGlb}from'./fixtures';
 
 test('editor discovers, places and persists dock, vacuum and occluder without changing other objects',async({page,request})=>{

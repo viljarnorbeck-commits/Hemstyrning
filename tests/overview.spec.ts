@@ -1,4 +1,4 @@
-import{test,expect}from'@playwright/test';import{fixture}from'./fixtures';
+import{test,expect}from'./test';import{fixture}from'./fixtures';
 test('ten read-only overview groups, responsive perimeter and live 3D',async({page})=>{
  await fixture(page);let writes=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/connection-api/'))writes++;});await page.goto('/');await expect(page.locator('.home-overview article')).toHaveCount(10);await expect(page.locator('#connection-status')).toContainText('Ansluten');
  await expect(page.locator('.hero-heading')).toHaveCount(0);await expect(page.locator('.home-quick-controls')).toBeHidden();await expect(page.locator('.home-overview')).toContainText('Inte ansluten');await expect(page.locator('[data-overview-card=cost]')).toContainText('Saknar data');

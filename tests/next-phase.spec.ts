@@ -1,4 +1,4 @@
-import{test,expect}from'@playwright/test';
+import{test,expect}from'./test';
 import{fixture,planeGlb}from'./fixtures';
 test('3D lamp click toggles confirmed state without a panel; drag and failed commands do not toggle',async({page,request})=>{
  await fixture(page);let id='',entity='';await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),c=await response.json(),o=c.objects.find((o:any)=>o.type==='light');id=o.id;entity=o.entityId;o.position=[0,5,0];c.objects=[o];c.quality='low';await route.fulfill({json:c});});

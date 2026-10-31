@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 test('shared navigation, vertical lamp list, horizontal detail rows and responsive pages',async({page})=>{
  await page.setViewportSize({width:1440,height:600});await page.goto('/control');await expect(page.locator('#control-status')).toContainText('Ansluten');
  await expect(page.getByRole('navigation',{name:'Huvudnavigation'})).toBeVisible();

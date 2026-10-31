@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 import {fixture} from './fixtures';
 
 test('editor searches HA entities, inspects attributes and persists a selected binding',async({page,request})=>{

@@ -20,19 +20,7 @@ HA-action. Separata switchar/knappar använder samma Connection/backend som hemm
 Ljusstyrka, Kelvin och RGB valideras mot konfigurerad lampa och dess funktioner.
 Bilar och robotar använder tidigare individuella bindningar och funktionsflaggor.
 
-Öppna **Visningsskärm** på TV/3D-klienten och ange dess sexsiffriga kod i kontroll-
-panelen. Koden gäller10min, kan förnyas och ger endast en specifik mottagare.
-Flera skärmar påverkas inte av samma val. `/screen-ws` har en egen kamera-protokoll-
-kanal: SelectObject, FocusObject, FollowObject, ShowOverview, EnterFree3D,
-CancelFollow och CameraTransitionCompleted. Meddelanden innehåller objekt-ID,
-inte HA-tjänster. Kontrollerade1,4s-övergångar körs av GardenScene, med befintliga
-markgränser och LUBA-tracker. Saknad verifierad position ger inget påhittat följmål.
-Manuell navigering avbryter övergång/följning.
-
-Klientidentitet lagras per fönster i sessionStorage; servern sparar parkopplingar
-i separata, ignorerade simulator-/real-register. WebSocket återansluter och har
-heartbeat. En stängd ny flik kräver ny parkoppling; en återansluten befintlig flik
-kan återuppta sitt mål efter serveromstart. Koden är inte HA-behörighet.
+Alla hemskärmar följer automatiskt serverns gemensamma visning. Objektval fokuserar alla följande skärmar, och fem minuters inaktivitet återställer HOME. Lokala permanenta kameravyer är undantagna. Se [Gemensam visningshantering](SHARED_VIEW.md) för protokoll, roller och tester.
 
 ## Förinställningar
 

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './test';
 test('ambient cards preserve animation and focus through confirmed commands',async({page,request})=>{
  const original=await request.get('/workspace-api/scene').then(r=>r.json());
  try{

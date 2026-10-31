@@ -1,13 +1,62 @@
-import{homeOverview}from'./home-overview';
+import {homeOverview} from './home-overview';
 import {startPresentation} from './start-presentation';
-
-import type{GardenScene}from'./scene';import type{Configuration}from'./configuration';import type{Connection}from'./connection';import{ScreenLink}from'./screen-link';
+import type {GardenScene} from './scene';
+import type {Configuration} from './configuration';
+import type {Connection} from './connection';
+import {ScreenLink} from './screen-link';
+import type {ViewState,ViewerView} from '../../../../shared/view-protocol.js';
 export function homeV2(config:Configuration,connection:Connection,garden:GardenScene){
- const presentation=startPresentation(config,connection,garden);const focus=(e:Event)=>{const {id,follow}=(e as CustomEvent).detail;void presentation.enter(()=>{try{garden.focusObject(id,follow);}catch(error){document.getElementById('data-status')!.textContent=(error as Error).message;}});};const overview=()=>setMode(false);document.addEventListener('hem-focus-object',focus);document.addEventListener('hem-show-overview',overview);const cards=homeOverview(config,connection),root=cards.root;document.body.append(root);
+ const initialList=new URLSearchParams(location.search).get('view')==='list';let firstSnapshot=true;
+ const presentation=startPresentation(config,connection,garden),cards=homeOverview(config,connection),root=cards.root;
+ document.body.append(root);const link=new ScreenLink('display','Hem');let disposed=false,revision=0,applied='',navigating=false,lastMove=0;
  const nav=document.querySelector('header nav')!,home=document.createElement('button'),free=document.createElement('button'),control=document.createElement('a');home.id='home-button';home.textContent='⌂ Hem';free.id='open-3d';free.textContent='Öppna 3D';control.href='/control';control.textContent='Kontrollpanel ↗';nav.prepend(home,free,control);
- const screen=document.createElement('details');screen.className='screen-identity glass';const requestedName=new URLSearchParams(location.search).get('screen');const name=sessionStorage.getItem('hem-display-name')??(requestedName&&requestedName.length<=60?requestedName:null)??localStorage.getItem('hem-display-name')??'Vardagsrum';screen.innerHTML='<summary>Visningsskärm: <b></b></summary><label>Skärmnamn<input maxlength="60"></label><p>Parkopplingskod: <strong data-pair-code>…</strong></p><button>Ny kod (10 min)</button>';screen.querySelector('b')!.textContent=name;screen.querySelector('input')!.value=name;screen.querySelector('input')!.onchange=e=>{sessionStorage.setItem('hem-display-name',(e.target as HTMLInputElement).value);location.reload();};document.body.append(screen);
- const link=new ScreenLink('display',name);link.addEventListener('message',e=>{const m=(e as CustomEvent).detail;if(m.type==='ConfigUpdated')void config.load().then(()=>{garden.setConfig(config.value);cards.render();render();});if(m.code)screen.querySelector('[data-pair-code]')!.textContent=m.code;if(m.objectId)for(const el of document.querySelectorAll<HTMLElement>('#device-markers [data-object]'))el.classList.toggle('selected',el.dataset.object===m.objectId);const complete=()=>link.completed(m.requestId);try{if(['FocusObject','SelectObject'].includes(m.type)){void presentation.enter(()=>{setMode(true);garden.focusObject(m.objectId,false,complete);});}if(m.type==='FollowObject'){void presentation.enter(()=>{setMode(true);garden.focusObject(m.objectId,true,complete);});}if(m.type==='ShowOverview'){setMode(false);garden.overview(complete);}if(m.type==='EnterFree3D')void presentation.enter(()=>setMode(true));if(m.type==='CancelFollow')garden.cancelFollow();}catch(error){document.getElementById('data-status')!.textContent=(error as Error).message;}});screen.querySelector('button')!.onclick=()=>link.renew();link.start();
- function setMode(value:boolean){if(location.pathname==='/'){const url=new URL(location.href);url.searchParams.delete('native');if(value)url.searchParams.set('view','3d');else url.searchParams.delete('view');history.replaceState({},'',url.pathname+url.search);if(!url.searchParams.has('preview'))localStorage.setItem('hem-last-view',url.pathname+url.search);}if(document.body.classList.contains('home-list'))document.getElementById('list-button')?.click();document.body.classList.toggle('hem-start',!value);root.hidden=value;presentation.home(false);garden.controls.enabled=true;home.setAttribute('aria-pressed',String(!value));if(!value){document.dispatchEvent(new Event('hem-clear-selection'));garden.overview();}}
- home.onclick=()=>setMode(false);free.onclick=()=>void presentation.enter(()=>setMode(true));document.querySelector('.mobile-home-nav [data-view="3d"]')?.addEventListener('click',()=>setMode(true));document.querySelector('.mobile-home-nav [data-view="home"]')?.addEventListener('click',()=>setMode(false));
- const render=()=>cards.render();const timer=setInterval(render,1000);render();const focusParams=new URLSearchParams(location.search);if(focusParams.get('focus')&&config.value.objects.some(o=>o.id===focusParams.get('focus')))void presentation.enter(()=>{setMode(true);garden.focusObject(focusParams.get('focus')!,focusParams.get('follow')==='1');});setMode(new URLSearchParams(location.search).get('view')==='3d');if(new URLSearchParams(location.search).get('view')===null)garden.revealOverview();else garden.overview();return()=>{clearInterval(timer);link.stop();cards.dispose();presentation.dispose();document.removeEventListener('hem-focus-object',focus);document.removeEventListener('hem-show-overview',overview);};
+ const viewer=document.createElement('section');viewer.className='view-camera-panel';viewer.hidden=true;viewer.setAttribute('aria-label','Kameravisning');viewer.innerHTML='<h2>Kameravisning</h2><p role="status"></p><button data-view-retry>Försök igen</button><button data-view-exit>Lämna kameravisning</button>';document.body.append(viewer);
+ const message=(text:string)=>{const node=document.getElementById('data-status');if(node)node.textContent=text;};
+ function setMode(value:boolean){
+  const url=new URL(location.href);url.searchParams.delete('native');url.searchParams.delete('focus');url.searchParams.delete('follow');if(value)url.searchParams.set('view','3d');else url.searchParams.delete('view');history.replaceState({sharedView:true},'',url.pathname+url.search);
+  if(document.body.classList.contains('home-list'))document.getElementById('list-button')?.click();
+  document.body.classList.toggle('hem-start',!value);root.hidden=value;presentation.home(false);garden.controls.enabled=true;home.setAttribute('aria-pressed',String(!value));
+ }
+ function reset(){garden.pauseRendering(false);++revision;applied='';presentation.cancel(true);garden.cancelFollow();viewer.hidden=true;document.body.classList.remove('camera-viewer');setMode(false);document.dispatchEvent(new Event('hem-clear-selection'));garden.energyNetwork.enabled=false;document.body.classList.remove('energy-view');garden.overview();document.body.dataset.viewMode='HOME';}
+ function clearViewerRoute(){const url=new URL(location.href);url.searchParams.delete('viewer');url.searchParams.delete('viewerKind');history.replaceState(history.state,'',url.pathname+url.search);initialViewer=null;}
+ function requestHome(){clearViewerRoute();link.leaveViewer();reset();if(link.connected&&link.canControl)link.send('ShowOverview');else if(!link.connected)sessionStorage.setItem('hem-home-request','1');}
+ async function apply(state:ViewState){
+  if(disposed||link.viewer)return;document.body.dataset.viewVersion=String(state.version);document.body.dataset.viewEpoch=state.epoch;
+  if(firstSnapshot){firstSnapshot=false;if((initialList||initialFree)&&state.mode==='HOME'){document.body.dataset.viewMode=initialFree?'FREE_3D':'HOME';return;}}
+  if(state.reason==='activity'&&applied)return;
+  if(state.mode==='HOME'){reset();if(state.reason==='invalid')message('Objektet saknas eller saknar verifierad position');return;}
+  if(state.mode==='FREE_3D'){++revision;presentation.cancel();garden.cancelFollow();if(!pendingInitialFree)setMode(true);pendingInitialFree=false;document.body.dataset.viewMode='FREE_3D';void garden.ready().catch(e=>message(String(e)));applied=state.epoch+':'+state.version;return;}
+  const key=state.epoch+':'+state.version;if(key===applied)return;applied=key;const n=++revision;
+  await presentation.enter(()=>{if(disposed||n!==revision||link.viewer)return;try{setMode(true);garden.cancelFollow();if('objectId'in state)garden.focusObject(state.objectId,state.mode==='FOLLOW_OBJECT');document.body.dataset.viewMode=state.mode;}catch(e){reset();message((e as Error).message);}});
+ }
+ function showViewer(view:ViewerView){garden.pauseRendering(true);++revision;presentation.cancel(true);garden.cancelFollow();viewer.hidden=false;document.body.classList.add('camera-viewer');viewer.querySelector('p')!.textContent=view.cameraRef==='simulated-camera'?'SIMULERAT KAMERATITTARLÄGE · ingen videoström används':'Ingen bild. Kamerans säkra strömanslutning är inte konfigurerad.';document.body.dataset.viewMode=view.mode;}
+ viewer.querySelector('[data-view-exit]')!.addEventListener('click',()=>{clearViewerRoute();viewer.hidden=true;document.body.classList.remove('camera-viewer');link.leaveViewer();});
+ viewer.querySelector('[data-view-retry]')!.addEventListener('click',()=>{if(link.viewer)link.openViewer(link.viewer);});
+ link.addEventListener('message',event=>{const m=(event as CustomEvent).detail;
+  if(m.type==='ConfigUpdated')void config.load().then(()=>{if(disposed)return;garden.setConfig(config.value);cards.render();});
+  if(m.type==='ViewState')void apply(m.state);
+  if(m.type==='ViewerState'){if(m.view)showViewer(m.view);else{garden.pauseRendering(false);viewer.hidden=true;document.body.classList.remove('camera-viewer');applied='';if(link.state)void apply(link.state);}}
+  if(m.type==='error')message(m.message);
+  if(m.type==='ready'){
+   if(sessionStorage.getItem('hem-home-request')==='1'){sessionStorage.removeItem('hem-home-request');requestHome();}
+   else if(initialFocus){const id=initialFocus;initialFocus='';try{link.send(initialFollow?'FollowObject':'FocusObject',id);}catch(e){message((e as Error).message);}}
+   else if(initialViewer){const view=initialViewer;initialViewer=null;link.openViewer(view);}
+   else if(initialFree){initialFree=false;if(link.canControl)link.send('EnterFree3D');}
+  }
+ });
+ const focus=(e:Event)=>{const {id,follow}=(e as CustomEvent).detail;const object=config.value.objects.find(o=>o.id===id);if(!object||object.placementConfirmed===false){message('Objektet saknar verifierad 3D-position');return;}try{link.send(follow?'FollowObject':'FocusObject',id);}catch(e){message((e as Error).message);}};
+ const open=()=>{try{link.send('EnterFree3D');}catch(e){message((e as Error).message);}};
+ const openViewer=(e:Event)=>{try{link.openViewer((e as CustomEvent).detail);}catch(e){message((e as Error).message);}};
+ document.addEventListener('hem-focus-object',focus);document.addEventListener('hem-show-overview',requestHome);document.addEventListener('hem-request-home',requestHome);document.addEventListener('hem-open-viewer',openViewer);
+ home.onclick=requestHome;free.onclick=open;
+ // OrbitControls change also fires during animation. Only actual input starts activity.
+ const inputStart=()=>{navigating=true;if(!link.viewer){++revision;presentation.cancel();garden.cancelFollow();}};const inputEnd=()=>{navigating=false;};
+ const inputChange=()=>{if(!navigating||link.viewer||!link.canControl)return;if(Date.now()-lastMove<1000)return;lastMove=Date.now();if(link.state?.mode!=='FREE_3D'){try{link.send('EnterFree3D');}catch{}}else link.activity();};
+ garden.controls.addEventListener('start',inputStart);garden.controls.addEventListener('end',inputEnd);garden.controls.addEventListener('change',inputChange);
+ const keyActivity=(e:KeyboardEvent)=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','+','-','PageUp','PageDown'].includes(e.key)&&(e.target===garden.renderer.domElement||e.target===document.body)&&!link.viewer&&link.canControl){if(link.state?.mode==='FREE_3D')link.activity();else link.send('EnterFree3D');}};document.addEventListener('keydown',keyActivity);
+ const params=new URLSearchParams(location.search);let initialViewer:ViewerView|null=params.get('viewer')?{mode:params.get('viewerKind')==='mower'?'VIEW_MOWER_CAMERA':'VIEW_CAMERA',cameraRef:params.get('viewer')!}:null;let initialFocus=params.get('focus')??'',initialFollow=params.get('follow')==='1',initialFree=params.get('view')==='3d'&&!history.state?.sharedView;
+ // TV boots locally at HOME; reconnects still receive the server's current state.
+ if(params.get('native')==='home'&&params.get('profile')==='tv'){initialFocus='';initialFree=false;sessionStorage.setItem('hem-home-request','1');}
+ let pendingInitialFree=initialFree;setMode(initialFree);if(initialFree)document.body.dataset.viewMode='FREE_3D';garden.revealOverview();link.start();const timer=setInterval(()=>cards.render(),1000);
+ return()=>{disposed=true;++revision;clearInterval(timer);link.stop();cards.dispose();presentation.dispose();viewer.remove();document.removeEventListener('hem-focus-object',focus);document.removeEventListener('hem-show-overview',requestHome);document.removeEventListener('hem-request-home',requestHome);document.removeEventListener('hem-open-viewer',openViewer);document.removeEventListener('keydown',keyActivity);garden.controls.removeEventListener('start',inputStart);garden.controls.removeEventListener('end',inputEnd);garden.controls.removeEventListener('change',inputChange);};
 }
