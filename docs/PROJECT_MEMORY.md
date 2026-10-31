@@ -96,3 +96,10 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - updateMarkup behåller data-dom-key/id/data-card och undviker value/checked/selected-ändringar under aktiv pekinteraktion. Spotify har stabila sektionsidentiteter. Dolda avancerade musikvyer suspenderas utan att uppspelningsanslutningen stoppas.
 - Landskapslås begärs bara i stödd standalone/helskärm och stående läge; avslag hanteras. Android/PWA-inställningar från tidigare uppdrag bevaras.
 - Inga tester, automatiserade webbläsarprov, TypeScript-körningar eller byggen utförda i detta designuppdrag. Statisk granskning är inte fysisk eller visuell verifiering.
+
+## Referensdesign – endast kontrollpanelens högersida
+
+- control-right.css är isolerad till reference-right: tre rader med färgade förinställningar, stor dynamisk enhetskontroll och låg horisontell Spotify-rad. Vänsterlistans markup/stilar har inte ändrats.
+- Tillgänglig lampa väljs lokalt som standard utan HA-kommando eller kamerafokus. Lampdetaljen visar SVG-illustration, bekräftad ljusfärg/tillstånd, stor skjutbrytare, stödda dimmer-/färg-/Kelvinreglage. Färgsnabbval använder samma befintliga change/Connection.light-väg.
+- Andra enheter använder samma illustrations-/detaljyta och befintliga kommandon. Spotify-kompaktläget har omslag/låt till vänster, stor transportknapp och seek i mitten, enhet/volym till höger. Seek använder befintlig backendåtgärd; enhetsval länkar till fullvyns enhetsflik.
+- Inga tester eller automatiserade webbläsarkörningar utförda enligt uppdraget. Layout och fysisk funktion är ännu inte verifierade.
