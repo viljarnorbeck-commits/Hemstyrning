@@ -23,7 +23,7 @@ function cover(url:string){try{const u=new URL(url);return u.protocol==='https:'
 const blank:Player={connected:false,playing:false,track:null,progressMs:0,device:null};
 export class MusicPanel{
  readonly root=document.createElement('aside');
- private dialog=document.createElement('dialog');private embedded=false;private queue:SpotifyItem[]=[];
+ readonly dialog=document.createElement('dialog');private embedded=false;private queue:SpotifyItem[]=[];
  private state:Player=blank;private setup:Setup={configured:false,connected:false,canControl:false,canConfigure:false,message:'Ansluter till Spotify…'};
  private devices:Device[]=[];private busy=false;private commandError=false;private feedback='';private open=false;private qr='';private qrLabel='';private timer:ReturnType<typeof setInterval>;
  private speaker=new BrowserSpeaker();private speakerEnabled=false;private readyDevice='';private deviceLoading=false;private sdkRefreshAt=0;
@@ -74,7 +74,10 @@ export class MusicPanel{
   void this.refresh();
   this.update();
  }
- mountPage(container:HTMLElement){this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab='search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadQueue();}
+ private homeHost:ParentNode|null=null;
+ setNotify(notify:(text:string)=>void){this.notify=notify;}
+ mountHome(){this.embedded=false;this.open=false;this.root.hidden=false;this.dialog.removeAttribute("open");this.dialog.classList.remove("embedded-music","compact-player");document.body.append(this.dialog);if(this.homeHost)this.homeHost.append(this.root);}
+ mountPage(container:HTMLElement){this.homeHost??=this.root.parentNode;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab='search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadQueue();}
  private async loadQueue(){if(!this.setup.connected)return;try{const data=await api<{queue:SpotifyItem[]}>('/queue');this.queue=Array.isArray(data.queue)?data.queue:[];this.renderDialog();}catch(e){this.report((e as Error).message);}}
  get summary(){return this.state.track?.name??(this.setup.connected?'Ingen låt spelas':'Spotify ej anslutet');}
  private get jamUrl(){return this.config.value?.music?.jamUrl??'';}

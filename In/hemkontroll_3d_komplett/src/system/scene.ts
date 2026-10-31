@@ -216,7 +216,7 @@ export class GardenScene {
   frame(target: EnvironmentFrame, states: Map<string, HassState>, connected: boolean, simulatedLights: Map<string, boolean>, simulation: boolean) {
     this.latestEnvironment=target;
     const now = performance.now();
-    if(now-this.lastFrame<1000/profiles[graphicsProfile()].fps)return;
+    if(now-this.lastFrame<1000/(document.body.classList.contains('app-feature')?8:profiles[graphicsProfile()].fps))return;
     const dt = Math.min((now - this.lastFrame) / 1000, 0.1); this.renderer.domElement.dataset.frameMs=String(now-this.lastFrame);this.lastFrame = now;
     this.visualStates=states;this.energyNetwork.update(this.config?.energyRoutes??[],states,connected,dt);
     if(this.diagnostic){this.energyNetwork.root.visible=false;this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.routeOverlay.visible=this.yardOverlay.visible=false;this.controls.update();this.constrainCamera();this.cameraStats();this.renderer.render(this.scene,this.camera);return;}

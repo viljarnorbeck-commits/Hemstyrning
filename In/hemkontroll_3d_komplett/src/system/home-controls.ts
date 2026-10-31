@@ -1,3 +1,4 @@
+import {getMusicPanel} from './music-session';
 import {normalizeCalendar,type CalendarItem}from'./calendar-data';
 import {escapeHtml as esc} from './panels';
 import {reading,formatReading as fmt,booleanReading} from './device-data';
@@ -21,7 +22,7 @@ export class HomeControls{
   this.mobile.className='mobile-home-nav';this.mobile.setAttribute('aria-label','Hemnavigering');this.mobile.innerHTML='<button data-view="3d">◇ 3D</button><button data-view="home">⌂ Hem</button><button data-view="lights">✦ Ljus</button><button data-view="cars">▰ Bilar</button><button data-view="music">♪ Musik</button><button data-view="calendar">▦ Kalender</button>';
   this.cleanButton.className='clean-view-toggle';this.cleanButton.id='clean-view';this.cleanButton.textContent='⛶';this.cleanButton.setAttribute('aria-label','Ren 3D-fullskärm');this.cleanButton.setAttribute('aria-pressed','false');
   document.body.append(this.strip,this.menu,this.right,this.dashboard,this.calendarPanel,this.mobile,this.cleanButton,this.cameraTools);
-  this.music=new MusicPanel(connection,store,notice);this.music.onVisibilityChange=open=>this.onViewChange(this.list||open);this.right.append(this.music.root,this.rightCalendar);
+  this.music=getMusicPanel(connection,store,notice);this.music.onVisibilityChange=open=>this.onViewChange(this.list||open);this.right.append(this.music.root,this.rightCalendar);
   for(const root of [this.menu,this.dashboard,this.right])root.addEventListener('click',event=>this.click(event));
   this.mobile.onclick=e=>{const view=(e.target as HTMLElement).closest<HTMLElement>('[data-view]')?.dataset.view;if(view==='music')this.music.show();else if(view==='calendar')this.openCalendar();else if(view==='home'){this.setListMode(false);document.getElementById('home-button')?.click();}else if(view==='3d')document.getElementById('open-3d')?.click();else if(view){this.setListMode(true);if(view!=='home')this.dashboard.querySelector(`[data-section="${view}"]`)?.scrollIntoView({block:'start',behavior:'smooth'});}};
   this.calendarPanel.onclick=event=>{if((event.target as HTMLElement).closest('[data-close-calendar]')){this.fullCalendar=false;this.calendarPanel.hidden=true;}};

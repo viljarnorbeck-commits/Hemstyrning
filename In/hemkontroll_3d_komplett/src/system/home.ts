@@ -1,3 +1,4 @@
+import {appConnection,startConnection} from './app-session';
 import{homeV2}from'./home-v2';
 import {available,robotSupports} from '../../../../shared/ha-contract.js';
 import './style.css';
@@ -11,7 +12,7 @@ import { reading,booleanReading,formatReading as fmt } from './device-data';
 import type { EnvironmentFrame, Season, SceneObject } from './types';
 
 const $=(id:string)=>document.getElementById(id)!;
-const config=new Configuration(), connection=new Connection();
+const config=new Configuration(), connection=appConnection;
 let hud:HomeControls;
 let garden:GardenScene, selected:string|undefined, showList=false, busy=false;
 let target:EnvironmentFrame;
@@ -95,10 +96,10 @@ async function start(){try{
  let panelTimer=0;connection.addEventListener('state',()=>{if(!panelTimer)panelTimer=window.setTimeout(()=>{panelTimer=0;update();panel();},250);});connection.addEventListener('connection',()=>{update();panel();});
  window.addEventListener('keydown',e=>{if(e.key==='Escape'){selected=undefined;showList=false;panel();}});
  if(initialView==='list')hud.setListMode(true);
- update();void connection.start();setInterval(update,1000);
+ update();startConnection();setInterval(update,1000);
  const markerEls=[...markers.querySelectorAll<HTMLElement>('[data-object]')];let frame=0;
  const animate=()=>{if(target)garden.frame(target,connection.states,connection.connected,new Map(),false);$('garden').dataset.renderFrames=String(++frame);if(frame%3===0){const occupied:{x:number;y:number}[]=[];for(const el of markerEls){const p=garden.screenPosition(el.dataset.object!);el.hidden=!p||p.z>1||p.z< -1||p.x<0||p.x>innerWidth||p.y<0||p.y>innerHeight||p.occluded;if(p&&!p.occluded){el.hidden=el.hidden||p.distance>160;el.classList.toggle('far',p.distance>95);if(config.value.labels!==false){const o=config.value.objects.find(o=>o.id===el.dataset.object),s=o?connection.states.get(o.entityId):undefined;const label=el.querySelector('small');if(label&&o)label.textContent=o.name+(o.type==='solar'?' · '+fmt(reading(o,connection.states,'production_kw','state'),'kW'):o.type==='car'?' · '+fmt(reading(o,connection.states,'battery_level','state'),'%'):o.type==='mower'?' · '+(s?.state??'Saknar data'):'');}let y=p.y;for(let attempt=0;attempt<8&&occupied.some(o=>Math.hypot(o.x-p.x,o.y-y)<33);attempt++)y-=32;occupied.push({x:p.x,y});el.style.transform=`translate(${p.x}px,${y}px) translate(-50%,-50%)`;el.style.setProperty('--leader',`${p.y-y}px`);}}}};hud.onViewChange=list=>{$('garden').dataset.camera=JSON.stringify(garden.camera.position.toArray());garden.setAnimationLoop(list?null:animate);markers.hidden=list;};garden.setAnimationLoop(animate);
  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
  window.addEventListener('pagehide',()=>{disposeV2();connection.stop();hud.dispose();garden.dispose();},{once:true});
  }catch(error){$('model-status').textContent=error instanceof Error?error.message:String(error);}}
-void start();
+export const homeReady=start();

@@ -44,7 +44,7 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 
 ## Spotify och appar
 
-- Spotify har separat sida och direkt Web API/SDK/OAuth via backend. Bevara sökning, kö, spellistor, enhetsval, Jam och tokenskydd. Ingen Spotify-widget ska återinföras i kontrollpanelen.
+- Spotify har separat sida och direkt Web API/SDK/OAuth via backend. Bevara sökning, kö, spellistor, enhetsval, Jam och tokenskydd. Användarens nya designuppdrag återinför Spotify i kontrollpanelens nedre högeryta genom samma beständiga spelarinstans.
 - Uppspelningsöverföring kräver bekräftad målenhet. Gamla behörigheter kräver återauktorisering. Testerna använder falsk API/SDK och får inte påverka verklig musik.
 - Nativeappar är tunna klienter mot samma betrodda HTTPS-server, utan HA-token eller modellkopior. Paket ska inte presenteras som ombyggda eller signerade utan faktisk verifiering.
 - Se `docs/SPOTIFY_DIRECT.md` och `docs/INSTALLABLE_APPS.md`.
@@ -54,3 +54,11 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Slutkontroll: TypeScript, 156 enhets-/integrationstester (60 backend + 96 frontend), produktionsbygge och samtliga 59 Playwright-test godkända. Flerfliktsprovet verifierade fokus, följning, serverstyrd timeout, upprepad Hem, lokal kameravy, återanslutning och snapshot efter sidomladdning utan HA-kommandon.
 - Playwright återställer gemensamt HOME före varje test. Använd en ren separat simulator-scenkonfiguration: en avbruten editorprovning kan lämna en importerad testmodell. Spotify-proven väntar på asynkron bekräftelse/SDK-registrering; återanslutningsstatus provas med kontrollerad webbläsarklocka. TV-provet väntar på färdig hemskärm före D-pad. Inga produktionsfunktioner ändrades för dessa testväntetider.
 - Ingen fysisk Google TV har verifierats i detta uppdrag. Windowsmiljön saknar Java/Gradle för nytt APK-bygge.
+
+## Pågående stor designuppdatering
+
+- AppShell håller GardenScene och HA-anslutningen beständiga. Funktionssidor monteras i ett outlet och städar egna lyssnare/timers med PageScope. Klientnavigation stöder historik och direktlänkar. Editor och OAuth använder fortsatt separat dokumentnavigation.
+- Kontrollpanelen har en lamplista och två högerytor: detaljer/förinställningar samt återanvänd Spotify. Den dubbla lampraden och Runt huset är borttagna. Belysningssidan behåller sina filter.
+- Gemensamma panelvariabler använder mörkgrått transparent material. Bakgrundsrendering på funktionssidor begränsas till 8 fps.
+- Android anger sensorLandscape, PWA-manifest landscape. Webbläsare får diskret rotationsuppmaning; orienteringslås begärs bara i standalone/helskärm och avslag hanteras.
+- VIKTIGT: användaren har uttryckligen bett att vänta med testkörningarna. Resultaten ovan gäller föregående commit, inte dessa designändringar. TypeScript, tester, bygge och visuell verifiering återstår för designuppdateringen.

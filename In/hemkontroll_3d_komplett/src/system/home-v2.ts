@@ -13,7 +13,7 @@ export function homeV2(config:Configuration,connection:Connection,garden:GardenS
  const viewer=document.createElement('section');viewer.className='view-camera-panel';viewer.hidden=true;viewer.setAttribute('aria-label','Kameravisning');viewer.innerHTML='<h2>Kameravisning</h2><p role="status"></p><button data-view-retry>Försök igen</button><button data-view-exit>Lämna kameravisning</button>';document.body.append(viewer);
  const message=(text:string)=>{const node=document.getElementById('data-status');if(node)node.textContent=text;};
  function setMode(value:boolean){
-  const url=new URL(location.href);url.searchParams.delete('native');url.searchParams.delete('focus');url.searchParams.delete('follow');if(value)url.searchParams.set('view','3d');else url.searchParams.delete('view');history.replaceState({sharedView:true},'',url.pathname+url.search);
+  const url=new URL(location.href);url.searchParams.delete('native');url.searchParams.delete('focus');url.searchParams.delete('follow');if(value)url.searchParams.set('view','3d');else url.searchParams.delete('view');if(location.pathname==='/')history.replaceState({sharedView:true},'',url.pathname+url.search);
   if(document.body.classList.contains('home-list'))document.getElementById('list-button')?.click();
   document.body.classList.toggle('hem-start',!value);root.hidden=value;presentation.home(false);garden.controls.enabled=true;home.setAttribute('aria-pressed',String(!value));
  }

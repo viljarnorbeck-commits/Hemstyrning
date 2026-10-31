@@ -11,7 +11,7 @@ export function updateMarkup(root:HTMLElement,html:string){
    if(old.nodeType!==fresh.nodeType||old.nodeName!==fresh.nodeName){parent.replaceChild(fresh.cloneNode(true),old);return;}
    if(old instanceof HTMLElement&&fresh instanceof HTMLElement){
     for(const a of Array.from(old.attributes))if(!fresh.hasAttribute(a.name))old.removeAttribute(a.name);
-    for(const a of Array.from(fresh.attributes))if(old.getAttribute(a.name)!==a.value)old.setAttribute(a.name,a.value);
+    for(const a of Array.from(fresh.attributes)){if(a.name==='value'&&old===document.activeElement&&old.matches('input,textarea,select'))continue;if(old.getAttribute(a.name)!==a.value)old.setAttribute(a.name,a.value);}
     if(old!==document.activeElement||!old.matches('input,select,textarea'))sync(old,fresh);
    }else if(old.nodeValue!==fresh.nodeValue)old.nodeValue=fresh.nodeValue;
   });
