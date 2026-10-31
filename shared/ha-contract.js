@@ -1,5 +1,5 @@
 /** HA's documented supported_features bitmasks, shared by UI, bridge and simulator. */
-export const MEDIA_FEATURES = Object.freeze({media_play:16384,media_pause:1,media_next_track:32,media_previous_track:16,volume_set:4,select_source:2048});
+export const MEDIA_FEATURES = Object.freeze({media_play:16384,media_pause:1,media_next_track:32,media_previous_track:16,volume_set:4,volume_mute:8,select_source:2048});
 export function available(state){return !!state && !['unknown','unavailable'].includes(state.state);}
 export function mediaSupports(state,service){return available(state)&&Object.hasOwn(MEDIA_FEATURES,service)&&(Number(state.attributes.supported_features??0)&MEDIA_FEATURES[service])!==0;}
 export function robotSupports(state,action){

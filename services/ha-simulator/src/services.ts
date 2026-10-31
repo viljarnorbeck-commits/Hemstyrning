@@ -16,6 +16,7 @@ export async function callService(store:StateStore,call:ServiceCall,delayMs:numb
  if(domain==='media_player'){
   for(const id of ids){const state=store.get(id);if(!id.startsWith('media_player.')||!mediaSupports(state,service))throw new ServiceError('Spelaren saknar stöd eller är otillgänglig',503);
    if(service==='volume_set'&&(typeof call.serviceData.volume_level!=='number'||!Number.isFinite(call.serviceData.volume_level)||call.serviceData.volume_level<0||call.serviceData.volume_level>1))throw new ServiceError('Volym måste vara 0–1');
+   if(service==='volume_mute'&&typeof call.serviceData.is_volume_muted!=='boolean')throw new ServiceError('Mute måste vara booleskt');
    if(service==='select_source'&&(!Array.isArray(state!.attributes.source_list)||!state!.attributes.source_list.includes(call.serviceData.source)))throw new ServiceError('Uppspelningsenheten finns inte');
   }
   await new Promise(resolve=>setTimeout(resolve,delayMs));
@@ -23,6 +24,7 @@ export async function callService(store:StateStore,call:ServiceCall,delayMs:numb
    const position=Number(state.attributes.media_position??0)+(state.state==='playing'?Math.max(0,(Date.now()-Date.parse(String(state.attributes.media_position_updated_at)))/1000):0);
    if(service==='media_next_track'||service==='media_previous_track')setDemoTrack(store,id,Number(state.attributes.track_index??0)+(service==='media_next_track'?1:-1),state.state);
    else if(service==='volume_set')store.set(id,state.state,{volume_level:call.serviceData.volume_level});
+   else if(service==='volume_mute')store.set(id,state.state,{is_volume_muted:call.serviceData.is_volume_muted});
    else if(service==='select_source')store.set(id,state.state,{source:call.serviceData.source});
    else store.set(id,service==='media_play'?'playing':'paused',{media_position:Math.min(Number(state.attributes.media_duration??position),Number.isFinite(position)?position:0),media_position_updated_at:new Date().toISOString()});
   }

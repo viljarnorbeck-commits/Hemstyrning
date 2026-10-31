@@ -7,7 +7,7 @@ import {escapeHtml as esc} from './panels';
 const cleanup = new WeakMap<Connection,()=>void>();
 export function bindingPanel(config:Configuration, connection:Connection) {
   cleanup.get(connection)?.();
-  const root=document.createElement('section');root.className='entity-binding-panel';
+  const root=document.createElement('section');root.className='entity-binding-panel';root.id='entity-bindings';
   root.innerHTML=`<h2>Home Assistant · entitetskopplingar</h2>
     <p>Gemensamma kopplingar för alla skärmar. Sparas i Hemstyrning. Home Assistant ändras inte.</p>
     <label>Informationskort eller 3D-objekt<select data-slot></select></label>

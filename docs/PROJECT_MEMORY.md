@@ -70,3 +70,11 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Kontinuerlig rörelse begränsas till primär/aktiv knapp. Kort får bara hover/fokus. Rörelsen stängs av för coarse pointer, TV och reduced-motion.
 - Inspiration: https://ui.aceternity.com/components/moving-border och officiellt registry/moving-border.json. Implementationen är egen CSS, utan React/Tailwind/Motion.
 - Inga testsviter eller Playwright-körningar utförda enligt användarens uttryckliga instruktion för detta designuppdrag.
+
+## Statisk HA-funktionsgenomgång
+
+- Se HA_FUNCTION_COVERAGE.md: inventeringen är en ögonblicksbild och fysisk funktion har inte verifierats. Inga tester eller verkliga styranrop kördes i uppdraget. HA_ALLOW_CONTROL ändrades inte.
+- Inställningarnas entityCatalog förenar läsande registermetadata (entity/device/area) med befintlig state-ström, visar disabled/unavailable/unknown/saknat state och stödjer sökning/domän/område. Registerfel degraderar till state-katalog utan att fabricera metadata.
+- entityPreferences i samma SceneConfig sparar val för kontrollpanel/funktionssidor och explicit tillåtna generiska kommandon. entity-action accepterar bara sparad entitet, fast domän/åtgärdslista och aktuellt state/kapabilitetsvärde; befintlig readonly- och rollmiddleware gäller. Ingen generisk serviceproxy.
+- HA-media använder befintlig media-endpoint och separat explicit mediaregistrering. Mute-bit 8/booleanvalidering kompletterad även i simulatorn. Direkt Spotify ändras inte.
+- Separat objektregistrering skapar placementConfirmed=false; Husqvarna får eget entity_id och får aldrig återanvändas som LUBA-telemetri. Generisk katalog är inte en komplett adapter för samtliga domäners styrning.
