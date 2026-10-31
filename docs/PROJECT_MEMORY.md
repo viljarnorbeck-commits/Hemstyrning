@@ -78,3 +78,11 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - entityPreferences i samma SceneConfig sparar val för kontrollpanel/funktionssidor och explicit tillåtna generiska kommandon. entity-action accepterar bara sparad entitet, fast domän/åtgärdslista och aktuellt state/kapabilitetsvärde; befintlig readonly- och rollmiddleware gäller. Ingen generisk serviceproxy.
 - HA-media använder befintlig media-endpoint och separat explicit mediaregistrering. Mute-bit 8/booleanvalidering kompletterad även i simulatorn. Direkt Spotify ändras inte.
 - Separat objektregistrering skapar placementConfirmed=false; Husqvarna får eget entity_id och får aldrig återanvändas som LUBA-telemetri. Generisk katalog är inte en komplett adapter för samtliga domäners styrning.
+
+## Korrigerad kontrollpanel
+
+- MusicPanel.mountCompact har egen kompakt markup (omslag/transport/tid/volym/aktiv enhet/länk till fullvy), utan inbäddad dialog eller enhetslista. Samma Spotify-instans och kommandon återanvänds; fullvyn behåller sökning/kö/Jam/konto.
+- device-switch har 48×26 px ovalt spår inom 48×44 px träffyta och en 20 px knapp som flyttas translateX(20px) över 210 ms. Tillstånd kommer fortsatt från HA och Moving Border gäller inte brytaren.
+- Kortgradienter ligger direkt på device-control/preset-card; gamla överlappande bakgrundspseudoelement är avstängda.
+- Vänsterlistan är enda enhetsväljaren: lampor, konfigurerade bilar, Easee vänster/höger, VVB, robotar och användarvalda HA-entiteter. Ingen separat väljare/pin-lista finns till höger. control-devices skapar bara presentationsobjekt för kända datakällor, ändrar inga sparade bindningar/positioner.
+- Inga tester kördes enligt korrigeringsuppdraget. Fysisk funktion och layoutverifiering återstår.

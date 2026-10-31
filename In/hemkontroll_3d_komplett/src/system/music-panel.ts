@@ -23,6 +23,7 @@ function cover(url:string){try{const u=new URL(url);return u.protocol==='https:'
 const blank:Player={connected:false,playing:false,track:null,progressMs:0,device:null};
 export class MusicPanel{
  readonly root=document.createElement('aside');
+ private compact=document.createElement('section');private compactMode=false;
  readonly dialog=document.createElement('dialog');private embedded=false;private queue:SpotifyItem[]=[];
  private state:Player=blank;private setup:Setup={configured:false,connected:false,canControl:false,canConfigure:false,message:'Ansluter till Spotify…'};
  private devices:Device[]=[];private busy=false;private commandError=false;private feedback='';private open=false;private qr='';private qrLabel='';private timer:ReturnType<typeof setInterval>;
@@ -42,6 +43,9 @@ export class MusicPanel{
    if(b.dataset.spotify)void this.command(b.dataset.spotify);
    else this.show();
   });
+  this.compact.className='spotify-compact';this.compact.setAttribute('aria-label','Spotify-spelare');
+  this.compact.addEventListener('click',e=>{const b=(e.target as Element).closest<HTMLElement>('[data-spotify]');if(b&&!b.matches(':disabled'))void this.command(b.dataset.spotify!);});
+  this.compact.addEventListener('change',e=>{const input=e.target as HTMLInputElement;if(input.hasAttribute('data-compact-volume'))void this.command('volume',{volume:Math.round(Number(input.value))});});
   this.dialog.addEventListener('click',e=>{
    const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b)return;
    if(b.dataset.musicTab){this.dialog.dataset.activeTab=b.dataset.musicTab;for(const tab of this.dialog.querySelectorAll<HTMLElement>('[data-music-tab]'))tab.setAttribute('aria-pressed',String(tab===b));return;}
@@ -76,14 +80,17 @@ export class MusicPanel{
  }
  private homeHost:ParentNode|null=null;
  setNotify(notify:(text:string)=>void){this.notify=notify;}
- mountHome(){this.embedded=false;this.open=false;this.root.hidden=false;this.dialog.removeAttribute("open");this.dialog.classList.remove("embedded-music","compact-player");document.body.append(this.dialog);if(this.homeHost)this.homeHost.append(this.root);}
- mountPage(container:HTMLElement){this.homeHost??=this.root.parentNode;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab='search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadQueue();}
+ mountHome(){this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.embedded=false;this.open=false;this.root.hidden=false;this.dialog.removeAttribute("open");this.dialog.classList.remove("embedded-music","compact-player");document.body.append(this.dialog);if(this.homeHost)this.homeHost.append(this.root);}
+ mountPage(container:HTMLElement){this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.homeHost??=this.root.parentNode;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab='search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadQueue();}
+ mountCompact(container:HTMLElement){this.homeHost??=this.root.parentNode;this.compactMode=true;this.embedded=false;this.open=false;this.root.hidden=true;this.dialog.removeAttribute('open');this.dialog.hidden=true;container.append(this.compact);this.renderCompact();}
+ private renderCompact(){const p=this.state,t=p.track,src=cover(t?.cover??''),allow=this.setup.connected&&this.setup.canControl&&!this.busy;updateMarkup(this.compact,`<div class="compact-art">${src?'<img src="'+src+'" alt="Albumomslag" referrerpolicy="no-referrer">':'<span aria-hidden="true">♪</span>'}</div><div class="compact-track"><small>SPOTIFY</small><h3>${esc(this.summary)}</h3><p>${esc(t?.artist??this.setup.message)}</p><div class="compact-timeline"><progress aria-label="Uppspelningstid" max="${Math.max(1,t?.durationMs??1)}" value="${Math.min(p.progressMs,t?.durationMs??0)}"></progress><small>${trackTime(p.progressMs/1000)} / ${trackTime((t?.durationMs??0)/1000)}</small></div><div class="compact-transport">${this.controls()}</div></div><div class="compact-output"><label>Volym<input type="range" aria-label="Spotify-volym" data-compact-volume min="0" max="100" value="${p.device?.volume_percent??0}" ${!allow||p.device?.volume_percent==null?'disabled':''}></label><div><small>UPPSPELNINGSENHET</small><strong>${esc(p.device?.name??'Ingen aktiv enhet')}</strong></div><a class="action-button" href="/music">Hela Spotify ↗</a></div><p class="compact-feedback" role="status">${esc(this.busy?'Väntar på Spotify…':this.feedback)}</p>`);}
  private async loadQueue(){if(!this.setup.connected)return;try{const data=await api<{queue:SpotifyItem[]}>('/queue');this.queue=Array.isArray(data.queue)?data.queue:[];this.renderDialog();}catch(e){this.report((e as Error).message);}}
  get summary(){return this.state.track?.name??(this.setup.connected?'Ingen låt spelas':'Spotify ej anslutet');}
  private get jamUrl(){return this.config.value?.music?.jamUrl??'';}
  update(){
   const p=this.state,t=p.track,src=cover(t?.cover??'');
   updateMarkup(this.root,`<button class="music-open" aria-label="Öppna Spotify"><span class="music-cover">${src?`<img src="${src}" alt="Albumomslag" referrerpolicy="no-referrer">`:'♪'}</span><span class="track-copy"><small>SPOTIFY · DIREKT</small><strong>${esc(this.summary)}</strong><span>${esc(t?.artist??this.setup.message)}</span><small>${esc(p.device?.name??'Ingen aktiv uppspelningsenhet')} · ${p.playing?'Spelar':'Pausad'}</small></span></button><div class="music-inline-controls">${this.controls()}</div><button class="jam-open" data-music="open">Musik och Jam ↗</button>`);
+  if(this.compactMode)this.renderCompact();
   if(this.open)this.renderDialog();
  }
  private controls(){
@@ -184,7 +191,7 @@ export class MusicPanel{
   if(focusedDevice)this.dialog.querySelector<HTMLButtonElement>(`[data-spotify-device="${CSS.escape(focusedDevice)}"]`)?.focus({preventScroll:true});
 
  }
- private report(text:string){this.feedback=text;this.notify(text);if(this.open)this.renderDialog();}
+ private report(text:string){this.feedback=text;if(this.compactMode)this.renderCompact();this.notify(text);if(this.open)this.renderDialog();}
  private async command(action:string,data:Record<string,unknown>={}){
   if(this.busy||!this.setup.canControl||!this.setup.connected)return;
   this.commandError=false;this.feedback='';this.busy=true;this.update();
@@ -212,5 +219,5 @@ export class MusicPanel{
   this.qr=await QRCode.toDataURL(url,{width:360,margin:4,errorCorrectionLevel:'M',color:{dark:'#071710',light:'#ffffff'}});
   this.qrLabel='Öppna Spotify Jam · aktuell session kan inte verifieras';this.renderDialog();
  }
- dispose(){this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
+ dispose(){this.compact.remove();this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
 }
