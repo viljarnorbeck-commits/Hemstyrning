@@ -86,3 +86,13 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Kortgradienter ligger direkt på device-control/preset-card; gamla överlappande bakgrundspseudoelement är avstängda.
 - Vänsterlistan är enda enhetsväljaren: lampor, konfigurerade bilar, Easee vänster/höger, VVB, robotar och användarvalda HA-entiteter. Ingen separat väljare/pin-lista finns till höger. control-devices skapar bara presentationsobjekt för kända datakällor, ändrar inga sparade bindningar/positioner.
 - Inga tester kördes enligt korrigeringsuppdraget. Fysisk funktion och layoutverifiering återstår.
+
+## Sammanhängande design – färdig vy före sidbyte
+
+- Sidmoduler returnerar ready/activate/dispose. AppShell behåller tidigare vy tills data är klar, aktiverar först därefter Spotify och byter innehåll med 200 ms övergång. Vid laddfel ligger föregående vy kvar. Klientnavigation återställer scrollposition och hanterar hash, kalender, listvy och objektlänkar.
+- Hem använder samma levande canvas; övriga sidor har diskret transparent överlägg och 8 fps bakgrund. Ingen modell/UV/ljussättning ändrad.
+- Gemensamt panelmaterial och neutrala textfärger används på funktionssidor/formulär/dialoger; Hemkorten har 93 procent opacitet utan ändrad placering eller bindning.
+- switch.css är gemensam skjutbrytare för lampor och observerat stoppbara skript. Förinställningarnas scenknappar är separata GO!-knappar i gradientkort; scriptbrytaren visar enbart bekräftat körläge.
+- updateMarkup behåller data-dom-key/id/data-card och undviker value/checked/selected-ändringar under aktiv pekinteraktion. Spotify har stabila sektionsidentiteter. Dolda avancerade musikvyer suspenderas utan att uppspelningsanslutningen stoppas.
+- Landskapslås begärs bara i stödd standalone/helskärm och stående läge; avslag hanteras. Android/PWA-inställningar från tidigare uppdrag bevaras.
+- Inga tester, automatiserade webbläsarprov, TypeScript-körningar eller byggen utförda i detta designuppdrag. Statisk granskning är inte fysisk eller visuell verifiering.

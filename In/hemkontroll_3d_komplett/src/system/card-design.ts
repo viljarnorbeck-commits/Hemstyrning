@@ -1,22 +1,25 @@
-/** Stable themes and DOM updates keep ambient animations alive across telemetry. */
+/** Stable themes and DOM reconciliation preserve active controls and scroll positions. */
 export function cardTheme(id:string){let hash=0;for(const c of id)hash=(Math.imul(hash,31)+c.charCodeAt(0))>>>0;return `palette-${hash%7}`;}
+const pressed=new WeakSet<Element>();
+if(typeof document!=='undefined'){
+ document.addEventListener('pointerdown',e=>{if(!(e.target instanceof Element))return;const el=e.target.closest('button,input,select,textarea');if(!el)return;pressed.add(el);const release=()=>{pressed.delete(el);window.removeEventListener('pointerup',release);window.removeEventListener('pointercancel',release);window.removeEventListener('blur',release);};window.addEventListener('pointerup',release,{once:true});window.addEventListener('pointercancel',release,{once:true});window.addEventListener('blur',release,{once:true});},{capture:true});
+}
+function key(node:Node){if(!(node instanceof HTMLElement))return undefined;return node.dataset.card??node.dataset.domKey??(node.id?'id:'+node.id:undefined);}
+function interacting(el:HTMLElement){return pressed.has(el)||(el===document.activeElement&&el.matches('input,select,textarea'));}
 export function updateMarkup(root:HTMLElement,html:string){
  const template=document.createElement('template');template.innerHTML=html;
- function sync(parent:Node,next:Node){
-  const incoming=Array.from(next.childNodes);
-  incoming.forEach((fresh,i)=>{let old=parent.childNodes[i];
-   const key=fresh instanceof HTMLElement?fresh.dataset.card:undefined;
-   if(key){const match=Array.from(parent.childNodes).find(n=>n instanceof HTMLElement&&n.dataset.card===key);if(match&&match!==old){parent.insertBefore(match,old??null);old=match;}}
-   if(!old){parent.appendChild(fresh.cloneNode(true));return;}
-   if(old.nodeType!==fresh.nodeType||old.nodeName!==fresh.nodeName){parent.replaceChild(fresh.cloneNode(true),old);return;}
-   if(old instanceof HTMLElement&&fresh instanceof HTMLElement){
-    for(const a of Array.from(old.attributes))if(!fresh.hasAttribute(a.name))old.removeAttribute(a.name);
-    for(const a of Array.from(fresh.attributes)){if(a.name==='value'&&old===document.activeElement&&old.matches('input,textarea,select'))continue;if(old.getAttribute(a.name)!==a.value)old.setAttribute(a.name,a.value);}
-    if(old!==document.activeElement||!old.matches('input,select,textarea'))sync(old,fresh);
-   }else if(old.nodeValue!==fresh.nodeValue)old.nodeValue=fresh.nodeValue;
-  });
-  while(parent.childNodes.length>incoming.length)parent.lastChild?.remove();
+ function sync(parent:Node,next:Node){const incoming=Array.from(next.childNodes);
+ for(let i=0;i<incoming.length;i++){const fresh=incoming[i]!;let old=parent.childNodes[i];const id=key(fresh);
+ if(id){const match=Array.from(parent.childNodes).find(n=>key(n)===id);if(match&&match!==old){parent.insertBefore(match,old??null);old=match;}}
+ if(!old){parent.appendChild(fresh.cloneNode(true));continue;}
+ if(old.nodeType!==fresh.nodeType||old.nodeName!==fresh.nodeName){parent.replaceChild(fresh.cloneNode(true),old);continue;}
+ if(old instanceof HTMLElement&&fresh instanceof HTMLElement){const active=interacting(old);
+ for(const a of Array.from(old.attributes))if(!fresh.hasAttribute(a.name)&&!(active&&['value','checked','selected'].includes(a.name)))old.removeAttribute(a.name);
+ for(const a of Array.from(fresh.attributes)){if(active&&['value','checked','selected'].includes(a.name))continue;if(old.getAttribute(a.name)!==a.value)old.setAttribute(a.name,a.value);}
+ if(!active||!old.matches('input,select,textarea'))sync(old,fresh);
+ }else if(old.nodeValue!==fresh.nodeValue)old.nodeValue=fresh.nodeValue;
+ }
+ while(parent.childNodes.length>incoming.length)parent.lastChild?.remove();
  }
  sync(root,template.content);
 }
-

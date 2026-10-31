@@ -53,16 +53,16 @@ button,input,select,textarea{border-radius:5px}input,select,textarea{background:
    the rest of the application keeps its existing shared design system. */
 
 /* Direct Spotify: shared player on Home and the separate tablet panel. */
-.spotify-direct{background:#111722;border:2px solid #9a6ee6;border-radius:12px;color:#f3f7ff}
-.spotify-direct .music-progress progress{accent-color:#bc6cff}
-.spotify-direct .music-buttons button{background:#2e2250;color:white}
+.spotify-direct{background:var(--panel-bg);border:1px solid var(--panel-edge);border-radius:12px;color:#f3f7ff}
+.spotify-direct .music-progress progress{accent-color:#b9d5cf}
+.spotify-direct .music-buttons button{background:var(--panel-raised);color:var(--text-primary)}
 .spotify-direct .music-now h3{font-weight:800}
 .spotify-direct [data-spotify="connect"]{background:#202226;color:#071018;border-color:#a3ff47}
-.spotify-direct .music-settings{background:#151e2c;border-radius:9px;padding:16px}
+.spotify-direct .music-settings{background:var(--panel-raised);border-radius:9px;padding:16px}
 
 /* Spotify search and library – solid, high-contrast controls on desktop and mobile. */
 .spotify-direct .spotify-browser{padding:17px 0;border-top:1px solid #53617788}
-.spotify-direct .spotify-browser h3{font-size:16px;margin:10px 0 12px;color:#d8b8ff}
+.spotify-direct .spotify-browser h3{font-size:16px;margin:10px 0 12px;color:var(--text-primary)}
 .spotify-direct .spotify-browser form{display:flex;align-items:flex-end;gap:9px}
 .spotify-direct .spotify-browser form label{flex:1;min-width:0;margin:0;font-size:13px}
 .spotify-direct .spotify-browser form button{min-height:44px;padding:8px 15px}
