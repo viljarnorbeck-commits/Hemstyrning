@@ -1,0 +1,18 @@
+/* The supplied image belongs only to /control's right-hand workspace. */
+body[data-app-route="/control"] .control-right.reference-right{
+ position:relative;isolation:isolate;box-sizing:border-box;min-width:0;min-height:0;
+ padding:12px;border:1px solid #ffffff20;border-radius:22px;overflow:hidden;
+ background-color:#28252e;
+ background-image:linear-gradient(rgba(25,26,31,.16),rgba(25,26,31,.16)),url('/assets/control-gradient.png');
+ background-size:cover;background-position:center;background-repeat:no-repeat;
+ box-shadow:0 8px 24px #0003;
+}
+body[data-app-route="/control"] .reference-right .device-stage,
+body[data-app-route="/control"] .reference-right #control-music{
+ background:rgba(25,27,32,.55);border:1px solid #ffffff15;border-radius:16px;
+ box-shadow:0 2px 8px #00000012;backdrop-filter:none;
+}
+/* Presets keep their own gradients; the common image shows through their gaps. */
+body[data-app-route="/control"] .reference-right #control-presets{background:transparent}
+@media(max-height:600px) and (orientation:landscape){body[data-app-route="/control"] .control-right.reference-right{padding:8px}}
+@media(max-width:700px) and (orientation:portrait){body[data-app-route="/control"] .control-right.reference-right{padding:10px}}

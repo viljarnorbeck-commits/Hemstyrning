@@ -185,3 +185,10 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 
 - Tar bort sidans 16 px nedre padding och listans 10 px extra bottenpadding, så den befintliga flex-/gridlistan kan sträcka sig ända ner. Även det låga liggande lägets nedre 6 px marginal tas bort. Listan behåller safe-area-inset-bottom för enheter med systemfält. Mobilens stående staplade layout bevaras.
 - Endast layoutändring; inga tester, TypeScript-körningar eller byggen enligt användarens testpaus.
+
+## Gemensam bildbakgrund på kontrollpanelens högersida, 1 november
+
+- Användarens bifogade bild kopieras oförändrad till public/assets/control-gradient.png. Lokal public-resurs följer Vites produktionspaket. Ingen extern bildkälla eller bildgenerering.
+- Ny control-background.css är strikt begränsad till body[data-app-route="/control"] och control-right. En opak gemensam panel med fallbackfärg, cover/center/no-repeat, 22 px hörn, tunn kontur och svag skugga fyller högersidan. Ett 16-procentigt mörkt lager ligger över bilden, utan extra blur eller transparens mot 3D-scenen.
+- Enhetskontroll och kompakt Spotify har diskret mörkgrå bakgrund med 55 procents opacitet, tunna konturer och ingen extra backdrop-blur. Förinställningarnas gradients, reglage, layoutordning och funktioner behålls. Vänsterlista, dess scroll/bredd och alla andra sidors bakgrunder är orörda. Popupens befintliga top-layer ligger utanför klippningen.
+- Inga tester, TypeScript-körningar, byggen eller automatiserade webbläsarprov enligt användarens uttryckliga instruktion. Endast statisk granskning; visuell granskning återstår.
