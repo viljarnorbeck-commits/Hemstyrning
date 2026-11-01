@@ -263,3 +263,10 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Sex Hue-enheter som fortfarande rapporterar unavailable har hidden=true i befintliga entityPreferences. Inga HA-entiteter raderades. Lokal säkerhetskopia före ändringen i ignorerade .build-tools/lights-before-renaming.json. Alla övriga inställningar bevarades.
 - Användarverifierade switch.aktorb1_b3_port9_sovrum1_tak registrerades med befintlig device-objektmodell som Viljars tak och läggs uttryckligen till i gemensam belysningsidentifiering, så den hamnar bland lamporna. Ingen generell regel om alla tak eller uttag infördes; inga Halloween-mål lades till.
 - Sparad konfiguration och faktisk kontrollpanel visar båda Viljars-namnen och inga otillgängliga lampkort eller Aktor-namn i lampgruppen. Läsande visuell granskning, ingen verklig styrning. Automatiska tester, typkontroll, byggen och push fortsatt pausade. Skärmbild .build-tools/renamed-viljar-lights.png.
+
+## Flytande sökning i kontrollpanelen, 1 november
+
+- Fasta sökfältet, KNX-statustexten och första Lampor-rubriken tar inte längre höjd i /control. Listan fyller kolumnen från överkant till nederkant.
+- Liten absolut placerad förstoringsglasknapp uppe till vänster, transparent mörkt glas och mjuk skugga. Öppnar ett lika transparent sökfält ovanpå listan, utan att ändra scrollområdets storlek. Namn/entity_id-sökningen återanvänds. /lights behåller sitt fasta fält och status.
+- Knappen annonserar öppet läge, fältet får fokus och krysset/Escape stänger och rensar med återställt fokus. Klick utanför stänger utan att rensa filtret eller rita om listan under pågående pekarklick; aktivt filter markeras på sökknappen. Dokumentlyssnaren tas bort när sidan lämnas.
+- Endast statisk diff och hemlighetskontroll. Automatiska tester, typkontroll, byggen och push är fortsatt pausade enligt användaren. Ingen verklig enhet styrdes.

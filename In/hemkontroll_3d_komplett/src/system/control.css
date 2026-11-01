@@ -1,4 +1,16 @@
 /* One vertical lamp list and two independent right-hand surfaces. */
+body[data-app-route="/control"] .lights-section{position:relative;gap:0}
+body[data-app-route="/control"] #control-lights{padding-top:0}
+body[data-app-route="/control"] #control-lights>.device-category:first-child{display:none}
+body[data-app-route="/control"] #control-search-toggle{position:absolute;top:6px;left:10px;z-index:6;display:grid;place-items:center;width:38px;height:38px;min-width:38px;min-height:38px;padding:9px;border:1px solid #ffffff28;border-radius:50%;background:rgba(25,28,33,.24);color:#fff;box-shadow:0 3px 14px #0005;backdrop-filter:blur(8px);opacity:.8;touch-action:manipulation}
+body[data-app-route="/control"] #control-search-toggle svg{width:19px;height:19px;pointer-events:none}
+body[data-app-route="/control"] #control-search-toggle:hover,body[data-app-route="/control"] #control-search-toggle[aria-expanded=true]{opacity:1;background:rgba(25,28,33,.45)}
+body[data-app-route="/control"] #control-search-toggle[data-filtered=true]{border-color:#efb35799;color:#ffcc87}
+body[data-app-route="/control"] .control-search-overlay{position:absolute;top:50px;left:7px;right:7px;z-index:7;display:flex;align-items:center;gap:6px;padding:8px;border:1px solid #ffffff28;border-radius:14px;background:rgba(25,28,33,.3);box-shadow:0 6px 24px #0005;backdrop-filter:blur(16px)}
+body[data-app-route="/control"] .control-search-overlay[hidden]{display:none!important}
+body[data-app-route="/control"] .control-search-overlay .control-search{flex:1;min-width:0;margin:0;background:rgba(25,28,33,.15);border-color:#ffffff20;min-height:42px;font-size:16px}
+body[data-app-route="/control"] #control-search-close{display:grid;place-items:center;flex:0 0 36px;width:36px;min-width:36px;min-height:42px;padding:4px;background:transparent;border:0;box-shadow:none;color:#fff;font-size:24px}
+body[data-app-route="/control"] #control-search-toggle:focus-visible,body[data-app-route="/control"] .control-search-overlay :focus-visible{outline:2px solid #efb357;outline-offset:2px}
 .control-layout .control-page{height:100dvh;display:flex;flex-direction:column;gap:10px;padding:8px 20px 0;overflow:hidden;box-sizing:border-box;background:transparent;color:var(--text-primary)}
 
 .control-permission:empty,#control-error:empty{display:none}.control-permission{padding:10px;border:1px solid #d99e6566;border-radius:8px;background:var(--panel-bg);font-size:12px}.control-permission span{margin:0 8px}#control-error{margin:0;font-size:12px}
