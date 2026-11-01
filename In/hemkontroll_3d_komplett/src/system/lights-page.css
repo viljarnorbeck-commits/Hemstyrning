@@ -1,4 +1,6 @@
 /* Lighting has only three full-height lamp lists; no inspector or media panels. */
+.light-location-heading{margin:12px 4px 3px;color:#dce4edb8;font-size:11px;font-weight:650;letter-spacing:.13em;text-transform:uppercase;flex:0 0 auto;grid-column:1/-1}
+.light-location-heading:first-child{margin-top:4px}
 body[data-app-route="/lights"] .lights-page{display:flex;flex-direction:column;height:100dvh;min-height:0;padding:8px 20px 0;gap:8px;overflow:hidden}
 body[data-app-route="/lights"] .lights-lists{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;flex:1;min-height:0;min-width:0;overflow:hidden}
 body[data-app-route="/lights"] .lights-column{display:flex;flex-direction:column;gap:7px;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;touch-action:pan-y;padding:3px 5px env(safe-area-inset-bottom,0px)}

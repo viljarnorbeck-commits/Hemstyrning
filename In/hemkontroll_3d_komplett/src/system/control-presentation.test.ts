@@ -1,4 +1,15 @@
-import{it,expect}from'vitest';import{shortKnxName,controlGroup,controlLight}from'./control-presentation';import{controlDevices,type ControlEntityMetadata}from'./control-devices';import type{SceneConfig,HassState}from'./types';
+import{it,expect}from'vitest';import{shortKnxName,controlGroup,controlLight,lightLocation,sortLightsByLocation}from'./control-presentation';import{controlDevices,type ControlEntityMetadata}from'./control-devices';import type{SceneConfig,SceneObject,HassState}from'./types';
+it('groups indoor and outdoor lamps using areas first and leaves ambiguous names for review',()=>{
+ const lamp=(name:string)=>({entityId:'light.test',name} as SceneObject),empty=new Map<string,HassState>();
+ for(const name of ['Viljars hyllor','Köksbord','Stora badrummet','Sovrum 2 Fönster'])expect(lightLocation(lamp(name),empty)).toBe('inside');
+ for(const name of ['All Hue Outdoor','Lampa 8 Stolpe Bron','Utanför hönshus','Easee Vänster LED strip'])expect(lightLocation(lamp(name),empty)).toBe('outside');
+ expect(lightLocation(lamp('Festen'),empty)).toBe('uncertain');
+ expect(lightLocation(lamp('Köksbord'),empty,[{entityId:'light.test',name:'Köksbord',platform:'hue',disabled:false,area:'Ute'}])).toBe('outside');
+});
+it('keeps each location together in Swedish name order without mutating lamp identities or source data',()=>{
+ const lamps=[{entityId:'light.a',name:'Utelys 2'},{entityId:'light.b',name:'Festen'},{entityId:'light.c',name:'Köksbord'},{entityId:'light.d',name:'Badrummet'},{entityId:'light.e',name:'Utelys 1'}] as SceneObject[],before=structuredClone(lamps);
+ expect(sortLightsByLocation(lamps,new Map()).map(o=>o.entityId)).toEqual(['light.d','light.c','light.e','light.a','light.b']);expect(lamps).toEqual(before);
+});
 const metadata:ControlEntityMetadata[]=[{entityId:'switch.aktora1_b2_port4_kok_koksbord_belysning',name:'AktorA1_B2_Port4_Kök_köksbord_belysning',area:'Kök',platform:'knx',disabled:false},{entityId:'switch.aktord1_a_motorvarmare_1',name:'AktorD1_A_Motorvärmare_1',area:'Ute',platform:'knx',disabled:false},{entityId:'switch.aktora1_b2_port8_vardagsrum_fonster_va',name:'AktorA1_B2_Port8_Kök_Vinkyl',area:'Kök',platform:'knx',disabled:false}];
 const states=()=>new Map(metadata.map(m=>[m.entityId,{entity_id:m.entityId,state:'off',attributes:{friendly_name:m.name},last_updated:new Date().toISOString()}as HassState]));
 it('distinguishes ceiling/window lighting from outlets and preserves unknown channels honestly',()=>{const extra:ControlEntityMetadata[]=[{entityId:'switch.bedroom_window',name:'AktorB1_B3_Port7_Sovrum2_Fönster',area:'',platform:'knx',disabled:false},{entityId:'switch.hall_outlet',name:'AktorA1_B1_Port1_Hall_Uttag_Fönster_Trapp',area:'',platform:'knx',disabled:false}];const list=controlDevices({objects:[]}as unknown as SceneConfig,new Map(),'home-assistant',extra);expect(controlLight(list.find(o=>o.entityId===extra[0]!.entityId)!,new Map(),extra)).toBe(true);expect(controlGroup(list.find(o=>o.entityId===extra[1]!.entityId)!,new Map(),extra)).toBe('outlets');expect(shortKnxName('AktorE1A')).toBe('Kanal E1 A');expect(shortKnxName('AktorB1_B3_Port2_NIL')).toBe('Ej namngiven port 2');});

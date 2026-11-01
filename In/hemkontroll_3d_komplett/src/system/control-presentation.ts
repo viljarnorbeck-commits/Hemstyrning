@@ -1,5 +1,24 @@
 import{isLightingEntity}from'../../../../shared/ha-contract.js';
 import type{SceneObject,HassState}from'./types';import type{ControlEntityMetadata}from'./control-devices';
+export const lightLocations=[['inside','Inne'],['outside','Ute'],['uncertain','Oklart']] as const;
+export type LightLocation=typeof lightLocations[number][0];
+/** A provisional display grouping; it never changes HA areas, bindings or command permissions. */
+export function lightLocation(o:SceneObject,states:Map<string,HassState>,catalog:readonly ControlEntityMetadata[]=[]):LightLocation{
+ const classify=(value:string):LightLocation=>{
+  const text=value.toLocaleLowerCase('sv-SE').replace(/[_-]/g,' ');
+  if(/\b(?:ute\w*|utomhus|utanför|outdoor|outside|garden|trädgård|altan|terrass|fasad|uppfart|driveway|patio|bron|brobelysning|stolp\w*|easee)\b/u.test(text))return'outside';
+  if(/\b(?:inne|inomhus|huset|entré|entre|allrum|indoor|inside|kök\w*|köks\w*|sov\w*|badrum\w*|badrummet|vardagsrum\w*|matsal\w*|hall\w*|trapp\w*|bastu\w*|källar\w*|tvätt\w*|kontor\w*|hyll\w*|living|bedroom|kitchen|bathroom|garage|verkstad|hönshus)\b/u.test(text))return'inside';
+  return'uncertain';
+ };
+ const entry=catalog.find(e=>e.entityId===o.entityId),area=classify(entry?.area??'');
+ if(area!=='uncertain')return area;
+ const name=classify(o.name+' '+String(states.get(o.entityId)?.attributes.friendly_name??''));
+ return name!=='uncertain'?name:classify(o.entityId.replace(/^(?:light|switch)\./,''));
+}
+export function sortLightsByLocation(lamps:SceneObject[],states:Map<string,HassState>,catalog:readonly ControlEntityMetadata[]=[]){
+ const rank={inside:0,outside:1,uncertain:2},locations=new Map(lamps.map(o=>[o.entityId,rank[lightLocation(o,states,catalog)]]));
+ return [...lamps].sort((a,b)=>locations.get(a.entityId)!-locations.get(b.entityId)!||a.name.localeCompare(b.name,'sv-SE',{numeric:true}));
+}
 export function controlLight(o:SceneObject,states:Map<string,HassState>,catalog:readonly ControlEntityMetadata[]=[]){
  if(o.type==='light')return true;
  const entry=catalog.find(e=>e.entityId===o.entityId&&e.platform==='knx');
