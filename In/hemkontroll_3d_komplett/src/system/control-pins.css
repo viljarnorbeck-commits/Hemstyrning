@@ -1,0 +1,13 @@
+body[data-app-route="/control"] #control-lights [data-pin-entity]{-webkit-touch-callout:none;user-select:none}
+body[data-app-route="/control"] #control-lights [data-pin-visible=true]>.device-select{padding-right:36px}
+body[data-app-route="/control"] #control-lights .control-pin{position:absolute;top:8px;right:65px;z-index:3;display:grid;place-items:center;width:30px;height:30px;min-width:30px;min-height:30px;padding:6px;gap:0;border:1px solid #ffffff65;border-radius:50%;background:linear-gradient(145deg,#ffffff50,#ffffff18);color:#fff;box-shadow:0 4px 12px #0004,0 0 10px #fff2,inset 0 1px #ffffff50;backdrop-filter:blur(10px);touch-action:manipulation;cursor:pointer}
+body[data-app-route="/control"] #control-lights .control-pin svg{width:18px;height:18px;pointer-events:none;filter:drop-shadow(0 1px 2px #0004)}
+body[data-app-route="/control"] #control-lights .control-pin[aria-pressed=true]{color:#fff0cb;border-color:#ffdc976b;background:linear-gradient(145deg,#efb65c70,#6a45364d);box-shadow:0 3px 10px #0003,0 0 11px #ffd38a2b}
+body[data-app-route="/control"] #control-lights .control-pin[aria-pressed=true] svg{fill:#ffe1a32b}
+body[data-app-route="/control"] #control-lights .control-pin:hover{background:#ffffff55;box-shadow:0 4px 16px #0004,0 0 14px #fff4}
+body[data-app-route="/control"] #control-lights .control-pin:focus-visible{outline:2px solid #fff;outline-offset:3px}
+body[data-app-route="/control"] #control-lights .pin-offer{animation:control-pin-reveal 260ms cubic-bezier(.2,.8,.25,1.25) both}
+.control-pin-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;pointer-events:none}
+.control-pin-status.pin-error{position:fixed;left:50%;bottom:24px;z-index:30;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);height:auto;padding:12px 18px;margin:0;border:1px solid #eab66a60;border-radius:14px;background:#242831ef;color:#ffe2b7;box-shadow:0 8px 26px #0005;clip-path:none;white-space:normal;font-size:13px}
+@keyframes control-pin-reveal{from{opacity:0;transform:translateY(9px) scale(.65) rotate(-24deg)}to{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@media(prefers-reduced-motion:reduce){body[data-app-route="/control"] #control-lights .pin-offer{animation:none}}

@@ -363,3 +363,11 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Samma verkliga rum, tömningsplats och punktstädningsåtgärder bevaras. Responsivt kompakt rutnät, rundade hörn, mörkt glas, mjuk skugga och 230 ms nedfällningsanimation. Minskad rörelse respekteras. Ingen egen skrollning; hjul/touchpan inne i popupen skrollar inte sidan under den.
 - Placeringen följer knappen och hålls inom skärmen vid ändrad fönsterstorlek/skrollning. Klick utanför, Escape, samma knapp eller val stänger menyn. Pilar/Home/End kan flytta fokus utan att starta något. Befintliga styranrop och behörigheter oförändrade.
 - Endast källgranskning och diffkontroll. Inga tester, byggen, typkontroller eller push kördes, enligt användarens senaste instruktion. Ingen verklig utrustning styrdes. Den nya rullgardinen är ännu inte granskad i webbläsaren.
+
+## Fästa funktioner överst i kontrollistan, 1 november
+
+- Långtryck i 550 ms på ett kort visar en animerad glasnål med mjuk ljusskugga. Separat tryck på nålen fäster raden överst; tryck på en redan fäst nål lossar den. Högerklick/kontextmeny ger också åtkomst. Escape/klick utanför döljer det tillfälliga nålvalet.
+- Rörelse över 10 px, avbruten pekare, släpp före tidsgränsen eller fönsterbyte avbryter långtrycket. Reglage för dimmer/färg ignoreras. Klicket efter ett registrerat långtryck stoppas i capture-fasen så att ingen fysisk funktion aktiveras av samma gest. Nästa nya tryck återställer spärren.
+- Fästningen lagras som controlPins i befintliga scene.json, i senast-fäst-först-ordning, via konfigurationens normala behörighetsskyddade sparväg. Ingen ändring av entityPreferences eller styrbehörigheter. Ingen separat lokal lagring. Misslyckad sparning flyttar inte raden och ger ett synligt fel.
+- Fästa entiteter visas en gång före övriga grupper, och återgår till sin vanliga kategori när de lossas. Sökning och dolda/filtrerade enheter respekteras. Nålvalet och ordningen bevaras över sensoruppdateringar; minskad rörelse respekteras.
+- Endast källgranskning och diffkontroll. Tester, typkontroll, bygge och push fortsatt pausade; inget HA-kommando utfört. Funktionen är ännu inte verifierad i webbläsaren.

@@ -22,6 +22,7 @@ export interface CameraView{position:Vec3;target:Vec3;zoom:number;fov:number}
 export interface EnergyRoute {id:string;name:string;points:Vec3[];sensor:string;unit:'W'|'kW';color:string;kind:'grid'|'solar'|'charging'|'other';confirmed:boolean}
 export interface StartPhoto {url:string;signature:string;createdAt:string;width:number;height:number;view:CameraView}
 export interface SceneConfig {
+ controlPins?:string[];
  weather?:{provider:'home-assistant'|'smhi';placeName:string;latitude:number;longitude:number};
  entityPreferences?:Record<string,{control:boolean;details:boolean;allowCommands:boolean;hidden?:boolean;hiddenOnDetails?:boolean;temperatureOffsetC?:number}>;
  sensorBindings?:Record<string,string>;

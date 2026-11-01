@@ -34,6 +34,17 @@ export class Configuration extends EventTarget {
     if(!response.ok){const data=await response.json().catch(()=>({}));throw Error(data.message??'Kunde inte spara förinställningen. Administratörsbehörighet krävs.');}
     ++sceneGeneration;sceneCache=structuredClone(scene);this.value=scene;this.previous=structuredClone(scene);this.status='Sparat på disk';this.dispatchEvent(new Event('status'));this.dispatchEvent(new Event('loaded'));
   }
+  async setControlPin(entityId:string,pinned:boolean){
+    if(this.dirty||this.saving)throw Error('Vänta tills övriga ändringar har sparats.');
+    this.saving=true;
+    try{
+      const scene=structuredClone(await readScene()),others=(scene.controlPins??[]).filter(id=>id!==entityId);
+      scene.controlPins=pinned?[entityId,...others]:others;
+      const response=await fetch('/workspace-api/scene',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(scene),signal:AbortSignal.timeout(15000)});
+      if(!response.ok){const data=await response.json().catch(()=>({}));throw Error(data.message??'Fästningen kunde inte sparas. Administratörsbehörighet krävs.');}
+      ++sceneGeneration;++this.revision;sceneCache=structuredClone(scene);this.value=scene;this.previous=structuredClone(scene);this.status='Sparat på disk';this.dispatchEvent(new Event('status'));this.dispatchEvent(new Event('loaded'));
+    }finally{this.saving=false;}
+  }
   changed() {
     if(this.previous&&JSON.stringify(this.previous)!==JSON.stringify(this.value)){this.undoStack.push(this.previous);if(this.undoStack.length>30)this.undoStack.shift();this.previous=structuredClone(this.value); }
     configureSensorBindings(this.value);
