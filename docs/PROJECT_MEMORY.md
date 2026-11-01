@@ -270,3 +270,9 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Liten absolut placerad förstoringsglasknapp uppe till vänster, transparent mörkt glas och mjuk skugga. Öppnar ett lika transparent sökfält ovanpå listan, utan att ändra scrollområdets storlek. Namn/entity_id-sökningen återanvänds. /lights behåller sitt fasta fält och status.
 - Knappen annonserar öppet läge, fältet får fokus och krysset/Escape stänger och rensar med återställt fokus. Klick utanför stänger utan att rensa filtret eller rita om listan under pågående pekarklick; aktivt filter markeras på sökknappen. Dokumentlyssnaren tas bort när sidan lämnas.
 - Endast statisk diff och hemlighetskontroll. Automatiska tester, typkontroll, byggen och push är fortsatt pausade enligt användaren. Ingen verklig enhet styrdes.
+
+## Kontrollpanelen visar bara på/av-enheter och dammsugare, 1 november
+
+- Användaren vill ta bort alla poster som saknar på/av-funktion från kontrollpanelen, med uttryckligt undantag för dammsugaren. /control filtrerar därför bort sensorvärden, binary_sensor-status, KNX-diagnostik, temperaturer, energimätare, varmvattenkort utan stödd brytare och andra rena informationsposter.
+- Befintliga light-lampor, switch-aktorer och dammsugare finns kvar. Bilkort får bara visas med verkligt annonserat klimat-on/off-stöd. Tillfällig otillgänglighet/skrivskydd för lampor och brytare gör inte att listan ändras; befintliga säkerhetsspärrar gäller. Ingen ny styrbehörighet aktiveras.
+- Enbart kontrollpanelens presentationsfilter ändras. Entiteter, lokal konfiguration, fullständig katalog i inställningar och andra sidor bevaras. Tester, typkontroll, byggen och push är fortsatt pausade. Ingen verklig utrustning styrdes.
