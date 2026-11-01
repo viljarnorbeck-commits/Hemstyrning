@@ -1,10 +1,11 @@
 import {suspendMusicView} from './music-session';
+import {setupMeasurementHistory} from './measurement-history';
 import {startConnection} from './app-session';
 const routes=['/','/control','/lights','/music','/energy','/cars','/climate','/mower','/security','/settings'];
 type MountedPage={ready:Promise<unknown>;activate():void;dispose():void};
 export async function startShell(){
- const {homeReady}=await import('./home');await homeReady;startConnection();
- for(const el of [...document.body.children])if(el instanceof HTMLElement&&el.id!=='garden'&&!el.matches('script,.app-sidebar,.nav-mobile,.music-panel,.music-widget,.spotify-device-popover'))el.dataset.homeUi='';
+ const {homeReady}=await import('./home');await homeReady;setupMeasurementHistory();startConnection();
+ for(const el of [...document.body.children])if(el instanceof HTMLElement&&el.id!=='garden'&&!el.matches('script,.app-sidebar,.nav-mobile,.music-panel,.music-widget,.spotify-device-popover,.measurement-history-dialog'))el.dataset.homeUi='';
  const hint=document.createElement('div');hint.className='orientation-hint';hint.textContent='Vrid gärna skärmen till liggande läge';hint.setAttribute('role','status');document.body.append(hint);
  window.setTimeout(()=>{hint.hidden=true;},6000);
  const lockLandscape=()=>{if(!matchMedia('(orientation: portrait)').matches)return;if(matchMedia('(display-mode: standalone)').matches||document.fullscreenElement){const orientation=screen.orientation as ScreenOrientation&{lock?:(mode:string)=>Promise<void>};if(orientation?.lock)void orientation.lock('landscape').catch(()=>{});}};

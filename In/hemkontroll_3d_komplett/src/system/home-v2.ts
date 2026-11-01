@@ -8,7 +8,7 @@ import type {ViewState,ViewerView} from '../../../../shared/view-protocol.js';
 export function homeV2(config:Configuration,connection:Connection,garden:GardenScene){
  const initialList=new URLSearchParams(location.search).get('view')==='list';let firstSnapshot=true;
  const presentation=startPresentation(config,connection,garden),cards=homeOverview(config,connection),root=cards.root;
- document.body.append(root);const link=new ScreenLink('display','Hem');let disposed=false,revision=0,applied='',navigating=false,lastMove=0;
+ document.body.append(root);const link=new ScreenLink('display','Hem');let disposed=false,revision=0,applied='',navigating=false,lastMove=0,followKey='',followDeadline=0,followRetry:ReturnType<typeof setTimeout>|undefined;
  const nav=document.querySelector('header nav')!,home=document.createElement('button'),free=document.createElement('button'),control=document.createElement('a');home.id='home-button';home.textContent='⌂ Hem';free.id='open-3d';free.textContent='Öppna 3D';control.href='/control';control.textContent='Kontrollpanel ↗';nav.prepend(home,free,control);
  const viewer=document.createElement('section');viewer.className='view-camera-panel';viewer.hidden=true;viewer.setAttribute('aria-label','Kameravisning');viewer.innerHTML='<h2>Kameravisning</h2><p role="status"></p><button data-view-retry>Försök igen</button><button data-view-exit>Lämna kameravisning</button>';document.body.append(viewer);
  const message=(text:string)=>{const node=document.getElementById('data-status');if(node)node.textContent=text;};
@@ -27,7 +27,15 @@ export function homeV2(config:Configuration,connection:Connection,garden:GardenS
   if(state.mode==='HOME'){reset();if(state.reason==='invalid')message('Objektet saknas eller saknar verifierad position');return;}
   if(state.mode==='FREE_3D'){++revision;presentation.cancel();garden.cancelFollow();if(!pendingInitialFree)setMode(true);pendingInitialFree=false;document.body.dataset.viewMode='FREE_3D';void garden.ready().catch(e=>message(String(e)));applied=state.epoch+':'+state.version;return;}
   const key=state.epoch+':'+state.version;if(key===applied)return;applied=key;const n=++revision;
-  await presentation.enter(()=>{if(disposed||n!==revision||link.viewer)return;try{setMode(true);garden.cancelFollow();if('objectId'in state)garden.focusObject(state.objectId,state.mode==='FOLLOW_OBJECT');document.body.dataset.viewMode=state.mode;}catch(e){reset();message((e as Error).message);}});
+  await presentation.enter(()=>{if(disposed||n!==revision||link.viewer)return;try{setMode(true);garden.cancelFollow();if('objectId'in state)garden.focusObject(state.objectId,state.mode==='FOLLOW_OBJECT');document.body.dataset.viewMode=state.mode;}catch(e){
+   // A cold 3D view can be ready before HA's snapshot has supplied a safe robot fix.
+   // Retain this camera intent briefly; focusObject still enforces verified geometry/position.
+   if(state.mode==='FOLLOW_OBJECT'&&(e as Error).message==='Ingen verifierad robotposition att följa'){
+    if(followKey!==key){followKey=key;followDeadline=performance.now()+10000;}
+    if(performance.now()<followDeadline){applied='';message('Väntar på verifierad robotposition…');clearTimeout(followRetry);followRetry=setTimeout(()=>{if(!disposed&&n===revision&&!link.viewer&&link.state?.epoch===state.epoch&&link.state.version===state.version)void apply(state);},250);return;}
+   }
+   reset();message((e as Error).message);
+  }});
  }
  function showViewer(view:ViewerView){garden.pauseRendering(true);++revision;presentation.cancel(true);garden.cancelFollow();viewer.hidden=false;document.body.classList.add('camera-viewer');viewer.querySelector('p')!.textContent=view.cameraRef==='simulated-camera'?'SIMULERAT KAMERATITTARLÄGE · ingen videoström används':'Ingen bild. Kamerans säkra strömanslutning är inte konfigurerad.';document.body.dataset.viewMode=view.mode;}
  viewer.querySelector('[data-view-exit]')!.addEventListener('click',()=>{clearViewerRoute();viewer.hidden=true;document.body.classList.remove('camera-viewer');link.leaveViewer();});
@@ -58,5 +66,5 @@ export function homeV2(config:Configuration,connection:Connection,garden:GardenS
  // TV boots locally at HOME; reconnects still receive the server's current state.
  if(params.get('native')==='home'&&params.get('profile')==='tv'){initialFocus='';initialFree=false;sessionStorage.setItem('hem-home-request','1');}
  let pendingInitialFree=initialFree;setMode(initialFree);if(initialFree)document.body.dataset.viewMode='FREE_3D';garden.revealOverview();link.start();const timer=setInterval(()=>cards.render(),1000);
- return()=>{disposed=true;++revision;clearInterval(timer);link.stop();cards.dispose();presentation.dispose();viewer.remove();document.removeEventListener('hem-focus-object',focus);document.removeEventListener('hem-show-overview',requestHome);document.removeEventListener('hem-request-home',requestHome);document.removeEventListener('hem-open-viewer',openViewer);document.removeEventListener('keydown',keyActivity);garden.controls.removeEventListener('start',inputStart);garden.controls.removeEventListener('end',inputEnd);garden.controls.removeEventListener('change',inputChange);};
+ return()=>{disposed=true;++revision;clearTimeout(followRetry);clearInterval(timer);link.stop();cards.dispose();presentation.dispose();viewer.remove();document.removeEventListener('hem-focus-object',focus);document.removeEventListener('hem-show-overview',requestHome);document.removeEventListener('hem-request-home',requestHome);document.removeEventListener('hem-open-viewer',openViewer);document.removeEventListener('keydown',keyActivity);garden.controls.removeEventListener('start',inputStart);garden.controls.removeEventListener('end',inputEnd);garden.controls.removeEventListener('change',inputChange);};
 }
