@@ -1,0 +1,11 @@
+.home-overview .time-slap-clock{display:inline-grid;position:relative;isolation:isolate;font-variant-numeric:tabular-nums;white-space:nowrap;transform-origin:left center}
+.time-slap-clock>span{grid-area:1/1;display:block;transition:opacity .4s ease;text-align:left}
+.time-slap-clock .clock-regular{font-weight:500;opacity:1}
+.time-slap-clock .clock-bold{font-weight:800;opacity:0}
+.time-slap-clock.is-time-slap{animation:time-slap-glow 2s ease-in-out infinite}
+.time-slap-clock.is-time-slap .clock-regular{animation:time-slap-regular 2s ease-in-out infinite}
+.time-slap-clock.is-time-slap .clock-bold{animation:time-slap-bold 2s ease-in-out infinite}
+@keyframes time-slap-regular{0%,100%{opacity:1}50%{opacity:.12}}
+@keyframes time-slap-bold{0%,100%{opacity:0}50%{opacity:1}}
+@keyframes time-slap-glow{0%,100%{opacity:.8;transform:scale(1);text-shadow:0 0 0 #ffdeaa00}50%{opacity:1;transform:scale(1.025);text-shadow:0 0 12px #ffdeaa88,0 0 24px #ffcb7038}}
+@media(prefers-reduced-motion:reduce){.time-slap-clock>span{transition:none}.time-slap-clock.is-time-slap,.time-slap-clock.is-time-slap>span{animation:none}.time-slap-clock.is-time-slap{color:#ffdfaf;text-shadow:0 0 10px #ffdeaa55}.time-slap-clock.is-time-slap .clock-regular{opacity:0}.time-slap-clock.is-time-slap .clock-bold{opacity:1}}
