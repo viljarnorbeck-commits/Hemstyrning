@@ -8,9 +8,9 @@ function key(node:Node){if(!(node instanceof Element))return undefined;return no
 function interacting(el:HTMLElement){return pressed.has(el)||(el===document.activeElement&&el.matches('input,select,textarea'));}
 export function updateMarkup(root:HTMLElement,html:string){
  const template=document.createElement('template');template.innerHTML=html;
- function sync(parent:Node,next:Node){const incoming=Array.from(next.childNodes);
+ function sync(parent:Node,next:Node){const incoming=Array.from(next.childNodes),keyed=new Map<string,ChildNode>();for(const child of Array.from(parent.childNodes)){const id=key(child);if(id)keyed.set(id,child);}
  for(let i=0;i<incoming.length;i++){const fresh=incoming[i]!;let old=parent.childNodes[i];const id=key(fresh);
- if(id){const match=Array.from(parent.childNodes).find(n=>key(n)===id);if(match&&match!==old){parent.insertBefore(match,old??null);old=match;}}
+ if(id){const match=keyed.get(id);if(match&&match!==old&&match.parentNode===parent&&key(match)===id){parent.insertBefore(match,old??null);old=match;}}
  if(!old){parent.appendChild(fresh.cloneNode(true));continue;}
  if(old.nodeType!==fresh.nodeType||old.nodeName!==fresh.nodeName){parent.replaceChild(fresh.cloneNode(true),old);continue;}
  if(old instanceof Element&&fresh instanceof Element){const active=old instanceof HTMLElement&&interacting(old);

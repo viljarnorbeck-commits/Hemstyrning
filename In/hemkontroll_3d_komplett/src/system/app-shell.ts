@@ -29,6 +29,7 @@ export async function startShell(){
  document.body.classList.toggle('app-feature',route!=='/');document.body.classList.toggle('home-mode',route==='/');
  if(route==='/control'||route==='/lights')document.body.classList.add('control-mode','control-layout',...(route==='/lights'?['lights-page']:[]));else if(route==='/settings')document.body.classList.add('settings-page');else if(route!=='/')document.body.classList.add('control-mode','function-mode');
  current=route;currentUrl=url.pathname+url.search+url.hash;document.body.dataset.appRoute=route;
+ document.dispatchEvent(new Event('hem-route-changed'));
  document.querySelectorAll('.app-sidebar nav a').forEach(a=>{if(a.getAttribute('href')===route)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
  restoreScroll(route);if(url.hash)requestAnimationFrame(()=>outlet.querySelector('#'+CSS.escape(decodeURIComponent(url.hash.slice(1))))?.scrollIntoView({block:'start'}));
  if(route==='/'&&!first){
@@ -43,6 +44,7 @@ export async function startShell(){
  finally{if(n===serial)outlet.removeAttribute('aria-busy');}
  }
  document.addEventListener('click',e=>{const mouse=e as MouseEvent;if(mouse.button||mouse.ctrlKey||mouse.metaKey||mouse.shiftKey||mouse.altKey)return;const a=(e.target as Element).closest<HTMLAnchorElement>('a[href]');if(!a||a.target||a.download)return;const u=new URL(a.href);if(u.origin!==location.origin||!routes.includes(u.pathname))return;
+ if(u.pathname===current&&u.pathname===location.pathname&&u.search===location.search&&!u.hash&&u.pathname!=='/'){e.preventDefault();e.stopImmediatePropagation();document.body.classList.remove('nav-open');document.querySelector('.nav-mobile')?.setAttribute('aria-expanded','false');return;}
  if(u.pathname===current&&u.search===location.search&&u.hash){e.preventDefault();history.pushState({},'',u.pathname+u.search+u.hash);document.getElementById(decodeURIComponent(u.hash.slice(1)))?.scrollIntoView({block:'start'});return;}
  e.preventDefault();e.stopImmediatePropagation();if(u.pathname===current&&u.pathname==='/'&&!u.search){document.dispatchEvent(new Event('hem-request-home'));return;}history.pushState({},'',u.pathname+u.search+u.hash);void show(u.href,u.pathname==='/'&&!u.search);},{capture:true});
  window.addEventListener('popstate',()=>void show(location.href));await show(location.href);

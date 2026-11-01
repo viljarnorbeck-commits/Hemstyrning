@@ -40,8 +40,9 @@ export class Connection extends EventTarget {
         }
         if (msg.type === 'result' && msg.id === 2 && msg.success) {
           this.states.clear();
-          for (const state of msg.result as HassState[]) this.accept(state);
+          for (const state of msg.result as HassState[]) this.accept(state,false);
           this.connected = true;this.lastPong=Date.now();
+          this.dispatchEvent(new Event('state'));
           clearInterval(this.heartbeat);this.heartbeat=setInterval(()=>{if(Date.now()-this.lastPong>30000){ws.close();return;}ws.send(JSON.stringify({id:99,type:'ping'}));},15000);
           this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source,commandsEnabled:this.commandsEnabled}}));
         }
@@ -57,11 +58,11 @@ export class Connection extends EventTarget {
       ws.onerror = () => ws.close();
     } catch { if (serial === this.serial) this.offline(); }
   }
-  private accept(state: HassState) {
+  private accept(state: HassState,notify=true) {
     this.states.set(state.entity_id, state);
     const command = this.pending.get(state.entity_id);
     if (command && command.expected === state.state) { clearTimeout(command.timer); this.pending.delete(state.entity_id); command.resolve(); }
-    this.dispatchEvent(new Event('state'));
+    if(notify)this.dispatchEvent(new Event('state'));
   }
   private offline() {
     clearInterval(this.heartbeat);

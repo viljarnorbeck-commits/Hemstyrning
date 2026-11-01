@@ -43,8 +43,11 @@ export class GardenScene {
   private occlusionVolumes=new THREE.Group();
   private moon=new THREE.DirectionalLight('#b8cdf3',0);
   private animation:(()=>void)|null=null;
-  pauseRendering(paused:boolean){this.renderer.setAnimationLoop(paused?null:this.animation);}
-  setAnimationLoop(callback:(()=>void)|null){this.animation=callback;this.renderer.setAnimationLoop(callback);}
+  private viewPaused=false;private backgroundPaused=false;
+  private syncAnimation(){this.renderer.setAnimationLoop(this.viewPaused||this.backgroundPaused?null:this.animation);}
+  pauseRendering(paused:boolean){this.viewPaused=paused;this.syncAnimation();}
+  setBackgroundPaused(paused:boolean){this.backgroundPaused=paused;this.syncAnimation();}
+  setAnimationLoop(callback:(()=>void)|null){this.animation=callback;this.syncAnimation();}
   readonly energyNetwork=new EnergyNetwork();private visualStates=new Map<string,HassState>();
   private followId?:string;
   private skyView=false;
@@ -310,7 +313,7 @@ export class GardenScene {
     for(let y=0;y<height;y++)image.data.set(pixels.subarray((height-y-1)*width*4,(height-y)*width*4),y*width*4);context.putImageData(image,0,0);
     const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Bilden kunde inte skapas')),'image/png'));
     return{blob,view,width,height,signature};
-    }finally{this.renderer.setAnimationLoop(this.animation);}
+    }finally{this.syncAnimation();}
   }
   screenBounds(id:string){const group=this.renderObjects.get(id);if(!group?.visible)return null;const screen=this.screenPosition(id);if(!screen||screen.occluded||screen.z>1||screen.z< -1)return null;const box=new THREE.Box3().setFromObject(group);if(box.isEmpty())return null;const points=[];for(const x of[box.min.x,box.max.x])for(const y of[box.min.y,box.max.y])for(const z of[box.min.z,box.max.z]){const p=new THREE.Vector3(x,y,z).project(this.camera);if(p.z< -1||p.z>1)return null;points.push(p);}const xs=points.map(p=>(p.x*.5+.5)*innerWidth),ys=points.map(p=>(-.5*p.y+.5)*innerHeight);return{x:Math.min(...xs),y:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)};}
   captureView():import('./types').CameraView{return{position:this.camera.position.toArray() as Vec3,target:this.controls.target.toArray() as Vec3,zoom:this.camera.zoom,fov:this.camera.fov};}

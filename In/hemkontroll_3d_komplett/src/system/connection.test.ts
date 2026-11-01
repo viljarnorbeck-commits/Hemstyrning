@@ -20,6 +20,17 @@ async function connected() {
   return {connection,socket,fetchMock};
 }
 describe('shared HA connection',()=>{
+  it('publishes a complete reconnect snapshot once while retaining normal live state events',async()=>{
+    const {connection,socket}=await connected();const snapshots:Array<{size:number;connected:boolean}>=[];
+    connection.addEventListener('state',()=>snapshots.push({size:connection.states.size,connected:connection.connected}));
+    try{
+      const rows=Array.from({length:750},(_,i)=>({...state('off'),entity_id:'light.snapshot_'+i}));
+      socket.emit({type:'result',id:2,success:true,result:rows});
+      expect(snapshots).toEqual([{size:750,connected:true}]);expect(connection.states.has('light.test')).toBe(false);
+      socket.emit({type:'event',event:{event_type:'state_changed',data:{new_state:{...rows[0],state:'on'}}}});
+      expect(snapshots).toHaveLength(2);expect(connection.states.get('light.snapshot_0')?.state).toBe('on');
+    }finally{connection.stop();}
+  });
   it('subscribes before snapshot and waits for state confirmation, not REST acceptance',async()=>{
     const {connection,socket,fetchMock}=await connected();
     expect(JSON.parse(socket.send.mock.calls[0][0]).type).toBe('subscribe_events');
