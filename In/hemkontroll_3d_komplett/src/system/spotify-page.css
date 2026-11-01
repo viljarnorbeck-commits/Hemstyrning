@@ -1,0 +1,82 @@
+/* Full player follows the control-panel player: charcoal glass, white controls,
+   restrained amber transport and Spotify green only for connection status. */
+.music-page{max-width:1500px;margin:auto;padding:32px clamp(16px,3vw,48px) 48px;box-sizing:border-box}
+.music-page>header{position:static;display:block;padding:0;margin:0 0 24px;background:none;pointer-events:auto}
+.music-page>header small{font-size:10px;letter-spacing:.16em;color:var(--text-muted)}
+.music-page>header h1{font-size:clamp(28px,3vw,42px);letter-spacing:-.04em;margin:8px 0}
+.music-page>header p{font-size:14px;color:var(--text-muted);margin:0}
+.music-page #music-notice:empty{display:none}
+#spotify-player.spotify-direct.embedded-music{display:flex!important;flex-direction:column;gap:22px;padding:clamp(18px,3vw,36px)!important;border:1px solid #ffffff24!important;border-radius:22px!important;background:linear-gradient(115deg,#ffffff07,transparent 65%),rgba(36,39,44,.91)!important;backdrop-filter:blur(18px);box-shadow:inset 0 1px #ffffff12,0 16px 48px #0002!important}
+#spotify-player.spotify-direct.embedded-music:before{display:none}
+#spotify-player.spotify-direct>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}
+#spotify-player.spotify-direct>header h2{font-size:21px;margin:4px 0 0;letter-spacing:-.03em}
+#spotify-player.spotify-direct>header small{font-size:9px;color:var(--text-muted);letter-spacing:.14em}
+#spotify-player.spotify-direct .music-account{display:flex;align-items:center;gap:10px;min-width:0}
+#spotify-player.spotify-direct .music-connection{font-size:12px;color:var(--text-muted);line-height:1.4;overflow-wrap:anywhere}
+#spotify-player.spotify-direct .music-connection.is-connected:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#1ed760;margin-right:7px;box-shadow:0 0 10px #1ed76044}
+#spotify-player.spotify-direct button{min-height:44px;border:1px solid #ffffff20;background:#ffffff07;color:var(--text-primary);font:inherit;font-size:13px;border-radius:10px;padding:10px 16px;box-shadow:none;cursor:pointer;touch-action:manipulation}
+#spotify-player.spotify-direct button:hover:not(:disabled){background:#ffffff12;border-color:#ffffff40}
+#spotify-player.spotify-direct button:disabled{opacity:.4;cursor:default}
+#spotify-player.spotify-direct button:focus-visible,#spotify-player.spotify-direct input:focus-visible,#spotify-player.spotify-direct summary:focus-visible{outline:2px solid #efa934;outline-offset:3px}
+#spotify-player.spotify-direct .music-now{display:grid;grid-template-columns:minmax(180px,.85fr) minmax(0,1.4fr);align-items:center;gap:clamp(20px,4vw,60px);margin:0;padding:0;text-align:left;border:0;background:none}
+#spotify-player.spotify-direct .music-artwork{width:100%;max-width:390px;margin:auto;min-width:0}
+#spotify-player.spotify-direct .large-cover{display:block;grid-row:auto;grid-column:auto;width:100%;height:auto;max-width:none;aspect-ratio:1;margin:0;border-radius:16px;object-fit:cover;box-shadow:0 16px 40px #0004}
+#spotify-player.spotify-direct .empty-cover{display:grid;place-items:center;font-size:clamp(70px,9vw,130px);color:#ffffff60;background:linear-gradient(145deg,#44414b,#292d35)}
+#spotify-player.spotify-direct .music-player-copy{min-width:0}
+#spotify-player.spotify-direct .music-eyebrow{font-size:10px;letter-spacing:.16em;color:#efb357;font-weight:650}
+#spotify-player.spotify-direct .music-now h3{font-size:clamp(25px,3vw,44px);line-height:1.15;letter-spacing:-.04em;color:var(--text-primary);margin:12px 0;overflow-wrap:anywhere;text-transform:none}
+#spotify-player.spotify-direct .music-artist{font-size:clamp(14px,1.5vw,19px);line-height:1.5;margin:0;color:var(--text-muted)}
+#spotify-player.spotify-direct .music-album{font-size:12px;margin:6px 0;color:var(--text-muted)}
+#spotify-player.spotify-direct .music-buttons{display:flex;align-items:center;justify-content:flex-start;gap:16px;margin:24px 0 14px}
+#spotify-player.spotify-direct .music-buttons button{display:grid;place-items:center;width:48px;height:48px;min-width:48px;padding:11px;border:0;border-radius:50%;background:transparent;color:var(--text-primary)}
+#spotify-player.spotify-direct .music-buttons button:is([data-spotify=play],[data-spotify=pause]){width:68px;height:68px;min-width:68px;border:1px solid #efa934;background:#ffffff05;box-shadow:0 0 22px #efa93416}
+#spotify-player.spotify-direct .music-buttons svg{width:26px;height:26px}
+#spotify-player.spotify-direct .music-progress{margin:0 0 18px}
+#spotify-player.spotify-direct input[type=range]{accent-color:#ffa20c;background:transparent;border:0;padding:0;margin:0;min-height:28px;width:100%;box-sizing:border-box}
+#spotify-player.spotify-direct .music-times{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums;color:var(--text-muted);font-size:11px}
+#spotify-player.spotify-direct .music-times span{display:inline;font-size:11px;margin:0}
+#spotify-player.spotify-direct .music-player-output{display:flex;align-items:center;gap:20px;border-top:1px solid #ffffff16;padding-top:16px}
+#spotify-player.spotify-direct .compact-device-button{display:flex;align-items:center;gap:9px;flex:1;min-width:0;text-align:left}
+#spotify-player.spotify-direct .compact-device-button>span:first-child{color:#1ed760;font-size:23px}
+#spotify-player.spotify-direct .compact-device-button strong{flex:1;min-width:0;font-size:12px;overflow-wrap:anywhere}
+#spotify-player.spotify-direct .music-volume{display:flex;align-items:center;gap:9px;flex:0 1 160px;min-width:80px;margin:0}
+#spotify-player.spotify-direct .music-volume svg{width:21px;height:21px;flex-shrink:0;color:var(--text-muted)}
+#spotify-player.spotify-direct .music-feedback{padding:12px 16px;margin:0;border-radius:10px;border:1px solid #efa93440;background:#efa9340a;color:#f0d4a1;font-size:13px;line-height:1.5}
+#spotify-player.spotify-direct .music-feedback:empty{display:none}
+#spotify-player.spotify-direct .music-library{min-width:0;margin-top:8px;border-top:1px solid #ffffff1c;padding-top:20px}
+#spotify-player.spotify-direct .music-tabs{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap}
+#spotify-player.spotify-direct .music-tabs button{flex:0 1 auto;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--text-muted);padding:10px 18px;font-size:13px}
+#spotify-player.spotify-direct .music-tabs button[aria-selected=true]{background:#ffffff0b;border-color:#efa93460;box-shadow:none;color:var(--text-primary)}
+#spotify-player.spotify-direct [role=tabpanel][hidden]{display:none!important}
+#spotify-player.spotify-direct .spotify-browser,#spotify-player.spotify-direct .spotify-queue,#spotify-player.spotify-direct .jam-section,#spotify-player.spotify-direct .music-devices,#spotify-player.spotify-direct .spotify-connect{border:0;background:none;padding:0;margin:0;border-radius:0;min-width:0}
+#spotify-player.spotify-direct .spotify-browser form{display:flex;align-items:center;gap:10px;margin:0 0 16px}
+#spotify-player.spotify-direct .spotify-browser input[type=search]{flex:1;min-width:0;min-height:48px;padding:12px 16px;border:1px solid #ffffff24;background:#ffffff06;color:var(--text-primary);border-radius:12px;margin:0;font-size:15px}
+#spotify-player.spotify-direct .spotify-browser form button{min-height:48px;flex-shrink:0;background:#efa93415;border-color:#efa93460}
+#spotify-player.spotify-direct .music-section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:24px 0 12px}
+#spotify-player.spotify-direct .music-section-heading h3,#spotify-player.spotify-direct .spotify-connect h3,#spotify-player.spotify-direct .jam-section h3{font-size:17px;letter-spacing:-.015em;text-transform:none;margin:0 0 4px}
+#spotify-player.spotify-direct p{color:var(--text-muted);font-size:13px;line-height:1.6}
+#spotify-player.spotify-direct .spotify-hits{display:grid;gap:8px;max-height:none;overflow:visible}
+#spotify-player.spotify-direct .music-search-results:not(:empty){padding-bottom:16px}
+#spotify-player.spotify-direct .music-playlists{grid-template-columns:repeat(2,minmax(0,1fr))}
+#spotify-player.spotify-direct .spotify-hits article{display:flex;align-items:center;flex-wrap:nowrap;gap:12px;min-width:0;padding:12px;background:#ffffff04;border:1px solid #ffffff13;border-radius:12px}
+#spotify-player.spotify-direct .music-result-art{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;background:#ffffff08;border-radius:7px;color:#ffffff65;font-size:24px;overflow:hidden}
+#spotify-player.spotify-direct .music-result-art img{width:100%;height:100%;object-fit:cover}
+#spotify-player.spotify-direct .spotify-hits .music-result-copy{flex:1;min-width:0}
+#spotify-player.spotify-direct .spotify-hits b,#spotify-player.spotify-direct .spotify-queue b{font-size:13px;white-space:normal;overflow-wrap:anywhere;line-height:1.4;color:var(--text-primary)}
+#spotify-player.spotify-direct .spotify-hits small,#spotify-player.spotify-direct .spotify-queue small{display:block;margin-top:4px;font-size:11px;line-height:1.4;color:var(--text-muted);white-space:normal;overflow-wrap:anywhere}
+#spotify-player.spotify-direct .spotify-hits button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;background:#ffffff06;border-color:#ffffff20;padding:8px 10px;min-height:42px;font-size:12px;color:var(--text-primary)}
+#spotify-player.spotify-direct .spotify-hits button svg{width:16px;height:16px}
+#spotify-player.spotify-direct .spotify-queue article{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid #ffffff12}
+#spotify-player.spotify-direct .music-queue-number{font-size:12px;color:var(--text-muted);width:25px;text-align:center;font-variant-numeric:tabular-nums}
+#spotify-player.spotify-direct .spotify-connect ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;list-style:none;padding:0}
+#spotify-player.spotify-direct .spotify-connect li button{width:100%;display:flex;align-items:center;gap:12px;text-align:left;min-height:76px}
+#spotify-player.spotify-direct .spotify-connect li button>span:nth-child(2){flex:1;min-width:0}
+#spotify-player.spotify-direct .spotify-connect li button[aria-pressed=true]{border-color:#1ed76066;background:#1ed7600b}
+#spotify-player.spotify-direct .spotify-connect strong{display:block;font-size:13px;overflow-wrap:anywhere}
+#spotify-player.spotify-direct .spotify-connect small{display:block;font-size:11px;color:var(--text-muted);margin-top:5px;overflow-wrap:anywhere}
+#spotify-player.spotify-direct .music-settings{margin-top:20px;padding:16px;background:#ffffff04;border:1px solid #ffffff16;border-radius:12px}
+#spotify-player.spotify-direct .music-settings summary{cursor:pointer;font-size:13px;min-height:24px}
+#spotify-player.spotify-direct .music-settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#spotify-player.spotify-direct .music-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:-1px;padding:0;border:0}
+@media(max-width:1050px){#spotify-player.spotify-direct .music-playlists{grid-template-columns:1fr}#spotify-player.spotify-direct .music-now{grid-template-columns:minmax(160px,.7fr) minmax(0,1fr);gap:24px}#spotify-player.spotify-direct .music-player-output{flex-wrap:wrap}#spotify-player.spotify-direct .music-volume{flex-basis:100%}}
+@media(max-width:650px){.music-page{padding:24px 14px 36px}.music-page>header{padding-right:48px}#spotify-player.spotify-direct.embedded-music{padding:18px!important;gap:20px}#spotify-player.spotify-direct .music-now{display:flex!important;flex-direction:column;gap:24px}#spotify-player.spotify-direct .music-artwork{max-width:260px}#spotify-player.spotify-direct .music-player-copy{width:100%}#spotify-player.spotify-direct .music-now h3{font-size:27px}#spotify-player.spotify-direct .music-buttons{justify-content:center;margin-top:18px}#spotify-player.spotify-direct .music-player-output{gap:14px}#spotify-player.spotify-direct .music-volume{flex-basis:105px}#spotify-player.spotify-direct .music-tabs{gap:6px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#spotify-player.spotify-direct .music-tabs button{padding:10px 6px;min-width:0;flex:auto}#spotify-player.spotify-direct .spotify-connect ul{grid-template-columns:1fr}#spotify-player.spotify-direct .spotify-hits article{gap:9px;flex-wrap:wrap}#spotify-player.spotify-direct .spotify-hits .music-result-copy{flex-basis:calc(100% - 60px)}#spotify-player.spotify-direct .spotify-hits button{flex:1}#spotify-player.spotify-direct .spotify-browser form{flex-wrap:wrap}#spotify-player.spotify-direct .spotify-browser form input{flex-basis:100%}#spotify-player.spotify-direct .spotify-browser form button{width:100%}#spotify-player.spotify-direct .music-section-heading{align-items:flex-start}#spotify-player.spotify-direct .music-account{gap:6px}#spotify-player.spotify-direct .music-connection{font-size:11px}}

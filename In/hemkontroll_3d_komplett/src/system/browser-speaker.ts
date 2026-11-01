@@ -46,6 +46,7 @@ export class BrowserSpeaker extends EventTarget {
   finally{if(serial===this.serial)this.pending=false;}
  }
  private async initializationFailed(serial:number){let protectedAudio=false;try{if(navigator.requestMediaKeySystemAccess){await navigator.requestMediaKeySystemAccess('com.widevine.alpha',[{initDataTypes:['cenc'],audioCapabilities:[{contentType:'audio/mp4; codecs="mp4a.40.2"'}]}]);protectedAudio=true;}}catch{}if(serial===this.serial)this.fail(protectedAudio?'Spotify SDK kunde inte initiera spelaren i den här webbläsaren.':'Den här webbläsaren saknar stöd för skyddat Spotify-ljud (Widevine/DRM). Prova vanlig Chrome eller Edge med skyddat innehåll tillgängligt.');}
+ reconnect(){this.disable();this.retryAt=0;this.failures=0;return this.enable();}
  private fail(message:string){if(this.deviceId)this.retiredDeviceIds.add(this.deviceId);++this.serial;this.pending=false;clearTimeout(this.timer);this.player?.disconnect();this.player=undefined;this.deviceId='';this.retryAt=Date.now()+Math.min(120000,10000*2**Math.min(this.failures++,4));this.message=message;this.changed();}
  /** Must be invoked directly by the user's device choice, before any await. */
  activate(){if(!this.player||!this.deviceId)return Promise.reject(new Error('Webbläsarspelaren är inte redo.'));return this.player.activateElement().then(()=>{this.needsGesture=false;this.changed();}).catch(()=>{this.needsGesture=true;this.changed();throw new Error('Webbläsaren blockerar ljud. Välj Tillåt ljud.');});}
