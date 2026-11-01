@@ -25,3 +25,5 @@ dialog#control-preset-composer.preset-composer::backdrop{background:#080a106b;ba
 #control-preset-composer.preset-composer label{margin:0;display:block;text-align:left}
 #control-preset-composer.preset-composer .composer-mode label,#control-preset-composer.preset-composer .composer-device,#control-preset-composer.preset-composer .composer-music-enable{display:flex;flex-direction:row}
 #control-preset-composer.preset-composer h3{text-transform:none;letter-spacing:normal}
+
+body[data-app-route="/control"] #control-add-preset[hidden]{display:none!important}

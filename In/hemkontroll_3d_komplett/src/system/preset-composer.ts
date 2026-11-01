@@ -14,7 +14,7 @@ export class PresetComposer{
  constructor(private config:Configuration,private connection:Connection,private devices:()=>SceneObject[],private saved:()=>void){
   this.button.type='button';this.button.id='control-add-preset';this.button.className='control-add-preset';this.button.setAttribute('aria-label','Lägg till förinställning');this.button.setAttribute('aria-haspopup','dialog');
   this.button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
-  if(document.body.dataset.serverRole&&document.body.dataset.serverRole!=='admin'){this.button.disabled=true;this.button.title='Administratörsbehörighet krävs för att skapa förinställningar.';}
+  if(document.body.dataset.serverRole&&document.body.dataset.serverRole!=='admin'){this.button.disabled=true;this.button.hidden=true;this.button.title='Administratörsbehörighet krävs för att skapa förinställningar.';}
   this.dialog.id='control-preset-composer';this.dialog.className='preset-composer';this.dialog.setAttribute('aria-labelledby','preset-composer-title');document.body.append(this.dialog);
   this.button.onclick=()=>this.open();
   this.dialog.addEventListener('cancel',e=>{e.preventDefault();if(!this.saving)this.close();});
