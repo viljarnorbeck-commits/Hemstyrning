@@ -1,5 +1,11 @@
 /* Full player follows the control-panel player: charcoal glass, white controls,
    restrained amber transport and Spotify green only for connection status. */
+/* The embedded player flows with the page, rather than trapping dialog scroll. */
+body[data-app-route="/music"]{height:100dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch}
+body[data-app-route="/music"] #app-outlet,body[data-app-route="/music"] .route-view,body[data-app-route="/music"] #music-content{height:auto;max-height:none;overflow:visible;min-width:0}
+body[data-app-route="/music"] .music-page{height:auto;max-height:none;overflow:visible;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+body[data-app-route="/music"] #spotify-player.spotify-direct.embedded-music{height:auto!important;max-height:none!important;overflow:visible!important;overscroll-behavior:auto;touch-action:pan-y pinch-zoom}
+body[data-app-route="/music"] #spotify-player.spotify-direct.embedded-music>*{flex-shrink:0}
 .music-page{max-width:1500px;margin:auto;padding:32px clamp(16px,3vw,48px) 48px;box-sizing:border-box}
 .music-page>header{position:static;display:block;padding:0;margin:0 0 24px;background:none;pointer-events:auto}
 .music-page>header small{font-size:10px;letter-spacing:.16em;color:var(--text-muted)}

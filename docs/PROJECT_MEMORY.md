@@ -423,3 +423,9 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Appens routing återställer inte längre en hemwidget vid återgång till Hem. Alla andra sidor, inklusive /lights, använder suspendMusicView, som stänger spelarens synliga panel/enhetsväljare och tar bort kompaktvyn utan att stoppa ljuduppspelning eller Spotify-sessionen. Spelarens äldre show-ingång tillåter bara de två angivna sidorna.
 - Singleton-spelaren skapas först när kontrollpanelen eller Spotify behöver den. Gamla hemwidgeten monteras inte i DOM och panelen börjar dold. Sidbyten uppdaterar även spelarens aktuella konfigurationsreferens så befintliga Jam-/konto-inställningar kommer från den aktiva sidan. Autentisering, token, Spotify Connect, uppspelning och förinställningarnas valfria Spotify-funktion ändras inte.
 - Endast källgranskning och diffkontroll. Tester, typkontroll, bygge och push fortsatt pausade. Ingen uppspelning eller HA-styrning utfördes; visuell granskning återstår. Servrarna behålls.
+
+## Spotify-fliken får sammanhängande sidskrollning, 1 november
+
+- /music använder sidans vertikala skrollyta och spelaren växer med innehållet. Den inbäddade dialogens gamla overflow:hidden och overscroll-behavior:contain tas över med specifika /music-regler, så den inte klipper innehåll eller fångar hjul/svep före sidans skrollning.
+- Outlet, sidvy och musikinnehåll har automatisk höjd utan maxhöjd. Spelarens sektioner krymps inte i flexlayouten och sidans nederkant har extra utrymme inklusive telefonens safe area. Horisontell skrollning undviks. Kontrollpanelens kompakta spelare ändras inte.
+- Endast CSS- och diffgranskning. Tester, typkontroll, bygge och push fortsatt pausade. Ingen Spotify-uppspelning eller HA-styrning utförd. Visuell granskning återstår.
