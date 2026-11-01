@@ -14,7 +14,9 @@ export function updateMarkup(root:HTMLElement,html:string){
  if(!old){parent.appendChild(fresh.cloneNode(true));continue;}
  if(old.nodeType!==fresh.nodeType||old.nodeName!==fresh.nodeName){parent.replaceChild(fresh.cloneNode(true),old);continue;}
  if(old instanceof Element&&fresh instanceof Element){const active=old instanceof HTMLElement&&interacting(old);
- for(const a of Array.from(old.attributes))if(!fresh.hasAttribute(a.name)&&!(active&&['value','checked','selected'].includes(a.name)))old.removeAttribute(a.name);
+ // Native details are user-owned UI state, like a focused field's current value.
+ // Live measurements must not collapse the form (or restart its unfold animation).
+ for(const a of Array.from(old.attributes))if(!fresh.hasAttribute(a.name)&&!(old instanceof HTMLDetailsElement&&a.name==='open')&&!(active&&['value','checked','selected'].includes(a.name)))old.removeAttribute(a.name);
  for(const a of Array.from(fresh.attributes)){if(active&&['value','checked','selected'].includes(a.name))continue;if(old.getAttribute(a.name)!==a.value)old.setAttribute(a.name,a.value);}
  if(!active||!old.matches('input,select,textarea'))sync(old,fresh);
  }else if(old.nodeValue!==fresh.nodeValue)old.nodeValue=fresh.nodeValue;

@@ -15,5 +15,5 @@ test('both lamp lists group provisional indoor, outdoor and unclear lamps withou
    if(route==='/lights')await expect(page.locator('.lights-column')).toHaveCount(3);
   }
   expect(writes).toBe(0);
- }finally{await page.close();for(const lamp of lamps)await request.delete('/dev-api/states/'+lamp.entityId);}
+ }finally{await page.close();await request.put('/workspace-api/scene',{data:original});for(const lamp of lamps)await request.delete('/dev-api/states/'+lamp.entityId);}
 });
