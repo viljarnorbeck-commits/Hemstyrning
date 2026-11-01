@@ -503,3 +503,6 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 ## Gemensam skroll för belysningsfliken, 1 november
 - Användaren vill att alla tre lampkolumner följer med tillsammans. Flyttade overflow-y:auto till .lights-lists och tog bort individuella kolumners skroll. Gridens align-items:start låter hela kolumninnehållet skapa den gemensamma skrollhöjden. Mobilens gemensamma skroll behålls.
 - Riktad Chromium-kontroll mot simulatorn verifierade att gemensamt scrollTop flyttar samtliga kolumner lika mycket och att mobilvyn har gemensam skroll utan horisontellt överflöde. Inledande försök med syntetiskt mushjul gav inkonsekventa resultat; slutkontrollen verifierade skrollposition/geometri direkt med tolerans för sidans inledningsanimation. Ingen enhet styrdes. Ingen full testsvit för denna begränsade CSS-ändring. Pushpausen kvarstår.
+
+## Tydligare bakgrund i kontrollpanelens sökruta, 1 november
+- Ökade sökpopupens bakgrund från 30 till 94 procent opacitet och inmatningsfältet till 95 procent, med tydlig ljus text och platshållare. Sökknapp, funktion och övrig design behålls. Begränsad CSS-ändring; inga nya tester eller full testsvit. Pushpausen kvarstår.
