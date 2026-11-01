@@ -34,3 +34,5 @@ apps/ios/**/xcuserdata/
 apps/ios/build/
 apps/ios/DerivedData/
 apps/ios/ExportOptions.plist
+__pycache__/
+*.pyc

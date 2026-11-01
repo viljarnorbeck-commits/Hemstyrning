@@ -19,7 +19,7 @@ it('broadcasts to every display, orders concurrent requests, validates IDs and d
   const invalid=next(controller.ws,'error');controller.ws.send(JSON.stringify({type:'view',mode:'FOCUS_OBJECT',objectId:'unplaced'}));await invalid;expect(coordinator.snapshot().mode).toBe('HOME');
   const unsafe=next(controller.ws,'error');controller.ws.send(JSON.stringify({type:'view',mode:'HOME',service:'unlock'}));await unsafe;
   const camera=next(a.ws,'error');a.ws.send(JSON.stringify({type:'viewer',mode:'VIEW_CAMERA',cameraRef:'http://internal-camera'}));await camera;
-  controller.ws.send(JSON.stringify({type:'view',mode:'FOCUS_OBJECT',objectId:'car'}));controller.ws.send(JSON.stringify({type:'view',mode:'FOLLOW_OBJECT',objectId:'mower'}));await new Promise(r=>setTimeout(r,70));expect(coordinator.snapshot()).toMatchObject({mode:'FOLLOW_OBJECT',objectId:'mower'});
+  const sequence=coordinator.snapshot().version;controller.ws.send(JSON.stringify({type:'view',mode:'FOCUS_OBJECT',objectId:'car'}));controller.ws.send(JSON.stringify({type:'view',mode:'FOLLOW_OBJECT',objectId:'mower'}));await expect.poll(()=>coordinator.snapshot().version,{timeout:3000}).toBe(sequence+2);expect(coordinator.snapshot()).toMatchObject({mode:'FOLLOW_OBJECT',objectId:'mower'});
   const rejoin=next(a.ws,'ViewerState');a.ws.send(JSON.stringify({type:'leaveViewer'}));expect((await rejoin).state.mode).toBe('FOLLOW_OBJECT');
  }finally{for(const ws of sockets)ws.terminate();hub.close();await new Promise<void>(r=>server.close(()=>r()));}
 });

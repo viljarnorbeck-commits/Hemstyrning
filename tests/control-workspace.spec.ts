@@ -32,7 +32,7 @@ test('read-only source explains disabled controls without blocking selection or 
  let commands=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/connection-api/'))commands++;});
  await page.route('**/connection-api/info',r=>r.fulfill({json:{mode:'home-assistant',commandsEnabled:false,controlBlockReason:'read-only'}}));
  await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
- await expect(page.locator('#control-permission')).toContainText('Skrivskyddad');await expect(page.locator('#control-lights .compact-device').first()).toContainText('Saknar verifierad bilanslutning');
+ await expect(page.locator('#control-permission')).toContainText('Skrivskyddad');await expect(page.locator('#control-lights .compact-device[data-card=vacuum]')).toContainText('Robotdammsugare');
  await page.locator('#control-lights .device-select').first().click();await expect(page.locator('#control-details h1')).not.toHaveText('Välj en enhet.');
  for(const button of await page.locator('[role=switch]').all())await expect(button).toBeDisabled();
  for(const slider of await page.locator('#control-details input').all())await expect(slider).toBeDisabled();
@@ -90,14 +90,14 @@ test('every function page and settings can reach the final content with native p
 
 test('right room lamp confirms two toggles and dimming in simulator',async({page,request})=>{
  await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
- const card=page.locator('#control-details'),toggle=card.locator('.stage-heading [role=switch]');
+ const selectedLamp=page.locator('#control-lights .lamp-card').filter({has:page.locator('[role=switch]:enabled')}).first();await selectedLamp.locator('.device-select').click();const card=page.locator('#control-details'),toggle=card.locator('.stage-heading [role=switch]');
  const before=await toggle.getAttribute('aria-checked');
  for(const expected of [before==='true'?'false':'true',before]){
   const command=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().includes('/connection-api/'));
   await toggle.click();expect((await command).ok()).toBe(true);await expect(toggle).toHaveAttribute('aria-checked',expected!);
-  await expect(page.locator('#control-lights .lamp-card').first().locator('[role=switch]')).toHaveAttribute('aria-checked',expected!);
+  await expect(selectedLamp.locator('[role=switch]')).toHaveAttribute('aria-checked',expected!);
  }
  const slider=card.locator('[data-dim]'),box=(await slider.boundingBox())!;
  await slider.click({position:{x:box.width*.6,y:box.height/2}});await expect(page.locator('#control-error')).toContainText('Bekräftat');
- await expect(page.locator('#control-lights .lamp-card').first().locator('[data-dim]')).toHaveValue(await slider.inputValue());
+ await expect(selectedLamp.locator('[data-dim]')).toHaveValue(await slider.inputValue());
 });

@@ -21,8 +21,7 @@ async function gesture(cdp:CDPSession,points:{id:number;x:number;y:number}[][]){
 test('compact desktop status, flowing Spotify/calendar and hidden but usable control scrollbars',async({page})=>{
  await setup(page,true);
  const strip=await page.locator('.home-status-strip').boundingBox();expect(strip!.width).toBeLessThanOrEqual(850);expect(strip!.width).toBeLessThan(1200);expect(strip!.x).toBeGreaterThanOrEqual(80);
- const music=page.locator('.music-widget'),calendar=page.locator('.right-calendar');let m=await music.boundingBox(),c=await calendar.boundingBox();expect(c!.y-m!.y-m!.height).toBeCloseTo(12,0);
- await music.evaluate(el=>(el as HTMLElement).style.minHeight='430px');m=await music.boundingBox();c=await calendar.boundingBox();expect(c!.y-m!.y-m!.height).toBeCloseTo(12,0);await music.evaluate(el=>(el as HTMLElement).style.minHeight='');
+ await expect(page.locator('.music-widget')).toHaveCount(0);const calendarBounds=await page.locator('.right-calendar').boundingBox();expect(calendarBounds!.width).toBeGreaterThan(0);
  await expect(page.locator('.calendar-today')).not.toBeEmpty();await page.locator('.home-right [data-calendar="more"]').click();await expect(page.locator('.home-right [data-calendar="more"]')).toHaveAttribute('aria-expanded','true');await page.locator('.home-right [data-calendar="open"]').click();await expect(page.locator('.calendar-panel')).toBeVisible();await page.locator('[data-close-calendar]').click();
  const style=await page.locator('.home-quick-controls').evaluate(el=>({scrollbar:getComputedStyle(el).scrollbarWidth,webkit:getComputedStyle(el,'::-webkit-scrollbar').display,overflow:getComputedStyle(el).overflowY}));expect(style).toMatchObject({scrollbar:'none',webkit:'none',overflow:'auto'});
  // Use the actual configured device list for scroll verification in the next navigation.
@@ -34,9 +33,9 @@ test('compact desktop status, flowing Spotify/calendar and hidden but usable con
 for(const [name,width,height] of [['iPhone',390,844],['Android',412,915],['Tablet',820,1180],['Landscape',844,390]] as const){
  test(`${name} compact music, status, camera tools and direct calendar stay within the viewport`,async({browser})=>{
  const context=await browser.newContext({viewport:{width,height},hasTouch:true,isMobile:true});const page=await context.newPage();
- try{await setup(page);for(const selector of ['.home-status-strip','.music-widget',width<=750?'.nav-mobile':'.app-sidebar','#camera-mode','#clean-view']){const box=await page.locator(selector).boundingBox();expect(box,selector).not.toBeNull();expect(box!.x,selector).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width,selector).toBeLessThanOrEqual(width+1);expect(box!.y,selector).toBeGreaterThanOrEqual(0);expect(box!.y+box!.height,selector).toBeLessThanOrEqual(height+1);}
+ try{await setup(page);for(const selector of ['.home-status-strip',width<=750?'.nav-mobile':'.app-sidebar','#camera-mode','#clean-view']){const box=await page.locator(selector).boundingBox();expect(box,selector).not.toBeNull();expect(box!.x,selector).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width,selector).toBeLessThanOrEqual(width+1);expect(box!.y,selector).toBeGreaterThanOrEqual(0);expect(box!.y+box!.height,selector).toBeLessThanOrEqual(height+1);}
   expect((await page.locator('.home-status-strip').boundingBox())!.width).toBeLessThan(width-35);
-  const cover=await page.locator('.music-widget').boundingBox(),mode=await page.locator('#camera-mode').boundingBox(),full=await page.locator('#clean-view').boundingBox();expect(mode!.y+mode!.height).toBeLessThanOrEqual(cover!.y);expect(full!.y+full!.height).toBeLessThanOrEqual(cover!.y);
+  await expect(page.locator('.music-widget')).toHaveCount(0);
   await page.goto(new URL('/?view=3d&calendar=1',(process.env.HEM_E2E_BASE_URL??'http://localhost:5173')).href);await expect(page.locator('.calendar-panel')).toBeVisible();await page.locator('[data-close-calendar]').tap();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`/tmp/hemkontroll-layout-${name}.png`});
  }finally{await context.close();}
  });

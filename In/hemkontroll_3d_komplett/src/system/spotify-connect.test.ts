@@ -17,6 +17,6 @@ it('merges only an actual ready SDK ID with real provider devices without duplic
 it('omits failed or retired SDK IDs and never creates a browser row before ready',()=>{expect(connectDevices([device('old'),device('speaker')],'','Hemstyrning',new Set(['old'])).map(d=>d.id)).toEqual(['speaker']);expect(connectDevices([],'','Hemstyrning',new Set())).toEqual([]);expect(connectDevices([],'invalid id','Hemstyrning',new Set())).toEqual([]);});
 it('prefers Connect over a Cast duplicate but requires account availability before allowing selection',()=>{
  const base={model:'',announced:true,lastSeen:1};const rows=[{...base,id:'cast',name:'Living room',protocol:'Google Cast'},{...base,id:'connect',name:'Living room',protocol:'Spotify Connect',spotifyId:'real-spotify-id'},{...base,id:'cast-only',name:'Bedroom',protocol:'Google Cast'}];
- const result=mergeNetworkDevices([],rows);expect(result).toHaveLength(2);expect(result[0]).toMatchObject({id:'discovered-connect',type:'Spotify Connect',is_restricted:true});expect(result[0].unavailableReason).toContain('Spotify-appen');expect(result[1].is_restricted).toBe(true);
+ const result=mergeNetworkDevices([],rows);expect(result).toHaveLength(2);expect(result[0]).toMatchObject({id:'discovered-connect',type:'Spotify Connect',is_restricted:true});expect(connectDevices(result,'','',new Set())).toEqual([]);expect(result[1].is_restricted).toBe(true);
  const reported={...device('api-id'),name:'Living room'};expect(mergeNetworkDevices([reported],rows).filter(d=>d.name==='Living room')).toEqual([reported]);
 });

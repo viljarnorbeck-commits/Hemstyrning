@@ -9,7 +9,7 @@ test('ambient cards preserve animation and focus through confirmed commands',asy
   await expect(page.locator('body')).toHaveAttribute('data-app-route','/control');
   await expect(page.locator('#control-status')).toHaveCount(0);
   await expect(page.locator('.control-toolbar')).toHaveCount(0);
-  const toggle=page.locator('#control-lights [data-action="toggle"]').first();
+  const toggle=page.locator('#control-lights [data-action="toggle"]:enabled').first();
   await expect(toggle).toBeEnabled();
   const before=await toggle.getAttribute('aria-checked');
   await page.evaluate(()=>{const card=document.querySelector('.device-control')!;(window as any).card=card;(window as any).animation=card.getAnimations({subtree:true}).find(a=>(a as CSSAnimation).animationName==='card-drift');});

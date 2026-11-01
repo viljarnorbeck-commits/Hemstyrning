@@ -29,47 +29,47 @@ test('desktop direct controls confirm each car, all lights and robot commands in
 });
 
 test('direct Spotify playback uses only the Spotify server API, with Connect devices and volume',async({page})=>{
- let playing=false,volume=30,title='Ljus över gården',commands:string[]=[];
+ let playing=false,volume=30,title='Ljus över gården',current='test-device',commands:string[]=[];
  await page.route('**/spotify-api/status',route=>route.fulfill({json:{configured:true,connected:true,canControl:true,canConfigure:true,message:'Ansluten'}}));
- await page.route('**/spotify-api/playback',route=>route.fulfill({json:{connected:true,playing,progressMs:32000,track:{name:title,artist:'Testartist',album:'Testalbum',cover:'https://i.scdn.co/image/test',durationMs:214000,url:null},device:{id:'test-device',name:'Vardagsrum',volume_percent:volume}}}));
- await page.route('**/spotify-api/devices',route=>route.fulfill({json:{devices:[{id:'test-device',name:'Vardagsrum',type:'speaker',is_active:true,is_restricted:false,supports_volume:true,volume_percent:volume},{id:'another-device',name:'Kök',type:'speaker',is_active:false,is_restricted:false,supports_volume:true,volume_percent:70}]}}));
- await page.route('**/spotify-api/command',async route=>{const body=route.request().postDataJSON();commands.push(body.action);if(body.action==='play')playing=true;if(body.action==='pause')playing=false;if(body.action==='volume')volume=body.volume;if(body.action==='next')title='Kväll vid havet';if(body.action==='previous')title='Ljus över gården';await route.fulfill({json:{accepted:true}});});
- await open(page);await expect(page.locator('.music-widget')).toContainText('Ljus över gården');
- await page.locator('.music-open').click();const modal=page.locator('dialog.music-panel');
- await expect(modal).toContainText('SPOTIFY WEB API');
- await modal.getByRole('button',{name:'Spela musik',exact:true}).click();await expect(modal.locator('.playback-state')).toHaveText('Spelar');
+ await page.route('**/spotify-api/playback',route=>route.fulfill({json:{connected:true,playing,progressMs:32000,track:{name:title,artist:'Testartist',album:'Testalbum',cover:'https://i.scdn.co/image/test',durationMs:214000,url:null},device:{id:current,name:current==='test-device'?'Vardagsrum':'Kök',volume_percent:volume}}}));
+ await page.route('**/spotify-api/devices*',route=>route.fulfill({json:{devices:[{id:'test-device',name:'Vardagsrum',type:'speaker',is_active:true,is_restricted:false,supports_volume:true,volume_percent:volume},{id:'another-device',name:'Kök',type:'speaker',is_active:false,is_restricted:false,supports_volume:true,volume_percent:70}]}}));
+ await page.route('**/spotify-api/command',async route=>{const body=route.request().postDataJSON();commands.push(body.action);if(body.action==='transfer')current=body.deviceId;if(body.action==='play')playing=true;if(body.action==='pause')playing=false;if(body.action==='volume')volume=body.volume;if(body.action==='next')title='Kväll vid havet';if(body.action==='previous')title='Ljus över gården';await route.fulfill({json:{accepted:true}});});
+ await page.goto('/music');await expect(page.locator('.embedded-music')).toContainText('Ljus över gården');
+ const modal=page.locator('.embedded-music');
+ await expect(modal.getByRole('heading',{name:'Spotify',exact:true})).toBeVisible();
+ await modal.getByRole('button',{name:'Spela musik',exact:true}).click();await expect(modal.getByRole('button',{name:'Pausa musik',exact:true})).toBeEnabled();
  await modal.getByRole('button',{name:'Nästa låt'}).click();await expect(modal).toContainText('Kväll vid havet');
  await modal.locator('#spotify-volume').fill('63');await modal.locator('#spotify-volume').dispatchEvent('change');await expect.poll(()=>volume).toBe(63);await page.waitForTimeout(650);await expect(modal.getByRole('button',{name:'Nästa låt'})).toBeEnabled();
- const speaker=modal.locator('[data-spotify-device="another-device"]');await expect(speaker).toBeEnabled();await speaker.click();await expect.poll(()=>commands).toContain('transfer');
+ await modal.getByRole('button',{name:'Välj uppspelningsenhet',exact:true}).click();const speaker=page.locator('[data-connect-device="another-device"]');await expect(speaker).toBeEnabled();await speaker.click();await expect.poll(()=>commands).toContain('transfer');
  expect(commands).toContain('play');expect(commands).toContain('next');expect(commands).toContain('volume');
 });
 
 test('Jam preserves manual Spotify invitation QR and rejects track links',async({page})=>{
  await page.route('**/spotify-api/status',route=>route.fulfill({json:{configured:false,connected:false,canControl:false,canConfigure:true,message:'Spotify ej konfigurerat'}}));
- await open(page);await page.locator('.music-open').click();const modal=page.locator('dialog.music-panel');
- await expect(modal).toContainText('Ingen Jam-länk sparad');
+ await page.goto('/music?tab=jam');const modal=page.locator('.embedded-music');
+ await expect(modal).toContainText('Ingen Jam-inbjudan sparad');
  await modal.locator('summary').click();
  await modal.locator('#jam-url').fill('https://open.spotify.com/track/1234567890');
- await modal.getByRole('button',{name:'Spara Jam-länk'}).click();await expect(page.locator('#toast')).toContainText('inte en låt');
+ await modal.getByRole('button',{name:'Spara länk'}).click();await expect(modal.locator('#music-feedback')).toContainText('inte en låt');
  await modal.locator('#jam-url').fill('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');
- await modal.getByRole('button',{name:'Spara Jam-länk'}).click();
+ await modal.getByRole('button',{name:'Spara länk'}).click();
  await modal.locator('summary').click();
  await modal.getByRole('button',{name:'Visa Jam QR-kod'}).click();await expect(modal.locator('.jam-qr img')).toHaveAttribute('src',/^data:image\/png;base64,/);
  const png=Buffer.from((await modal.locator('.jam-qr img').getAttribute('src'))!.split(',')[1],'base64'),decoded=await sharp(png).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  expect(jsQR(new Uint8ClampedArray(decoded.data),decoded.info.width,decoded.info.height)?.data).toBe('https://open.spotify.com/socialsession/TESTONLY0123456789?si=test');
- await modal.locator('summary').click();await modal.getByRole('button',{name:'Ta bort Jam-länk'}).click();await expect(modal).toContainText('Ingen Jam-länk sparad');
+ await modal.locator('summary').click();await modal.getByRole('button',{name:'Ta bort länk'}).click();await expect(modal).toContainText('Ingen Jam-inbjudan sparad');
 });
 
 test('list mode stops the animation loop, preserves camera and clean fullscreen restores UI',async({page})=>{
  await open(page);await page.locator('#list-button').click();await expect(page.locator('#home-dashboard')).toBeVisible();await expect(page.locator('#garden')).toBeHidden();
- for(const title of ['Belysning','Bilar','Gräsklippare','Robotdammsugare','Elförbrukning','Solpaneler','Väder','Spotify','Kalender'])await expect(page.locator('#home-dashboard').getByRole('heading',{name:title,exact:true})).toBeVisible();
+ for(const title of ['Belysning','Bilar','Gräsklippare','Robotdammsugare','Elförbrukning','Solpaneler','Väder','Kalender'])await expect(page.locator('#home-dashboard').getByRole('heading',{name:title,exact:true})).toBeVisible();
  const frames=await page.locator('#garden').getAttribute('data-render-frames'),camera=await page.locator('#garden').getAttribute('data-camera');await page.waitForTimeout(1200);expect(await page.locator('#garden').getAttribute('data-render-frames')).toBe(frames);
  await page.locator('#list-button').click();await expect(page.locator('#garden')).toBeVisible();expect(await page.locator('#garden').getAttribute('data-camera')).toBe(camera);await expect.poll(()=>page.locator('#garden').getAttribute('data-render-frames')).not.toBe(frames);
- await page.locator('#clean-view').click();await expect(page.locator('.music-widget')).toBeHidden();await expect(page.locator('.home-status-strip')).toBeHidden();await expect(page.locator('.home-quick-controls')).toBeHidden();await page.getByRole('button',{name:'Återgå till normalläge',exact:true}).click();await expect(page.locator('.music-widget')).toBeVisible();await expect(page.locator('.home-quick-controls')).toBeVisible();
+ await page.locator('#clean-view').click();await expect(page.locator('.music-widget')).toBeHidden();await expect(page.locator('.home-status-strip')).toBeHidden();await expect(page.locator('.home-quick-controls')).toBeHidden();await page.getByRole('button',{name:'Återgå till normalläge',exact:true}).click();await expect(page.locator('.music-widget')).toHaveCount(0);await expect(page.locator('.home-quick-controls')).toBeVisible();
 });
 
 test('mobile portrait and landscape provide shared navigation and scrollable dashboard without overflow',async({page})=>{
- await page.setViewportSize({width:390,height:844});await open(page);await expect(page.locator('.home-quick-controls')).toBeHidden();await expect(page.locator('.music-widget')).toBeVisible();await page.locator('.music-widget .music-open').click();await expect(page.locator('dialog.music-panel')).toBeVisible();await page.getByRole('button',{name:'Stäng musik',exact:true}).click();
+ await page.setViewportSize({width:390,height:844});await open(page);await expect(page.locator('.home-quick-controls')).toBeHidden();await expect(page.locator('.music-widget')).toHaveCount(0);await page.goto('/music');await expect(page.locator('.embedded-music')).toBeVisible();await open(page);
  await page.locator('#list-button').click();await expect(page.locator('#home-dashboard')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'/tmp/hemkontroll-home-mobile.png'});
  await page.setViewportSize({width:844,height:390});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('#open-3d').click();await expect(page.locator('#garden')).toBeVisible();await page.locator('#clean-view').click();await expect(page.locator('.nav-mobile')).toBeHidden();await page.getByRole('button',{name:'Återgå till normalläge',exact:true}).click();await expect(page.locator('.app-sidebar')).toBeVisible();
 });
