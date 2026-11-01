@@ -42,3 +42,11 @@
 /* KNX names and entity IDs may be single long words, especially on mobile. */
 .reference-right .device-stage-content h1{min-width:0;overflow-wrap:anywhere}
 .reference-right .device-stage-content code{overflow-wrap:anywhere}
+
+/* Keep preset feedback inside its row rather than adding it above a 100%-high grid. */
+.reference-right .preset-panel{display:flex;flex-direction:column;min-height:0}
+.reference-right .preset-grid{height:auto;flex:1;min-height:0}
+.reference-right .preset-availability{font-size:10px;line-height:1.1;text-align:center}
+@media(max-height:500px) and (orientation:landscape){.reference-right .preset-message{display:none}.reference-right .preset-card .preset-availability{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
+
+@media(max-height:500px) and (orientation:landscape){.reference-right .preset-card{padding:2px}}

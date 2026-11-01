@@ -25,7 +25,7 @@ test('original UV/PNG samples render identically to the unsimplified reference w
  await page.route('**/__source/Daniels_u0_v0_diffuse.png',route=>route.fulfill({path:resolve('In/Daniels_u0_v0_diffuse.png'),contentType:'image/png'}));
  await page.route('**/models/daniels-reference.glb',async route=>route.fulfill({body:await sampledModel('In/hemkontroll_3d_komplett/public/models/daniels-reference.glb'),contentType:'model/gltf-binary'}));
  // This reference harness imports unbundled modules through Vite's development-only /@fs endpoint.
- await page.goto('http://localhost:5173/__texture-check');
+ await page.goto(new URL('/__texture-check',(process.env.HEM_E2E_BASE_URL??'http://localhost:5173')).href);
  const result=await page.evaluate(async(moduleRoot)=>{
   // Vite serves these official modules; this deliberately renders once, without app effects.
   const THREE=await import(moduleRoot+'/build/three.module.js');

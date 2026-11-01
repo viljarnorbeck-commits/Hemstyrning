@@ -37,7 +37,7 @@ for(const [name,width,height] of [['iPhone',390,844],['Android',412,915],['Table
  try{await setup(page);for(const selector of ['.home-status-strip','.music-widget',width<=750?'.nav-mobile':'.app-sidebar','#camera-mode','#clean-view']){const box=await page.locator(selector).boundingBox();expect(box,selector).not.toBeNull();expect(box!.x,selector).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width,selector).toBeLessThanOrEqual(width+1);expect(box!.y,selector).toBeGreaterThanOrEqual(0);expect(box!.y+box!.height,selector).toBeLessThanOrEqual(height+1);}
   expect((await page.locator('.home-status-strip').boundingBox())!.width).toBeLessThan(width-35);
   const cover=await page.locator('.music-widget').boundingBox(),mode=await page.locator('#camera-mode').boundingBox(),full=await page.locator('#clean-view').boundingBox();expect(mode!.y+mode!.height).toBeLessThanOrEqual(cover!.y);expect(full!.y+full!.height).toBeLessThanOrEqual(cover!.y);
-  await page.goto('http://localhost:5173/?view=3d&calendar=1');await expect(page.locator('.calendar-panel')).toBeVisible();await page.locator('[data-close-calendar]').tap();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`/tmp/hemkontroll-layout-${name}.png`});
+  await page.goto(new URL('/?view=3d&calendar=1',(process.env.HEM_E2E_BASE_URL??'http://localhost:5173')).href);await expect(page.locator('.calendar-panel')).toBeVisible();await page.locator('[data-close-calendar]').tap();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`/tmp/hemkontroll-layout-${name}.png`});
  }finally{await context.close();}
  });
 }

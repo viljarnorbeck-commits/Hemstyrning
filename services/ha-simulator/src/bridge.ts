@@ -1,3 +1,5 @@
+import {HalloweenEffect} from './halloween-effect.js';
+import type {HassState} from './types.js';
 import {smhiWeatherApi} from './smhi-weather.js';
 import {readRegistry} from './ha-registry.js';
 import {allowedOrigin} from './access.js';
@@ -40,6 +42,8 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
       res.status(503).json({mode:'real',authenticated:false,commandsEnabled:false,message:'Home Assistant kunde inte verifieras. Kontrollera URL, token och nätverk lokalt.'});
     }
   });
+  const halloween=new HalloweenEffect(async(domain,service,data)=>{if(live){if(!live.commandsEnabled)throw new Error('Skrivskyddad anslutning');const response=await fetch(live.url+'/api/services/'+domain+'/'+service,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(4000)});if(!response.ok)throw new Error('Home Assistant avvisade belysningskommandot');}else await callService(store,{domain,service,serviceData:data},delay);});
+  router.get('/presets/:id/status',async(req,res)=>{const config=await load(),p=config.presets.find(p=>p.id===req.params.id&&!p.hidden&&p.effect==='halloween');if(!p){res.sendStatus(404);return;}res.json(halloween.status(p.id));});
   let registryCache:Awaited<ReturnType<typeof readRegistry>>=[],registryAt=0;
   router.get('/catalog',async(_req,res)=>{try{if(live&&Date.now()-registryAt>60000){registryCache=await readRegistry(live);registryAt=Date.now();}res.json({entities:registryCache,registryAvailable:!!live,source:live?'home-assistant':'simulator'});}catch{res.json({entities:[],registryAvailable:false,source:live?'home-assistant':'simulator',message:'Registermetadata saknas. State-katalogen fungerar fortfarande.'});}});
   router.post('/entity-action',async(req,res)=>{
@@ -76,6 +80,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
   router.post('/presets/:id',async(req,res)=>{
     if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
     const config=await load(),preset=config.presets.find(p=>p.id===req.params.id&&!p.hidden),stop=req.body?.action==='stop';
+    if(preset?.effect==='halloween'){if(res.locals.hemRole==='viewer'||!['activate','stop'].includes(req.body?.action)){res.sendStatus(403);return;}try{const states=await read('states')as HassState[];const ids=(preset.effectTargets??[]).filter(id=>!config.entityPreferences[id]?.hidden&&config.entityPreferences[id]?.allowCommands!==false);const status=stop?await halloween.stop(preset.id):await halloween.start(preset.id,ids,states,preset.effectVacuum);res.json({accepted:true,...status});}catch(e){res.status(409).json({message:e instanceof Error?e.message:'Halloween kunde inte startas'});}return;}
     if(!preset||!['activate','stop'].includes(req.body?.action)||stop&&(!preset.canStop||!preset.entityId.startsWith('script.'))){res.sendStatus(403);return;}
     const domain=preset.entityId.split('.')[0]!,service=stop?'turn_off':'turn_on',target=(await read('states') as {entity_id:string;state:string}[]).find(s=>s.entity_id===preset.entityId);
     if(!target||target.state==='unavailable'||target.state==='unknown'&&domain==='script'){res.status(400).json({message:'Scenen eller skriptet är otillgängligt'});return;}
@@ -188,7 +193,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     } else await callService(store, { domain: 'light', service, serviceData: { entity_id: entityId } }, delay);
     res.json({ accepted: true });
   });
-  return router;
+  return Object.assign(router,{stopEffects:()=>halloween.stop()});
 }
 
 /** Read-only WS gateway; remote credentials are exchanged exclusively on the server. */

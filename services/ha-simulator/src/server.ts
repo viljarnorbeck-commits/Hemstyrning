@@ -51,7 +51,7 @@ export function createSimulator(options: SimulatorOptions) {
   app.use('/workspace-api', workspace.router);
   app.use('/spotify-api',spotifyApi(options.dataDirectory ?? resolve(import.meta.dirname,'../../../data'),request=>access.role(request)));
   app.use(express.json());
-  app.use(['/bridge/api','/connection-api'], bridgeApi(store, workspace.load, delayMs, options.live));
+  const bridge=bridgeApi(store,workspace.load,delayMs,options.live);app.use(['/bridge/api','/connection-api'],bridge);
   const dev = express.Router();
   dev.use((req,res,next)=>{ if(req.headers.origin && !allowedOrigin(req.headers.origin)){res.sendStatus(403);return;}next(); });
   dev.use('/learning',mowerHistoryApi(history,'simulator',workspace.load));
@@ -150,7 +150,7 @@ export function createSimulator(options: SimulatorOptions) {
   const sessions = new Map<WebSocket, ClientSession>();
   server.on('close',()=>{workspace.close();stopRecorder();history.close();});
   server.on('listening',()=>{void workspace.load().then(scene=>{if(!server.listening)return;simulation.configure({...simulation.settings,latitude:scene.location.latitude,longitude:scene.location.longitude,mowerRoute:scene.geography.simulatorRoute??[]});simulation.start();}).catch(()=>{if(server.listening)simulation.start();});});
-  server.on('close',()=>simulation.stop());
+  server.on('close',()=>{simulation.stop();void bridge.stopEffects();});
 
   server.on("upgrade", (request, socket, head) => {
     if(!access.role(request)||!allowedOrigin(request.headers.origin)){socket.destroy();return;}
