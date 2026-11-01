@@ -174,3 +174,9 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Uppdateras vid montering och högst en gång per minut; avbrutna vyer avbryter registeranrop och timers. Befintlig backendcache återanvänds. Sensorer och binära sensorer har läsande detaljvy med entity_id, område och rapporttid. Ingen påhittad lamp-/GPS-/batteristyrning för dessa funktioner. KNX-temperaturvisning respekterar sparad lokal korrigering, inklusive utomhusgivarens −0,7 °C.
 - Listvisning ger inga nya styrbehörigheter. Befintliga sparade enheter och uttryckliga allowCommands-val använder tidigare kommandovägar; avaktiverade registerposter är spärrade. Inga Home Assistant-ändringar eller styrkommandon skickades. Easee-kortens borttagning, WLED-döljning, Spotify och övrig design bevaras.
 - Tester, TypeScript, bygge och automatiska webbläsarprov fortsatt pausade enligt användaren. Endast läsande inventering och kodgranskning; visuell granskning och fullständighet i renderad vy återstår att verifiera senare.
+
+## Kontrollpanel utan övre verktygsrad, 1 november
+
+- På användarens begäran tas hela control-toolbar bort: Ansluten, Gemensam visning, Översikt och Avsluta följning. Tillhörande DOM-uppdateringar och CSS tas bort, så raden inte lämnar kvar utrymme. Sidans övre padding minskas till 8 px.
+- Förinställningslistan inklusive Halloween, vänsterlistan, enhetsrutan, Spotify och ScreenLink/config-synk är bevarade. Nödvändiga fel- och behörighetsmeddelanden finns kvar.
+- Inga tester, TypeScript-körningar, byggen eller automatiserade webbläsarprov enligt den fortsatta testpausen.
