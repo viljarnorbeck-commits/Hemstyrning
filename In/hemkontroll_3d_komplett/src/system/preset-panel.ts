@@ -1,4 +1,5 @@
 import {updateMarkup} from './card-design';
+import {runPresetMusic} from './preset-music';
 import type{Configuration}from'./configuration';import type{Connection}from'./connection';import{escapeHtml as esc}from'./panels';
 // Preset colors can be user-selected, so choose legible foreground text on
 // the strongly colored tile rather than assuming every accent is light.
@@ -23,7 +24,9 @@ export class PresetPanel{
   this.root.onclick=async e=>{
    const b=(e.target as HTMLElement).closest<HTMLElement>('[data-preset]'),p=config.value.presets?.find(p=>p.id===b?.dataset.preset);if(!p||this.busy)return;
    const stop=b!.getAttribute('aria-checked')==='true';this.busy=p.id;this.message='Skickar · inväntar bekräftelse';this.render();
-   try{const result=await connection.preset(p,stop);if(p.effect==='halloween'){this.effects[p.id]=result;this.message=result.message;}else this.message=stop?'Skriptet bekräftat stoppat':'Aktivering bekräftad av Home Assistant. Lampornas status visas separat.';}
+   try{const result=await connection.preset(p,stop);if(p.effect==='halloween'){this.effects[p.id]=result;this.message=result.message;}else this.message=p.effect==='combination'?result.message:stop?'Skriptet bekräftat stoppat':'Aktivering bekräftad av Home Assistant. Lampornas status visas separat.';
+    if(!stop&&p.spotify){try{await runPresetMusic(p.spotify);this.message=(this.message||'Kombinationen startad.')+' Spotify-kommandot mottaget.';}catch(e){this.message=(this.message||'Enhetskommandon mottagna.')+' Spotify: '+(e as Error).message;}}
+   }
    catch(e){this.message=(e as Error).message;}finally{this.busy='';this.render();}
   };
   connection.addEventListener('state',this.listener);connection.addEventListener('connection',this.listener);this.render();
@@ -37,11 +40,11 @@ export class PresetPanel{
   const signature=JSON.stringify([this.config.value.presets,this.effects,this.connection.connected,this.connection.commandsEnabled,this.busy,this.message,(this.config.value.presets??[]).map(p=>this.connection.states.get(p.entityId))]);if(signature===this.signature)return;this.signature=signature;
   const scroll=this.root.scrollTop;
   const cards=(this.config.value.presets??[]).filter(p=>!p.hidden).map(p=>{
-   const state=this.connection.states.get(p.entityId),native=p.effect==='halloween',effect=this.effects[p.id];
-   const running=native?effect?.running===true:state?.state==='on'&&p.entityId.startsWith('script.');
-   const disabled=!this.connection.connected||!this.connection.commandsEnabled||(!native&&(!state||state.state==='unavailable'))||!!this.busy||!!effect?.restoring||(native&&!effect);
-   const toggle=native||p.entityId.startsWith('script.')&&p.canStop;
-   const info=native?(effect?.restoring?'Återställer…':effect?.running?effect.remainingSeconds+' s · '+effect.targetCount+' lampor':effect?.message||'60 s · belysning + lokaliseringssignal'):!state?'Saknar entitet':state.state==='unavailable'?'Otillgänglig':'';
+   const state=this.connection.states.get(p.entityId),native=!!p.effect,blink=p.effect==='halloween',effect=this.effects[p.id];
+   const running=blink?effect?.running===true:state?.state==='on'&&p.entityId.startsWith('script.');
+   const disabled=!this.connection.connected||!this.connection.commandsEnabled||(!native&&(!state||state.state==='unavailable'))||!!this.busy||!!effect?.restoring||(blink&&!effect);
+   const toggle=blink||!native&&p.entityId.startsWith('script.')&&p.canStop;
+   const info=blink?(effect?.restoring?'Återställer…':effect?.running?effect.remainingSeconds+' s · '+effect.targetCount+' lampor':effect?.message||'60 s · belysning + lokaliseringssignal'):p.effect==='combination'?(p.actions?.length??0)+' enheter'+(p.spotify?' · Spotify':''):!state?'Saknar entitet':state.state==='unavailable'?'Otillgänglig':'';
    return '<article data-card="preset-'+esc(p.id)+'" class="preset-card '+(running?'active':'')+'" style="--accent:'+p.color+';--preset-ink:'+presetInk(p.color)+'"><span class="preset-icon" aria-hidden="true">'+esc(p.icon)+'</span><strong>'+esc(p.name)+'</strong>'+(toggle?'<button class="device-switch preset-switch '+(running?'active':'')+'" role="switch" aria-checked="'+running+'" aria-label="'+esc(p.name)+'" data-preset="'+esc(p.id)+'" '+(disabled?'disabled':'')+'><span aria-hidden="true"></span></button>':'<button class="preset-go" data-preset="'+esc(p.id)+'" aria-label="Kör '+esc(p.name)+'" '+(disabled?'disabled':'')+'>'+(this.busy===p.id?'Väntar…':'GO!')+'</button>')+'<small class="preset-availability">'+esc(info)+'</small></article>';
   }).join('');
   updateMarkup(this.root,'<div class="section-heading"><div><small>STÄMNING & SCENER</small><h2>Förinställningar</h2></div><a href="/settings">Redigera ↗</a></div><p role="status" class="preset-message">'+esc(this.message)+'</p><div class="preset-grid" tabindex="0" aria-label="Scener">'+(cards||'<p>Inga förinställningar valda. Välj scener eller skript i inställningarna.</p>')+'</div>');this.root.scrollTop=scroll;

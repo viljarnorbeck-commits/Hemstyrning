@@ -6,6 +6,8 @@ const vector = z.tuple([finite, finite, finite]);
 const imageUrl = z.string().regex(/^\/(?:workspace-api\/panoramas\/[a-f0-9]{64}\.(?:png|jpg)|textures\/sky\/[a-z0-9_]+\.jpg)$/);
 const grade=z.object({warmth:finite.min(-.2).max(.2),saturation:finite.min(.5).max(1.5),contrast:finite.min(.8).max(1.25),exposure:finite.min(.5).max(2)});
 const modelUrl = z.string().regex(/^\/(?:models\/[\w.-]+\.glb|workspace-api\/models\/[a-f0-9]{64}\.glb)$/);
+const presetAction=z.object({entityId:z.string().regex(/^(?:light|switch|vacuum)\.[a-z0-9_]+$/),action:z.enum(['turn_on','turn_off','locate'])}).refine(a=>a.entityId.startsWith('vacuum.')?a.action==='locate':a.action!=='locate','Ogiltig enhetsfunktion');
+const presetMusic=z.object({action:z.enum(['play','pause']),uri:z.string().regex(/^spotify:(?:track|playlist):[a-zA-Z0-9]{1,100}$/).optional(),deviceId:z.string().regex(/^[-\w]{1,100}$/).optional()});
 export const sceneSchema = z.object({
   version: z.literal(1),
   weather:z.object({provider:z.enum(['home-assistant','smhi']),placeName:z.string().max(100),latitude:finite.min(-90).max(90),longitude:finite.min(-180).max(180)}).refine(p=>p.provider!=='smhi'||p.placeName.trim().length>0,'Ange plats för SMHI').optional(),
@@ -16,7 +18,7 @@ export const sceneSchema = z.object({
   startPhoto:z.object({url:z.string().regex(/^\/workspace-api\/start-images\/[a-f0-9]{64}\.png$/),signature:z.string().min(1).max(20000),createdAt:z.string().datetime(),width:finite.int().min(320).max(4096),height:finite.int().min(240).max(4096),view:z.object({position:vector,target:vector,zoom:finite.min(.1).max(10),fov:finite.min(20).max(90)})}).optional(),
   energyRoutes:z.array(z.object({id:z.string().min(1).max(100),name:z.string().min(1).max(120),points:z.array(vector).min(2).max(100),sensor:z.string().regex(/^(?:[a-z_]+\.[a-z0-9_]+(?:@[a-z0-9_]+)?)?$/),unit:z.enum(['W','kW']),color:z.string().regex(/^#[a-fA-F0-9]{6}$/),kind:z.enum(['grid','solar','charging','other']),confirmed:z.boolean().default(false)})).max(100).default([]),
   labels:z.boolean().default(true),
-  presets:z.array(z.object({id:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),name:z.string().min(1).max(80),icon:z.string().max(12),color:z.string().regex(/^#[0-9a-fA-F]{6}$/),description:z.string().max(300),effect:z.literal('halloween').optional(),effectTargets:z.array(z.string().regex(/^(?:light|switch)\.[a-z0-9_]+$/)).max(150).optional(),effectVacuum:z.string().regex(/^vacuum\.[a-z0-9_]+$/).optional(),entityId:z.string().regex(/^(?:scene|script)\.[a-z0-9_]+$/),canStop:z.boolean().default(false),hidden:z.boolean().default(false)})).max(100).default([]),
+  presets:z.array(z.object({id:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),name:z.string().min(1).max(80),icon:z.string().max(12),color:z.string().regex(/^#[0-9a-fA-F]{6}$/),description:z.string().max(300),effect:z.enum(['halloween','combination']).optional(),actions:z.array(presetAction).max(100).optional(),spotify:presetMusic.optional(),effectTargets:z.array(z.string().regex(/^(?:light|switch)\.[a-z0-9_]+$/)).max(150).optional(),effectVacuum:z.string().regex(/^vacuum\.[a-z0-9_]+$/).optional(),entityId:z.string().regex(/^(?:scene|script)\.[a-z0-9_]+$/),canStop:z.boolean().default(false),hidden:z.boolean().default(false)})).max(100).default([]),
   layoutVersion: z.number().default(2),
   location: z.object({ timeZone:z.string().refine(value=>{try{new Intl.DateTimeFormat('sv-SE',{timeZone:value});return true;}catch{return false;}},'Ogiltig tidszon').default('Europe/Stockholm'),latitude: finite.min(-90).max(90), longitude: finite.min(-180).max(180), northOffset: finite }),
   models: z.object(Object.fromEntries(['summer', 'autumn', 'firstSnow', 'winter'].map(key => [key, z.object({
@@ -61,6 +63,11 @@ export const sceneSchema = z.object({
   if(value.energyRoutes.some(r=>r.points.every(p=>p.every((n,i)=>n===r.points[0]![i]))))ctx.addIssue({code:'custom',message:'En kabel måste ha skilda punkter'});
   const ids = value.objects.map(o => o.id);
   if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', message: 'Objekt-ID måste vara unika' });
+  if(new Set(value.presets.map(p=>p.id)).size!==value.presets.length)ctx.addIssue({code:'custom',message:'Förinställningarnas ID måste vara unika'});
+  for(const p of value.presets){
+    if(p.effect==='combination'&&!p.actions?.length&&!p.spotify)ctx.addIssue({code:'custom',message:'Kombinationen måste innehålla en enhet eller Spotify'});
+    if(p.actions&&new Set(p.actions.map(a=>a.entityId)).size!==p.actions.length)ctx.addIssue({code:'custom',message:'En enhet får bara förekomma en gång i kombinationen'});
+  }
 });
 
 export type SceneConfig = z.infer<typeof sceneSchema>;

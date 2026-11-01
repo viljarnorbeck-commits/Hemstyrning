@@ -77,9 +77,31 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     else await callService(store,{domain:'media_player',service,serviceData:data},delay);
     res.json({accepted:true});
   });
+  const combinationsRunning=new Set<string>();
   router.post('/presets/:id',async(req,res)=>{
     if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
     const config=await load(),preset=config.presets.find(p=>p.id===req.params.id&&!p.hidden),stop=req.body?.action==='stop';
+    if(preset?.effect==='combination'){
+      if(res.locals.hemRole==='viewer'||req.body?.action!=='activate'){res.sendStatus(403);return;}
+      const states=await read('states')as HassState[],actions=preset.actions??[];
+      // Validate every saved target before the first service call. Never accept client-supplied actions.
+      const invalid=actions.find(a=>{
+        const state=states.find(s=>s.entity_id===a.entityId),pref=config.entityPreferences[a.entityId];
+        const object=config.objects.find(o=>o.entityId===a.entityId&&['light','device','vacuum'].includes(o.type));
+        if(pref?.hidden||pref?.allowCommands===false||!available(state)||(!object&&!pref?.allowCommands))return true;
+        return a.action==='locate'?!object||object.type!=='vacuum'||!robotSupports(state,'vacuum_locate'):!['on','off'].includes(state!.state);
+      });
+      if(invalid){res.status(409).json({message:'En vald enhet är otillgänglig, saknar koppling eller tillåter inte funktionen: '+invalid.entityId});return;}
+      if(combinationsRunning.has(preset.id)){res.status(409).json({message:'Kombinationen körs redan. Vänta tills den är klar.'});return;}
+      combinationsRunning.add(preset.id);const failures:string[]=[];
+      // Small batches bound network concurrency and keep larger scenes responsive.
+      try{for(let index=0;index<actions.length;index+=4)await Promise.all(actions.slice(index,index+4).map(async a=>{try{
+        const domain=a.entityId.split('.')[0]!,data={entity_id:a.entityId};
+        if(live){const r=await fetch(live.url+'/api/services/'+domain+'/'+a.action,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(6000)});if(!r.ok)throw Error();}
+        else await callService(store,{domain,service:a.action,serviceData:data},delay);
+      }catch{failures.push(a.entityId);}}));}finally{combinationsRunning.delete(preset.id);}
+      res.status(failures.length?502:200).json({accepted:!failures.length,confirmed:false,message:failures.length?'Kombinationen kördes delvis. Misslyckades: '+failures.join(', '):'Kommandon mottagna. Enheternas verkliga status visas i listan.'});return;
+    }
     if(preset?.effect==='halloween'){if(res.locals.hemRole==='viewer'||!['activate','stop'].includes(req.body?.action)){res.sendStatus(403);return;}try{const states=await read('states')as HassState[];const ids=(preset.effectTargets??[]).filter(id=>!config.entityPreferences[id]?.hidden&&config.entityPreferences[id]?.allowCommands!==false);const status=stop?await halloween.stop(preset.id):await halloween.start(preset.id,ids,states,preset.effectVacuum);res.json({accepted:true,...status});}catch(e){res.status(409).json({message:e instanceof Error?e.message:'Halloween kunde inte startas'});}return;}
     if(!preset||!['activate','stop'].includes(req.body?.action)||stop&&(!preset.canStop||!preset.entityId.startsWith('script.'))){res.sendStatus(403);return;}
     const domain=preset.entityId.split('.')[0]!,service=stop?'turn_off':'turn_on',target=(await read('states') as {entity_id:string;state:string}[]).find(s=>s.entity_id===preset.entityId);
