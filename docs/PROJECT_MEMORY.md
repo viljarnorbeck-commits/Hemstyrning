@@ -136,3 +136,10 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Valfri SceneConfig.weather sparar källa, platsnamn och prognospunkt i befintlig lokal konfiguration. Kyrkås, Östersund sparades lokalt utifrån HA:s hemposition avrundad till tre decimaler. Befintlig location och samtliga övriga inställningar jämfördes och bevarades; inga privata koordinater committas. Inställningssidan kan ändra väderkälla och punkt.
 - Vädervyn och 3D använder samma adapter. Prognos märks SMHI/prognos, verklig utomhusmätning visas separat och prioriteras när aktuell. Ingen syntetisk HA-entitet läggs i entitetskatalogen. Simulatorn behåller sitt eget väder.
 - Normal läsning av /connection-api/weather gav HTTP 200, available=true och prognos för Kyrkås. Ingen testsvit eller visuell granskning körd; dessa kvarstår enligt pausen.
+
+## KNX utomhustemperatur och kalibrering, 1 november
+
+- Läsande HA-diagnostik visade fungerande sensor.uteknx_temperatur (5,6 °C, rapport knappt två minuter gammal). Tidigare ersattes värdet av SMHI när generell 15-minutersgräns passerades. Nu behålls just denna givares senaste giltiga mätning med rapporttid och tydlig markering när den är äldre; unavailable/unknown/frånkopplad och saknad eller ogiltig tidsstämpel förblir utan numeriskt värde. Äldre mätning betecknas aldrig som ny liveavläsning.
+- Användarens korrigering −0,7 °C sparas lokalt i befintlig entityPreferences.temperatureOffsetC, ingen HA-ändring. Gemensam measurement tillämpar korrigering efter enhetskontroll, en gång, utan att ändra råstate eller SMHI/simulator. Hemöversikt, klimat och kompakta KNX-sammanfattningen använder den.
+- Entitetskatalogen visar HA:s råvärde och låter administratör ändra temperaturkorrigering (−20 till +20 °C). Befintliga övriga entitetsval bevaras när inställning sparas.
+- Tester, TypeScript, bygge och automatiserade webbläsarprov är fortfarande pausade enligt användaren. Endast normal läsande anslutningsdiagnostik och lokal konfigurationsändring utförd.

@@ -37,10 +37,13 @@ export const sensorSlots = [
   ['vacuum.xiaomi_vacuum_cleaner','Robotdammsugare','vacuum'],
 ] as const;
 let bindings: Record<string,string> = {};
-export function configureSensorBindings(scene: Pick<SceneConfig,'sensorBindings'>) {
-  bindings = {...scene.sensorBindings};
+let preferences:SceneConfig['entityPreferences']={};
+export function configureSensorBindings(scene: Pick<SceneConfig,'sensorBindings'|'entityPreferences'>) {
+  bindings = {...scene.sensorBindings};preferences=scene.entityPreferences??{};
 }
 export function defaultEntity(slot: string) { return slot.startsWith('$') ? '' : slot; }
 export function hasSensorBinding(slot:string) { return Object.hasOwn(bindings,slot); }
 export function resolveEntity(slot: string) { return Object.hasOwn(bindings,slot) ? bindings[slot]! : defaultEntity(slot); }
 export function readState(states: Map<string,HassState>, slot: string) { return states.get(resolveEntity(slot)); }
+
+export function temperatureOffsetC(entityId:string){return preferences?.[entityId]?.temperatureOffsetC??0;}

@@ -1,3 +1,4 @@
+import {measurement} from './overview-data';
 import {weatherSnapshot} from './weather-source';
 import {getMusicPanel} from './music-session';
 import {normalizeCalendar,type CalendarItem}from'./calendar-data';
@@ -38,8 +39,9 @@ export class HomeControls{
  private click(event:Event){if((event.target as HTMLElement).closest('.music-widget'))return;const el=(event.target as HTMLElement).closest<HTMLElement>('button');if(!el)return;if(el.dataset.object)this.select(el.dataset.object);if(el.dataset.follow){this.setListMode(false);document.dispatchEvent(new CustomEvent('hem-focus-object',{detail:{id:el.dataset.follow,follow:true,inspect:false}}));}if(el.dataset.calendar==='more'){this.moreEvents=!this.moreEvents;this.render();}else if(el.dataset.calendar)this.openCalendar();if(el.dataset.command)void this.command(el.dataset.command,el.dataset.id);if(el.dataset.music)this.music.show();if(el.dataset.view==='3d')this.setListMode(false);}
  update(config:SceneConfig,date:Date){this.config=config;this.date=date;const states=this.connection.states,weatherView=weatherSnapshot(config,states,this.connection.connected,this.connection.source),weather=weatherView.state,energy=config.objects.find(o=>o.type==='energy'),solar=config.objects.find(o=>o.type==='solar');
   const metric=(o:SceneObject|undefined,key:string,fallback?:string)=>this.connection.connected&&o?reading(o,states,key,fallback):null;
-  const conditions:Record<string,string>={sunny:'Klart','clear-night':'Klart',partlycloudy:'Växlande molnighet',cloudy:'Mulet',rainy:'Regn',pouring:'Kraftigt regn',snowy:'Snöfall','snowy-rainy':'Snöblandat regn',fog:'Dimma'};
-  const summary=[['Tid',date.toLocaleString('sv-SE',{timeZone:config.location.timeZone??'Europe/Stockholm',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})],[weatherView.source==='smhi'?'SMHI-prognos':'Ute',weatherView.connected?fmt(weather?.attributes.temperature,'°C'):'Saknar data'],['Väder',weatherView.description],['Elpris',fmt(metric(energy,'price'),'kr/kWh')],['Förbrukning',fmt(metric(energy,'house_power_kw','state'),'kW')],['Solel',fmt(metric(solar,'production_kw','state'),'kW')]];
+  const outdoor=measurement(states,'sensor.uteknx_temperatur',this.connection.connected,'°C');
+   const conditions:Record<string,string>={sunny:'Klart','clear-night':'Klart',partlycloudy:'Växlande molnighet',cloudy:'Mulet',rainy:'Regn',pouring:'Kraftigt regn',snowy:'Snöfall','snowy-rainy':'Snöblandat regn',fog:'Dimma'};
+  const summary=[['Tid',date.toLocaleString('sv-SE',{timeZone:config.location.timeZone??'Europe/Stockholm',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})],[outdoor.value!==null?(outdoor.status==='Gammal mätning'?'Ute · senaste KNX-värde':'Ute · KNX'):weatherView.source==='smhi'?'SMHI-prognos':'Ute',outdoor.value!==null?fmt(outdoor.value,'°C'):weatherView.connected?fmt(weather?.attributes.temperature,'°C'):'Saknar data'],['Väder',weatherView.description],['Elpris',fmt(metric(energy,'price'),'kr/kWh')],['Förbrukning',fmt(metric(energy,'house_power_kw','state'),'kW')],['Solel',fmt(metric(solar,'production_kw','state'),'kW')]];
   this.strip.innerHTML=summary.map(([label,value])=>`<div><small>${label}</small><strong>${esc(value)}</strong></div>`).join('');
   this.render();this.renderCalendar();this.music.update();void this.loadAgenda();
  }

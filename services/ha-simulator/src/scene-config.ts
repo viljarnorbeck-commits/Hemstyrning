@@ -9,7 +9,7 @@ const modelUrl = z.string().regex(/^\/(?:models\/[\w.-]+\.glb|workspace-api\/mod
 export const sceneSchema = z.object({
   version: z.literal(1),
   weather:z.object({provider:z.enum(['home-assistant','smhi']),placeName:z.string().max(100),latitude:finite.min(-90).max(90),longitude:finite.min(-180).max(180)}).refine(p=>p.provider!=='smhi'||p.placeName.trim().length>0,'Ange plats för SMHI').optional(),
-  entityPreferences:z.record(z.string().regex(/^[a-z_]+\.[a-z0-9_]+$/),z.object({control:z.boolean().default(false),details:z.boolean().default(false),allowCommands:z.boolean().default(false),hidden:z.boolean().optional()})).refine(v=>Object.keys(v).length<=300,'Högst 300 valda entiteter').default({}),
+  entityPreferences:z.record(z.string().regex(/^[a-z_]+\.[a-z0-9_]+$/),z.object({control:z.boolean().default(false),details:z.boolean().default(false),allowCommands:z.boolean().default(false),hidden:z.boolean().optional(),temperatureOffsetC:z.number().finite().min(-20).max(20).optional()})).refine(v=>Object.keys(v).length<=300,'Högst 300 valda entiteter').default({}),
   sensorBindings:z.record(z.string().regex(/^(?:\$[a-zA-Z][a-zA-Z0-9]*|[a-z_]+\.[a-z0-9_]+)$/),z.string().regex(/^(?:[a-z_]+\.[a-z0-9_]+)?$/)).refine(v=>Object.keys(v).length<=200,'Högst 200 sensorkopplingar').default({}),
   startView:z.object({position:vector,target:vector,zoom:finite.min(.1).max(10),fov:finite.min(20).max(90)}).optional(),
   startMode:z.enum(['live','photo']).default('live'),
