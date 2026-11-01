@@ -1,0 +1,41 @@
+/* Individual transforms preserve positioned controls, markers and sliding switch thumbs. */
+html body :is(button,input[type="button"],input[type="submit"],input[type="reset"],a.action-button,a.settings-link,a.hem-button,.app-sidebar nav a,summary,select,[role="button"]:not([data-measurement-history])):not(:disabled):not([aria-disabled="true"]){
+ transition:translate 180ms cubic-bezier(.2,.7,.3,1),scale 180ms cubic-bezier(.2,.7,.3,1),filter 180ms ease,box-shadow 180ms ease,background-color 180ms ease,border-color 180ms ease,color 180ms ease;
+}
+@media(hover:hover) and (pointer:fine){
+ html body :is(button:not(.device-select),input[type="button"],input[type="submit"],input[type="reset"],a.action-button,a.settings-link,a.hem-button,.app-sidebar nav a,summary,select,[role="button"]:not([data-measurement-history])):hover:not(:disabled):not([aria-disabled="true"]){translate:0 -2px;scale:1.015;filter:drop-shadow(0 5px 7px #0005) drop-shadow(0 0 6px #d9ebff21)}
+ .device-control:has(>.device-select:hover){translate:0 -2px;scale:1.008;filter:drop-shadow(0 5px 8px #0004) drop-shadow(0 0 7px #d9ebff1c)}
+}
+html body :is(button:not(.device-select),input[type="button"],input[type="submit"],input[type="reset"],a.action-button,a.settings-link,a.hem-button,.app-sidebar nav a,summary,select,[role="button"]:not([data-measurement-history])):active:not(:disabled):not([aria-disabled="true"]){translate:0 1px;scale:.975;filter:drop-shadow(0 1px 2px #0003);transition-duration:80ms}
+html body :is(button:not(.device-select,.device-switch),input[type="button"],input[type="submit"],input[type="reset"],a.action-button,a.settings-link,a.hem-button,.app-sidebar nav a,summary,select):active:not(:disabled):not([aria-disabled="true"]){box-shadow:inset 0 2px 7px #0005,inset 0 -1px #ffffff14}
+.device-control{transition:translate 180ms ease,scale 180ms ease,filter 180ms ease}
+.device-control:has(>.device-select:active){translate:0 1px;scale:.99;filter:drop-shadow(0 1px 2px #0002);transition-duration:80ms}
+.device-switch:active:not(:disabled)::before{box-shadow:inset 0 3px 7px #0006}
+
+/* Existing top-layer menus keep their positioning and their command handlers. */
+html body .spotify-device-popover:not([hidden]),html body .control-search-overlay:not([hidden]){transform-origin:top center;animation:hem-menu-unfold 210ms cubic-bezier(.16,1,.3,1) both}
+details[open]::details-content{animation:hem-details-unfold 210ms ease both}
+@supports not selector(details::details-content){details[open]>:not(summary){animation:hem-details-unfold 210ms ease both}}
+@supports(interpolate-size:allow-keywords) and selector(details::details-content){
+ details{interpolate-size:allow-keywords}
+ details::details-content{block-size:0;overflow:clip;transition:block-size 230ms cubic-bezier(.2,.7,.3,1),content-visibility 230ms allow-discrete}
+ details[open]::details-content{block-size:auto}
+}
+/* Progressive enhancement: unsupported browsers retain their accessible native picker. */
+@supports(appearance:base-select){
+ html body select:not([multiple]):not([size]),html body select[size="1"]{appearance:base-select}
+ html body select:not([multiple]):not([size])::picker(select),html body select[size="1"]::picker(select){appearance:base-select;box-sizing:border-box;max-block-size:min(60dvh,420px);overflow:auto;padding:7px;border:1px solid #d8e8f538;border-radius:14px;background:linear-gradient(135deg,#30343cf8,#20252cfa);color:#f2f5fa;box-shadow:0 15px 35px #0007,inset 0 1px #ffffff14;backdrop-filter:blur(18px);transform-origin:top center;animation:hem-menu-unfold 210ms cubic-bezier(.16,1,.3,1) both}
+ html body select::picker-icon{transition:rotate 200ms ease;color:#b5c5d6}
+ html body select:open::picker-icon{rotate:180deg}
+ html body select:not([multiple]):not([size]) option,html body select[size="1"] option{padding:10px 12px;border-radius:9px;min-block-size:40px;background:transparent;color:inherit}
+ html body select:not([multiple]):not([size]) option:checked,html body select[size="1"] option:checked{background:#a5c9df20}
+ html body select:not([multiple]):not([size]) option:hover,html body select[size="1"] option:hover{background:#d1e7fa1c}
+}
+@keyframes hem-menu-unfold{from{opacity:0;translate:0 -7px;scale:1 .94}to{opacity:1;translate:0 0;scale:1}}
+@keyframes hem-details-unfold{from{opacity:0;translate:0 -5px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){
+ html body :is(button,input[type="button"],input[type="submit"],input[type="reset"],a.action-button,a.settings-link,a.hem-button,.app-sidebar nav a,summary,select,[role="button"]:not([data-measurement-history])):not(:disabled):not([aria-disabled="true"]),html body .device-control{transition:none!important;translate:none!important;scale:none!important}
+ html body .spotify-device-popover:not([hidden]),html body .control-search-overlay:not([hidden]),details[open]::details-content{animation:none}
+ details::details-content,html body select::picker-icon{transition:none}
+ html body select::picker(select),details[open]>:not(summary){animation:none!important}
+}
