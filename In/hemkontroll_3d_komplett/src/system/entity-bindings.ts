@@ -11,6 +11,7 @@ export const sensorSlots = [
   ['$costToday','Elkostnad · idag','SEK · endast verifierad dagskostnad'],
   ['$averageToday','Snittpris · idag','kr/kWh · endast verifierat dagsmedel'],
   ...['vanster','hoger'].flatMap(side => [
+    [`light.easee_${side}_led_strip`, `Easee ${side} · laddboxlampa`, 'light · separat från laddningen'],
     [`sensor.easee_${side}_status`, `Easee ${side} · status`, 'Laddbox'],
     [`sensor.easee_${side}_power`, `Easee ${side} · effekt`, 'W eller kW'],
     [`sensor.easee_${side}_session_energy`, `Easee ${side} · sessionsenergi`, 'kWh'],

@@ -2,6 +2,8 @@ import {resolveEntity,hasSensorBinding} from './entity-bindings';
 /** Explicit, independently replaceable vehicle / charger assignments. Never infer vehicle telemetry from a charger. */
 export interface VehicleBinding{id:string;name:string;year:number;objectId:string;charger:string;battery:string;range:string;remaining:string;connection:string}
 export const vehicles:VehicleBinding[]=[{id:'ev6',name:'Kia EV6',year:2023,objectId:'ui-car-0',charger:'easee_vanster',battery:'',range:'',remaining:'',connection:''},{id:'egolf',name:'Volkswagen e-Golf',year:2017,objectId:'ui-car-1',charger:'easee_hoger',battery:'',range:'',remaining:'',connection:''}];
+const chargerLights:Record<string,string>={easee_vanster:'light.easee_vanster_led_strip',easee_hoger:'light.easee_hoger_led_strip'};
+export function vehicleChargerLight(v:VehicleBinding){return resolveEntity(chargerLights[v.charger]??'');}
 export const energyBindings={house:'sensor.ferroamp_consumption_power',solarTotal:'sensor.ferroamp_total_solar_energy',price:'sensor.electricity_price_bringasen_380'};
 export const climateBindings={thermostat:'climate.vvb_kallaren_termostat',switch:'switch.vvb_kallaren_on_off',rooms:['sensor.uteknx_temperatur','sensor.storabadrummet_temperatur']};
 export interface CameraBinding{id:string;name:string;entityId:string;streamPath:string}
