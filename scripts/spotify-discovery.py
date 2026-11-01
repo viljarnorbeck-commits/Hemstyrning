@@ -61,6 +61,9 @@ class Devices(ServiceListener):
                 with self.lock:
                     if name in self.rows:
                         self.rows[name]['name'] = label
+                        device_id = data.get('deviceID')
+                        if isinstance(device_id, str) and 0 < len(device_id) <= 100 and all(c.isalnum() or c in '-_' for c in device_id):
+                            self.rows[name]['spotifyId'] = device_id
         except (OSError, ValueError):
             pass
 

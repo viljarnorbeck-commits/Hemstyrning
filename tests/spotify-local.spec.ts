@@ -1,16 +1,20 @@
 import {test,expect} from '@playwright/test';
-test('network receivers appear in the app without playback or Spotify login, and become unconfirmed after discovery loss',async({page})=>{
- let available=true;
+test('device chooser merges local idle Connect receivers and hides their Cast duplicates without starting music',async({page})=>{
+ const commands:any[]=[];let chosen=false;
  await page.route('**/spotify-api/**',async route=>{
   const path=new URL(route.request().url()).pathname;
-  if(path==='/spotify-api/local-devices')return route.fulfill({json:{available,devices:[{id:'cast',name:'Idle speaker',model:'Cast',protocol:'Google Cast',announced:true,lastSeen:Date.now()/1000},{id:'previous',name:'Previous speaker',model:'',protocol:'Spotify Connect',announced:false,lastSeen:1}]}});
-  return route.fulfill({json:{configured:false,connected:false,canControl:false,canConfigure:false,message:'Test: no Spotify account'}});
+  if(route.request().method()==='POST'){commands.push(route.request().postDataJSON());chosen=true;}
+  let json:any={playlists:[],queue:[],tracks:[],artists:[],albums:[]};
+  if(path.endsWith('/status'))json={configured:true,connected:true,canControl:true,canConfigure:false,webPlaybackAuthorized:false,message:'Test'};
+  if(path.endsWith('/playback'))json={connected:true,playing:false,track:null,device:chosen?{id:'receiver-real-id',name:'Idle speaker',volume_percent:20}:null,progressMs:0};
+  if(path.endsWith('/devices'))json={devices:[]};
+  if(path.endsWith('/local-devices'))json={available:true,devices:[{id:'cast',name:'Idle speaker',model:'',protocol:'Google Cast',announced:true,lastSeen:1},{id:'connect',name:'Idle speaker',model:'',protocol:'Spotify Connect',announced:true,lastSeen:1,spotifyId:'receiver-real-id'}]};
+  return route.fulfill({json});
  });
- await page.goto('/music');await page.getByRole('tab',{name:'Enheter',exact:true}).click();
- const network=page.getByRole('region',{name:'Spotify-enheter på nätverket'});
- await expect(network).toContainText('Idle speaker');await expect(network).toContainText('Annonserar på nätverket');await expect(network).toContainText('Previous speaker');
- await expect(network).toContainText('Tidigare upptäckt · tillgänglighet obekräftad');
- available=false;await network.getByRole('button',{name:'Sök på nätverket'}).click();
- await expect(network).toContainText('Lokal upptäckt är frånkopplad');
- await expect(network.getByText('Annonserar på nätverket',{exact:true})).toHaveCount(0);
+ await page.goto('/music');await page.getByRole('button',{name:'Välj uppspelningsenhet',exact:true}).click();
+ const menu=page.getByRole('menu',{name:'Välj uppspelningsenhet'});
+ await expect(menu.getByRole('menuitemradio')).toHaveCount(1);
+ await expect(menu).toContainText('Idle speaker');await expect(menu).toContainText('Spotify Connect');
+ await expect(page.getByRole('region',{name:'Spotify-enheter på nätverket'})).toHaveCount(0);
+ await menu.getByRole('menuitemradio').click();await expect.poll(()=>commands).toEqual([{action:'transfer',deviceId:'receiver-real-id',play:false}]);
 });

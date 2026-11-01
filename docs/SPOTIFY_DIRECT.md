@@ -2,12 +2,12 @@
 
 ## Lokal upptäckt av mottagare utan uppspelning
 
-Under **Spotify → Enheter** visas även mottagare som annonserar Spotify Connect
+Under **Välj uppspelningsenhet** visas även mottagare som annonserar Spotify Connect
 eller Google Cast på serverdatorns nätverk, även när de saknas i konto-API:t.
 Detta startar ingen uppspelning och kräver ingen ny Spotify-inloggning.
 En nätverksannons är inte ett bevis på uppspelningsstatus eller Spotify-styrbarhet.
-Enheter som bara upptäckts lokalt kan ännu inte väljas/väckas från listan.
-Protokollen visas separat; namn används inte som automatisk enhetsidentifiering.
+Upptäckta Connect-mottagare med verifierat getInfo-deviceID kan väljas; Spotify måste bekräfta bytet. Enbart lokal upptäckt räcker inte för kontoaktivering.
+Vid samma normaliserade namn visas Spotify Connect framför Cast enligt användarens val. Befintliga API-ID:n prioriteras. Namn används endast för visuell dubblettrensning, aldrig för att skapa ett uppspelnings-ID.
 
 Windows-hjälparen körs separat från appens backend:
 
@@ -20,7 +20,7 @@ Hjälparen använder mDNS och läsande getInfo från annonserade privata IP-adre
 utan proxy/redirects, kontoregistrering eller uppspelningskommandon. Den skriver
 en atomisk namnsnapshot var femte sekund till ignorerade
 `data/spotify-local-devices.json`. Backend lämnar endast tillåtna visningsfält
-via rollskyddad GET `/spotify-api/local-devices`, aldrig IP-adresser eller token.
+via rollskyddad GET `/spotify-api/local-devices`, inklusive validerat Spotify-deviceID men aldrig IP-adresser eller token.
 En snapshot äldre än 30 sekunder förkastas. UI märker kvarvarande rader som
 obekräftade om tjänsten försvinner. Enheter som aldrig annonserar kan inte garanteras
 upptäckt. Inställningarna för Spotify-kontot och Home Assistant ändras inte.
@@ -192,3 +192,5 @@ Dokumentation: [Web Playback SDK](https://developer.spotify.com/documentation/we
 Automatiska browsertester använder en uttryckligen falsk SDK och Spotify-API.
 De bevisar registrering/livscykel/UI, inte att DRM eller riktig ljuduppspelning
 fungerar på en fysisk enhet. Verklig uppspelning kräver ditt godkännande hos Spotify.
+
+Verifierat: enhetsväljartest och tre enhetstester för sammanslagning passerar. Läsande getInfo ger riktiga Spotify-ID:n. Verkligt HT-A9-test med transfer/play=false gav Spotify404 Device not found; automatisk mottagaraktivering är fortfarande inte löst. Ingen musik startades. Separata listan och Enheter-fliken är borttagna.
