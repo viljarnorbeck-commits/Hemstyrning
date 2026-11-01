@@ -19,7 +19,7 @@ function loadSDK(){
  });return sdkPromise;
 }
 export class BrowserSpeaker extends EventTarget {
- deviceId='';lastDeviceId='';name='Hemstyrning · Webbläsare';message='';needsGesture=false;
+ readonly retiredDeviceIds=new Set<string>();deviceId='';lastDeviceId='';name='Hemstyrning · Webbläsare';message='';needsGesture=false;
  private player?:SDKPlayer;private enabled=false;private pending=false;private serial=0;private retryAt=0;private failures=0;private timer?:ReturnType<typeof setTimeout>;
  private changed(){this.dispatchEvent(new Event('change'));}
  async enable(){
@@ -34,18 +34,20 @@ export class BrowserSpeaker extends EventTarget {
      const data=await response.json();if(this.enabled&&serial===this.serial&&typeof data.accessToken==='string')callback(data.accessToken);
     }).catch(()=>{if(serial===this.serial)this.fail('Spotify-behörigheten behöver förnyas. Anslut kontot igen.');});
    }});this.player=player;
-   player.addListener('ready',({device_id})=>{if(serial!==this.serial||!this.enabled||typeof device_id!=='string')return;clearTimeout(this.timer);this.deviceId=this.lastDeviceId=device_id;this.failures=0;this.message='Tillgänglig som Spotify Connect-enhet';this.changed();});
+   player.addListener('ready',({device_id})=>{if(serial!==this.serial||!this.enabled||typeof device_id!=='string'||!/^[-\w]{1,100}$/.test(device_id))return;if(this.deviceId&&this.deviceId!==device_id)this.retiredDeviceIds.add(this.deviceId);clearTimeout(this.timer);this.retiredDeviceIds.delete(device_id);this.deviceId=this.lastDeviceId=device_id;this.failures=0;this.message='Tillgänglig som Spotify Connect-enhet';this.changed();});
    player.addListener('not_ready',()=>{if(serial===this.serial)this.fail('Webbläsaren tappade Spotify-anslutningen. Återansluter…');});
-   player.addListener('autoplay_failed',()=>{if(serial!==this.serial)return;this.needsGesture=true;this.message='Välj Tillåt ljud för att aktivera webbläsarens ljud.';this.changed();});
+   player.addListener('autoplay_failed',()=>{if(serial!==this.serial)return;this.needsGesture=true;this.message='Tryck på Spela eller Tillåt ljud för att aktivera webbläsarens ljud.';this.changed();});
    player.addListener('player_state_changed',()=>{if(serial===this.serial)this.dispatchEvent(new Event('playback'));});
-   for(const [event,message]of [['initialization_error','Webbläsaren stöder inte Spotify-uppspelning. Prova Chrome eller Edge med skyddat innehåll aktiverat.'],['authentication_error','Anslut Spotify igen för att förnya webbläsarbehörigheten.'],['account_error','Webbläsaruppspelning kräver Spotify Premium.'],['playback_error','Spotify kunde inte spela ljud i den här webbläsaren.']])player.addListener(event,()=>{if(serial===this.serial)this.fail(message);});
+   player.addListener('initialization_error',()=>{if(serial===this.serial)void this.initializationFailed(serial);});
+   for(const [event,message]of [['authentication_error','Anslut Spotify igen för att förnya webbläsarbehörigheten.'],['account_error','Webbläsaruppspelning kräver Spotify Premium.'],['playback_error','Spotify kunde inte spela ljud i den här webbläsaren.']])player.addListener(event,()=>{if(serial===this.serial)this.fail(message);});
    this.timer=setTimeout(()=>{if(serial===this.serial&&!this.deviceId)this.fail('Spotify kunde inte registrera webbläsaren. Kontrollera Premium, Web Playback SDK i utvecklarappen och nätverket.');},25000);
    if(!await player.connect()&&serial===this.serial)this.fail('Spotify kunde inte ansluta webbläsaren.');
   }catch(error){if(serial===this.serial)this.fail(error instanceof Error?error.message:'Webbläsaren kunde inte anslutas.');}
   finally{if(serial===this.serial)this.pending=false;}
  }
- private fail(message:string){++this.serial;this.pending=false;clearTimeout(this.timer);this.player?.disconnect();this.player=undefined;this.deviceId='';this.retryAt=Date.now()+Math.min(120000,10000*2**Math.min(this.failures++,4));this.message=message;this.changed();}
+ private async initializationFailed(serial:number){let protectedAudio=false;try{if(navigator.requestMediaKeySystemAccess){await navigator.requestMediaKeySystemAccess('com.widevine.alpha',[{initDataTypes:['cenc'],audioCapabilities:[{contentType:'audio/mp4; codecs="mp4a.40.2"'}]}]);protectedAudio=true;}}catch{}if(serial===this.serial)this.fail(protectedAudio?'Spotify SDK kunde inte initiera spelaren i den här webbläsaren.':'Den här webbläsaren saknar stöd för skyddat Spotify-ljud (Widevine/DRM). Prova vanlig Chrome eller Edge med skyddat innehåll tillgängligt.');}
+ private fail(message:string){if(this.deviceId)this.retiredDeviceIds.add(this.deviceId);++this.serial;this.pending=false;clearTimeout(this.timer);this.player?.disconnect();this.player=undefined;this.deviceId='';this.retryAt=Date.now()+Math.min(120000,10000*2**Math.min(this.failures++,4));this.message=message;this.changed();}
  /** Must be invoked directly by the user's device choice, before any await. */
  activate(){if(!this.player||!this.deviceId)return Promise.reject(new Error('Webbläsarspelaren är inte redo.'));return this.player.activateElement().then(()=>{this.needsGesture=false;this.changed();}).catch(()=>{this.needsGesture=true;this.changed();throw new Error('Webbläsaren blockerar ljud. Välj Tillåt ljud.');});}
- disable(){this.enabled=false;++this.serial;clearTimeout(this.timer);this.pending=false;this.player?.disconnect();this.player=undefined;this.deviceId='';this.needsGesture=false;this.message='';this.changed();}
+ disable(){if(this.deviceId)this.retiredDeviceIds.add(this.deviceId);this.enabled=false;++this.serial;clearTimeout(this.timer);this.pending=false;this.player?.disconnect();this.player=undefined;this.deviceId='';this.needsGesture=false;this.message='';this.changed();}
 }
