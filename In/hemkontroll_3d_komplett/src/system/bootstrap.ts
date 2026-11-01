@@ -1,5 +1,7 @@
 import{startNavigation}from'./app-navigation';
 import{platformSetup}from'./client-platform';
+import{disableInputHistory}from'./input-history';
+disableInputHistory();
 platformSetup();
 import './style.css';
 import './v2.css';

@@ -506,3 +506,7 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 
 ## Tydligare bakgrund i kontrollpanelens sökruta, 1 november
 - Ökade sökpopupens bakgrund från 30 till 94 procent opacitet och inmatningsfältet till 95 procent, med tydlig ljus text och platshållare. Sökknapp, funktion och övrig design behålls. Begränsad CSS-ändring; inga nya tester eller full testsvit. Pushpausen kvarstår.
+
+## Avstängd formulärhistorik/autofyll, 1 november
+- Användaren vill slippa webbläsarens listor med tidigare inskriven text i appens skrivfält. Gemensam bootstrap sätter autocomplete=off på input, textarea och form. En avgränsad DOM-observer hanterar nytillkomna fält och återställer attributet när DOM-avstämning annars tar bort det; ändrar inte värden eller appens egna datalistor/sökresultat.
+- Riktad Chromium-kontroll mot simulatorn godkänd för /control, /music och /settings, dynamiskt tillagda fält samt efter borttaget attribut. Första kontrollen upptäckte att löpande DOM-avstämning tog bort attributet, vilket rättades före slutkontrollen. TypeScript godkänd. Webbläsaren kan i vissa fall ignorera autocomplete=off för egna lösenordshanterare; inga inloggningsuppgifter eller sparad historik raderades. Ingen full systemtestsvit eller push för denna begränsade ändring.
