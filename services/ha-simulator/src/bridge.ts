@@ -155,6 +155,26 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
       res.json({accepted:true,confirmed:false});
     }catch{res.status(502).json({message:'Datakällan kunde inte nås'});}
   });
+  // Only saved room/zone definitions can be invoked; clients never supply service payloads.
+  router.post('/vacuum-target',async(req,res)=>{
+    if(res.locals.hemRole==='viewer'||req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
+    const scene=await load(),object=scene.objects.find(o=>o.id===req.body?.object_id&&o.type==='vacuum');
+    const target=object?.vacuumTargets?.find(t=>t.id===req.body?.target_id);
+    if(!object||!target||!object.entityId.startsWith('vacuum.')||scene.entityPreferences[object.entityId]?.hidden||scene.entityPreferences[object.entityId]?.allowCommands===false){res.sendStatus(403);return;}
+    try{
+      const state=(await read('states')as HassState[]).find(s=>s.entity_id===object.entityId);
+      if(!available(state)){res.status(409).json({message:'Dammsugaren är otillgänglig.'});return;}
+      const [domain,service]=target.kind==='goto'?['vacuum','send_command']:['xiaomi_miio',target.kind==='segment'?'vacuum_clean_segment':'vacuum_clean_zone'];
+      const payload=target.kind==='goto'?{entity_id:object.entityId,command:'app_goto_target',params:target.position}:target.kind==='segment'?{entity_id:object.entityId,segments:target.segments}:{entity_id:object.entityId,zone:target.zones,repeats:target.repeats};
+      if(live){
+        const services=await read('services')as Array<{domain:string;services:Record<string,unknown>}>;
+        if(!services.some(s=>s.domain===domain&&Object.hasOwn(s.services,service))){res.status(409).json({message:'Home Assistant stöder inte den sparade dammsugarfunktionen just nu.'});return;}
+        const r=await fetch(`${live.url}/api/services/${domain}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});
+        if(!r.ok){res.status(502).json({message:'Home Assistant avvisade dammsugarfunktionen.'});return;}
+      }else{await new Promise(resolve=>setTimeout(resolve,delay));store.set(object.entityId,target.kind==='goto'?'moving':'cleaning',{task:target.label,simulated:true},'simulator-user');}
+      res.json({accepted:true,confirmed:false,label:target.label});
+    }catch{res.status(502).json({message:'Dammsugarfunktionen kunde inte skickas till Home Assistant.'});}
+  });
   router.post('/commands',async(req,res)=>{
     if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
     const scene=await load(),object=scene.objects.find(o=>o.id===req.body.object_id);if(!object){res.sendStatus(403);return;}

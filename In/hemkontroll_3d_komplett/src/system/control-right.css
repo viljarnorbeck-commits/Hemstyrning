@@ -24,6 +24,8 @@
 
 /* Vacuum details use their own compact controls, without location/3D fields. */
 #control-details .vacuum-detail{display:flex;flex-direction:column;gap:12px;min-width:0;width:100%}
+#control-details .device-stage-content:has(.vacuum-detail){justify-content:flex-start}
+#control-details .vacuum-detail{flex-shrink:0}
 #control-details .vacuum-summary{display:flex;flex-wrap:wrap;gap:10px 24px}
 #control-details .vacuum-summary>div{display:flex;flex-direction:column;gap:4px;min-width:0}
 #control-details .vacuum-summary small,#control-details .vacuum-fan label{font-size:12px;color:var(--text-muted)}
@@ -33,6 +35,20 @@
 #control-details .vacuum-controls button{min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 10px;font-size:13px;white-space:normal;line-height:1.25}
 #control-details .vacuum-controls button svg{width:20px;height:20px;flex-shrink:0}
 #control-details .vacuum-controls button[data-action=vacuum_start]{border-color:#efa93470;background:#efa93412}
+#control-details .vacuum-target-picker{min-width:0}
+#control-details .vacuum-menu-toggle{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:48px;border:1px solid #efa93455;background:#efa9340c;border-radius:12px;padding:10px 14px;text-align:left}
+#control-details .vacuum-menu-toggle>span:last-child{margin-left:auto;color:#efb357}
+#control-details .vacuum-target-menu{margin-top:10px;padding:14px;border:1px solid #ffffff20;border-radius:14px;background:linear-gradient(120deg,#ffffff06,transparent),#1b1e2480;box-shadow:inset 0 1px #ffffff08}
+#control-details .vacuum-target-menu[hidden]{display:none!important}
+#control-details .vacuum-menu-heading{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+#control-details .vacuum-menu-heading strong{font-size:14px;font-weight:650}
+#control-details .vacuum-menu-heading small{font-size:11px;color:var(--text-muted)}
+#control-details .vacuum-room-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#control-details .vacuum-room-grid .vacuum-target{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:78px;padding:12px 8px;border:1px solid #ffffff1b;border-radius:12px;background:#ffffff05;text-align:center;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+#control-details .vacuum-target svg{width:21px;height:21px;color:#efb357;flex-shrink:0}
+#control-details .vacuum-target small{font-size:10px;color:var(--text-muted)}
+#control-details .vacuum-room-grid .vacuum-empty{border-color:#efb35744;background:#efb3570a}
+@media(max-width:1000px){#control-details .vacuum-room-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #control-details .vacuum-fan{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 #control-details .vacuum-fan select{flex:1;min-width:100px;min-height:44px;color:var(--text-primary);background:#292d33;border:1px solid #ffffff26;border-radius:10px;padding:8px;font:inherit}
 #control-details .vacuum-fan button{min-height:44px;font-size:13px}

@@ -48,6 +48,11 @@ export const sceneSchema = z.object({
     footprint:z.object({width:finite.min(.1).max(5),length:finite.min(.1).max(5)}).optional(),
     classification:z.object({origin:z.enum(['automatic','manual']),status:z.enum(['proposed','approved','rejected']),analysisKey:z.string(),proposalId:z.string(),confidence:finite.min(0).max(1)}).optional(),
     trackingOffset:vector.default([0,0,0]),
+    vacuumTargets:z.array(z.discriminatedUnion('kind',[
+      z.object({id:z.string().regex(/^[a-z0-9_-]{1,60}$/),label:z.string().min(1).max(80),kind:z.literal('segment'),segments:z.array(finite.int().min(1).max(1000)).min(1).max(30)}),
+      z.object({id:z.string().regex(/^[a-z0-9_-]{1,60}$/),label:z.string().min(1).max(80),kind:z.literal('goto'),position:z.tuple([finite.int().min(0).max(100000),finite.int().min(0).max(100000)])}),
+      z.object({id:z.string().regex(/^[a-z0-9_-]{1,60}$/),label:z.string().min(1).max(80),kind:z.literal('zone'),zones:z.array(z.tuple([finite.int().min(0).max(100000),finite.int().min(0).max(100000),finite.int().min(0).max(100000),finite.int().min(0).max(100000)])).min(1).max(10),repeats:finite.int().min(1).max(3)})
+    ])).max(32).refine(targets=>new Set(targets.map(t=>t.id)).size===targets.length,'Unika rum-ID krävs').optional(),
     bindings: z.record(z.string(), z.string().max(200)).default({}),
   })).max(200),
 }).superRefine((value, ctx) => {
