@@ -371,3 +371,10 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Fästningen lagras som controlPins i befintliga scene.json, i senast-fäst-först-ordning, via konfigurationens normala behörighetsskyddade sparväg. Ingen ändring av entityPreferences eller styrbehörigheter. Ingen separat lokal lagring. Misslyckad sparning flyttar inte raden och ger ett synligt fel.
 - Fästa entiteter visas en gång före övriga grupper, och återgår till sin vanliga kategori när de lossas. Sökning och dolda/filtrerade enheter respekteras. Nålvalet och ordningen bevaras över sensoruppdateringar; minskad rörelse respekteras.
 - Endast källgranskning och diffkontroll. Tester, typkontroll, bygge och push fortsatt pausade; inget HA-kommando utfört. Funktionen är ännu inte verifierad i webbläsaren.
+
+## Wifi-brandväggen godkänd och öppnad, 1 november
+
+- Användaren svarade uttryckligen Ja, öppna rutan nu och godkände denna gång Windows UAC. Den lokala hjälpen .build-tools/enable-phone-wifi.ps1 skapade den befintligt planerade regeln Hemstyrning-Wifi-Viewer-5174. Resultatfilens success är true.
+- Faktisk Windows-regel verifierad: Enabled=True, Inbound Allow, TCP local port 5174, local address 192.168.0.68, remote 192.168.0.0/24, Wi-Fi-interface. Ingen annan port, routerinställning eller autentisering ändrades. Wifi-profilen är fortfarande Public; regeln gäller enbart de angivna adresserna/interfacet.
+- Kodskyddad wifi-kontroll finns på http://192.168.0.68:5174/control. Aktuell tillfällig kod visas enbart på datorns http://127.0.0.1:5175. Den redan körande processen och koden behölls. Vanlig localhost:5173/control ger HTTP 200; anonym wifi-begäran ger avsiktligt inloggningssidan med HTTP 401.
+- Användaren har fått telefonlänken, kodsidans datorlänk och frågan vad telefonen visar. Fysisk telefoninloggning är ännu inte bekräftad. Ingen riktig enhet styrdes, inga tester eller byggen kördes och inget pushades. Båda servrarna lämnas igång.
