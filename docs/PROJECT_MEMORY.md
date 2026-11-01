@@ -152,3 +152,8 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Spelaren är en sammanhängande grå glaspanel med 75–95 px omslag på bred yta, låt/artist, central transport och tidslinje, samt lokal enhetsknapp och volym. Smal panel får två rader, utan egna spellistor/kö/sökning eller scrollbar. Hela Spotify-länken och dubblerad tidsinformation borttagna. Nödvändiga anslutnings-/felmeddelanden finns kvar. Ny CSS är isolerad till musikpanelen/popupen. Övriga kontrollpanelen är oförändrad.
 - Gemensam MusicPanel-instans, Web API, SDK, OAuth, tokens, Jam och fullständiga musikvyn behålls. Ingen ny integrationsinstans eller parallell playbackhämtning. Lokal tidsindikator uppdateras varje sekund från senaste Spotify-status och slutar extrapolera efter 15 sekunder utan ny status.
 - Endast kodgranskning och Git-/hemlighetskontroll. Inga tester, TypeScript-körningar, byggen, automatiska webbläsarprov eller verkliga Spotify-kommandon utförda enligt användarens uttryckliga instruktion. Layout, fokus/scroll och faktisk uppspelning/enhetsbyte behöver senare verifieras. Kontots aktuella inloggning, scope och enheter har inte kontrollerats eller ändrats.
+
+## Easee på kontrollpanelen, 1 november
+
+- På användarens begäran tas de två automatiskt tillagda Easee-statuskorten bort från controlDevices. Bilkorten, bilsidans laddboxdata, energikopplingar och HA-entiteter bevaras. Ingen lokal konfiguration eller fysisk enhet ändras.
+- Inga tester, TypeScript-körningar eller byggen enligt den fortsatta testpausen.
