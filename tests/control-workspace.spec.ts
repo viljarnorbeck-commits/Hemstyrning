@@ -7,7 +7,7 @@ test('discovered lamp requires persistence, then confirms switch and dimmer thro
  const lamp=original.objects.find((o:any)=>o.type==='light');
  try{
   await request.put('/workspace-api/scene',{data:{...original,objects:original.objects.filter((o:any)=>o.id!==lamp.id)}});
-  await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('#control-status')).toContainText('Ansluten',{timeout:20000});
+  await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
   const id='ha-'+lamp.entityId,card=page.locator(`#control-lights [data-card="${id}"]`);
   await card.locator('.device-select').click();await expect(page.locator('#control-details h1')).toHaveText(lamp.name);
   await expect(card.locator('[role=switch]')).toBeDisabled();
@@ -20,7 +20,7 @@ test('discovered lamp requires persistence, then confirms switch and dimmer thro
   const slider=card.locator('[data-dim]');const box=(await slider.boundingBox())!;await slider.click({position:{x:box.width*.7,y:box.height/2}});
   await expect(page.locator('#control-error')).toContainText('Bekräftat');
   await expect.poll(async()=>{const s=await request.get('/dev-api/states').then(r=>r.json());return s.find((v:any)=>v.entity_id===lamp.entityId).attributes.brightness;}).toBeGreaterThan(100);
-  await page.reload();await expect(page.locator('#control-status')).toContainText('Ansluten');await expect(card.locator('[role=switch]')).toBeEnabled();
+  await page.reload();await expect(page.locator('.nav-ha')).toHaveClass(/connected/);await expect(card.locator('[role=switch]')).toBeEnabled();
   await page.route('**/connection-api/services/light/**',async route=>{await new Promise(r=>setTimeout(r,400));await route.continue();});
   await card.locator('[role=switch]').click();await expect(page.locator('#control-error')).toContainText('Väntar');
   const other=page.locator('#control-lights .device-select').first();await other.click();await expect(page.locator('#control-error')).toContainText('Bekräftat');
@@ -31,7 +31,7 @@ test('discovered lamp requires persistence, then confirms switch and dimmer thro
 test('read-only source explains disabled controls without blocking selection or saving configuration',async({page})=>{
  let commands=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/connection-api/'))commands++;});
  await page.route('**/connection-api/info',r=>r.fulfill({json:{mode:'home-assistant',commandsEnabled:false,controlBlockReason:'read-only'}}));
- await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('#control-status')).toContainText('Ansluten');
+ await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
  await expect(page.locator('#control-permission')).toContainText('Skrivskyddad');await expect(page.locator('#control-lights .compact-device').first()).toContainText('Saknar verifierad bilanslutning');
  await page.locator('#control-lights .device-select').first().click();await expect(page.locator('#control-details h1')).not.toHaveText('Välj en enhet.');
  for(const button of await page.locator('[role=switch]').all())await expect(button).toBeDisabled();
@@ -44,7 +44,7 @@ test('vertical lamps and navigation scroll by wheel and keyboard at low height; 
  try{
   const lamp=original.objects.find((o:any)=>o.type==='light');
   await request.put('/workspace-api/scene',{data:{...original,objects:[...original.objects,...Array.from({length:35},(_,i)=>({...lamp,id:'scroll-lamp-'+i,name:'Scrolllampa '+i,placementConfirmed:false}))]}});
-  await page.setViewportSize({width:1280,height:600});await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('#control-status')).toContainText('Ansluten');
+  await page.setViewportSize({width:1280,height:600});await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
   const nav=page.getByRole('navigation',{name:'Huvudnavigation'});await nav.hover();await page.mouse.wheel(0,700);await expect.poll(()=>nav.evaluate(e=>e.scrollTop)).toBeGreaterThan(0);
   await nav.locator('a').last().focus();await expect(nav.locator('a').last()).toBeInViewport();
   const list=page.locator('#control-lights');await list.hover();await page.mouse.wheel(0,1800);await expect.poll(()=>list.evaluate(e=>e.scrollTop)).toBeGreaterThan(500);
@@ -58,7 +58,7 @@ test('vertical lamps and navigation scroll by wheel and keyboard at low height; 
 test('neutral theme, compact lamps and mobile page reachability at all requested sizes',async({page})=>{
  test.setTimeout(240000);
  for(const [width,height]of[[1920,1080],[2560,1440],[1280,800],[1024,768],[800,1280],[390,844]]){
-  await page.setViewportSize({width,height});await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('#control-status')).toContainText('Ansluten');
+  await page.setViewportSize({width,height});await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
   await expect(page.locator('.control-page .music-widget')).toHaveCount(0);
   const card=page.locator('.lamp-card').first();await card.locator('.device-select').click();
   expect(await card.innerText()).not.toMatch(/Ej områdesplacerad|\bAV\b|\bPÅ\b/);
@@ -89,7 +89,7 @@ test('every function page and settings can reach the final content with native p
 });
 
 test('right room lamp confirms two toggles and dimming in simulator',async({page,request})=>{
- await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('#control-status')).toContainText('Ansluten');
+ await page.goto('/control');await expect(page.locator('body')).toHaveAttribute('data-app-route','/control',{timeout:30000});await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
  const card=page.locator('#control-details'),toggle=card.locator('.stage-heading [role=switch]');
  const before=await toggle.getAttribute('aria-checked');
  for(const expected of [before==='true'?'false':'true',before]){

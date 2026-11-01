@@ -6,7 +6,9 @@ test('ambient cards preserve animation and focus through confirmed commands',asy
  try{
   const config=structuredClone(original);config.presets=[{id:'halloween',name:'Halloween',icon:'🎃',color:'#ff8400',description:'Simulerad stämning',entityId:'script.halloween',canStop:true,hidden:false}];
   await request.put('/workspace-api/scene',{data:config});await page.goto('/control');
-  await expect(page.locator('#control-status')).toContainText('Ansluten');
+  await expect(page.locator('body')).toHaveAttribute('data-app-route','/control');
+  await expect(page.locator('#control-status')).toHaveCount(0);
+  await expect(page.locator('.control-toolbar')).toHaveCount(0);
   const toggle=page.locator('#control-lights [data-action="toggle"]').first();
   await expect(toggle).toBeEnabled();
   const before=await toggle.getAttribute('aria-checked');

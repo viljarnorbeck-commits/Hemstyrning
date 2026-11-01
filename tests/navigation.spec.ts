@@ -2,7 +2,7 @@ import {test,expect} from './test';
 import{fixture}from'./fixtures';
 test.beforeEach(async({page})=>{await fixture(page);});
 test('shared navigation, vertical lamp list, horizontal detail rows and responsive pages',async({page})=>{
- await page.setViewportSize({width:1440,height:600});await page.goto('/control');await expect(page.locator('#control-status')).toContainText('Ansluten');
+ await page.setViewportSize({width:1440,height:600});await page.goto('/control');await expect(page.locator('.nav-ha')).toHaveClass(/connected/);
  await expect(page.getByRole('navigation',{name:'Huvudnavigation'})).toBeVisible();
  await expect(page.locator('.control-page .music-widget')).toHaveCount(0);
  const list=page.locator('#control-lights');expect(await list.locator('.device-control').count()).toBeGreaterThanOrEqual(6);
@@ -17,7 +17,7 @@ test('vertical lamp list supports native touch swipe',async({browser})=>{
  const context=await browser.newContext({viewport:{width:1024,height:768},hasTouch:true,isMobile:true}),page=await context.newPage();
  try{
   await page.route('**/workspace-api/scene',async r=>{const c=await(await r.fetch()).json(),lamp=c.objects.find((o:any)=>o.type==='light');c.objects.push(...Array.from({length:25},(_,i)=>({...lamp,id:'touch-light-'+i,name:'Touchlampa '+i,placementConfirmed:false})));await r.fulfill({json:c});});
-  await page.goto('http://localhost:5173/control');await expect(page.locator('#control-status')).toContainText('Ansluten');const list=page.locator('#control-lights'),box=(await list.boundingBox())!,cdp=await context.newCDPSession(page),x=box.x+box.width*.5,y=box.y+Math.min(box.height-30,340);
+  await page.goto('http://localhost:5173/control');await expect(page.locator('.nav-ha')).toHaveClass(/connected/);const list=page.locator('#control-lights'),box=(await list.boundingBox())!,cdp=await context.newCDPSession(page),x=box.x+box.width*.5,y=box.y+Math.min(box.height-30,340);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});for(let i=1;i<=8;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-i*28}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect.poll(()=>list.evaluate(e=>e.scrollTop)).toBeGreaterThan(0);
  }finally{await context.close();}
 });

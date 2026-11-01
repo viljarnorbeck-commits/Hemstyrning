@@ -16,3 +16,13 @@ body[data-app-route="/control"] .reference-right #control-music{
 body[data-app-route="/control"] .reference-right #control-presets{background:transparent}
 @media(max-height:600px) and (orientation:landscape){body[data-app-route="/control"] .control-right.reference-right{padding:8px}}
 @media(max-width:700px) and (orientation:portrait){body[data-app-route="/control"] .control-right.reference-right{padding:10px}}
+
+/* Short landscape needs room for the compact player's two responsive rows. */
+@media(max-height:500px) and (orientation:landscape){body[data-app-route="/control"] .control-right.reference-right{grid-template-rows:minmax(64px,.7fr) minmax(96px,1.7fr) minmax(164px,1fr)}}
+
+/* Keep all colour/Kelvin controls visible on a normal landscape tablet. */
+@media(min-width:701px) and (max-width:1100px) and (min-height:601px) and (orientation:landscape){
+ body[data-app-route="/control"] .control-right.reference-right{grid-template-rows:minmax(120px,.6fr) minmax(180px,2.1fr) minmax(164px,1fr)}
+ body[data-app-route="/control"] #control-details .device-stage-content{padding:14px}
+ body[data-app-route="/control"] #control-details .stage-dimmer{margin:4px 0}
+}

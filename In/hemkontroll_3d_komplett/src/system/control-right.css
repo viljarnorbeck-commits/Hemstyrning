@@ -38,3 +38,7 @@
 #control-details .vacuum-fan button{min-height:44px;font-size:13px}
 .reference-right .device-visual>.vacuum-illustration{width:min(90%,270px);height:auto;max-height:270px}
 @media(max-width:1000px){#control-details .vacuum-controls{grid-template-columns:repeat(2,minmax(0,1fr))}#control-details .vacuum-detail{gap:9px}}
+
+/* KNX names and entity IDs may be single long words, especially on mobile. */
+.reference-right .device-stage-content h1{min-width:0;overflow-wrap:anywhere}
+.reference-right .device-stage-content code{overflow-wrap:anywhere}
