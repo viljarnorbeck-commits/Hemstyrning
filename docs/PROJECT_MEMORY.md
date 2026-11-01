@@ -304,3 +304,9 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Detta är enbart presentationsklassning; gemensam Halloween-identifiering och dess mål ändras inte. Ingen ny styrbehörighet eller objektsregistrering görs automatiskt. De nya lampkorten använder samma säkra befintliga kommandovägar och sparkrav som tidigare.
 - Explicita uttag och namngivna köks-/TV-uttag sorteras under Uttag. Återstående allmänna/okända switchar ligger under Brytare i stället för att felaktigt kallas uttag. Motorvärmare behåller egen grupp. All KNX-presentation får korta namn, inte bara tidigare identifierade lampor; redan anpassade namn som Viljars hyllor/tak bevaras. Namnlösa E1-kanaler heter Kanal E1 A osv; NIL-portar heter Ej namngiven port 2/4 utan gissad funktion.
 - Uppdaterade regressionsförväntningen för Vinkyl till Uttag och lade till fall för fönsterlampa kontra fönsteruttag samt namnlösa kanaler. Inga tester, typkontroller eller byggen kördes; push är fortsatt pausad. Endast statisk diff, hemlighetskontroll och serverstatus.
+
+## Egna färgfamiljer för motorvärmare och uttag, 1 november
+
+- Användaren vill behålla lampor och dammsugare exakt som de är men ge Motorvärmare och Uttag egna liknande färgteman med små variationer. Endast kontrollpanelens kortpresentation ändras.
+- deviceCard annonserar befintlig presentationsgrupp via data-device-group. CSS begränsad till /control ger motorvärmare en varm koppar/orange färgfamilj med dämpat rosenfärgat avslut och uttag en petrol/turkos/blå familj. Befintlig stabil palette-klass ger små skillnader mellan kort utan slumpmässiga färgbyten vid omritning.
+- Lampkort, dammsugare, övriga brytare, reglage, detaljpaneler och styrlogik ändras inte. Inga tester, typkontroller, byggen eller push kördes enligt pausen. Endast statisk diff, hemlighetskontroll och kontroll av localhost.
