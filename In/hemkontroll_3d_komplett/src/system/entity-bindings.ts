@@ -6,7 +6,7 @@ export const sensorSlots = [
   ['sensor.ferroamp_consumption_power','Huset · aktiv effekt','W eller kW'],
   ['sensor.ferroamp_solar_power','Solpaneler · effekt','W eller kW'],
   ['sensor.ferroamp_total_solar_energy','Solpaneler · total energi','kWh'],
-  ['sensor.elmatare_hus2_effekt_summa','Jannes hus · effekt','W eller kW'],
+  ['sensor.elmatare_hus2_effekt_summa','Hus 2 · effekt','W eller kW'],
   ['sensor.electricity_price_bringasen_380','Elpris · aktuellt','SEK/kWh'],
   ['$costToday','Elkostnad · idag','SEK · endast verifierad dagskostnad'],
   ['$averageToday','Snittpris · idag','kr/kWh · endast verifierat dagsmedel'],

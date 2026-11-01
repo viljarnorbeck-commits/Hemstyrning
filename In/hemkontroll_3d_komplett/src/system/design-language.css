@@ -30,3 +30,7 @@ body.function-mode{background:var(--app-bg);color:var(--technical-ink)}
 .view-camera-panel{position:fixed;z-index:100;inset:70px 24px 24px calc(var(--nav-width,238px) + 24px);padding:28px;background:#202226;border:1px solid #45484f;border-radius:8px;color:#f4f4f6;display:flex;flex-direction:column;align-items:flex-start;gap:20px}.view-camera-panel[hidden]{display:none}.camera-viewer #device-markers,.camera-viewer .home-overview{visibility:hidden}@media(max-width:750px){.view-camera-panel{inset:75px 12px 20px}}
 
 .function-page>section,.music-settings,.spotify-browser,.music-panel,.settings-shell fieldset,dialog{color:var(--text-primary);border-color:var(--panel-edge)}dialog{background:var(--panel-strong);backdrop-filter:blur(var(--panel-blur));border-radius:10px}dialog::backdrop{background:rgba(12,13,16,.48)}.function-page>header,.music-page>header{background:transparent}.music-page,.function-page,.settings-shell{background:transparent}.home-overview article{--metric-accent:var(--card-accent)}
+.measurement-age{display:block;font-size:10px;line-height:1.45;color:var(--text-muted);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.home-overview .overview-line:has(.measurement-age){flex-wrap:wrap}
+.home-overview .overview-line .measurement-age{flex-basis:100%;text-align:right;margin-top:2px}
+.history-update-note{font-size:12px;color:var(--text-muted);line-height:1.5}

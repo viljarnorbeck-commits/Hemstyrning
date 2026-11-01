@@ -22,6 +22,7 @@ export class Connection extends EventTarget {
     try {
       const info = await fetch(this.base+'/info', { signal: AbortSignal.timeout(10000) }).then(check).then(r => r.json());
       if (serial !== this.serial || this.stopped) return;
+      if(this.source!==info.mode)this.states=new Map();
       this.source = info.mode;this.commandsEnabled=info.commandsEnabled===true;this.controlBlockReason=info.controlBlockReason??null;
       const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}${this.socketPath}`);
       this.socket = ws;
