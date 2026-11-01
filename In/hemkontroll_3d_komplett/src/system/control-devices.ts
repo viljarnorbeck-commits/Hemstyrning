@@ -9,5 +9,5 @@ export function controlDevices(config:SceneConfig,states:Map<string,HassState>,s
  add('sensor.easee_vanster_status','Easee vänster');add('sensor.easee_hoger_status','Easee höger');add('climate.vvb_kallaren_termostat','Varmvattenberedaren');
  for(const[id,p]of Object.entries(config.entityPreferences??{}))if(p.control){const s=states.get(id);if(s)add(id,String(s.attributes.friendly_name??id));}
  const rank=(o:SceneObject)=>o.type==='light'?0:o.type==='car'?1:o.entityId.includes('easee_')?2:o.entityId.includes('vvb_')?3:o.type==='mower'?4:o.type==='vacuum'?5:6;
- return list.sort((a,b)=>rank(a)-rank(b));
+ return list.filter(o=>!config.entityPreferences?.[o.entityId]?.hidden).sort((a,b)=>rank(a)-rank(b));
 }

@@ -120,3 +120,11 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 
 - Slutlig systemgranskning: 159 enhets-/integrationstester, 62/62 Playwright, TypeScript, produktionsbygge, tre modellvarianter och gemensam version godkända. Se SYSTEM_AUDIT_2026-10-31.md för fulla resultat och tidigare misslyckade körningar.
 - Normal real-miljö återstartad 1 november. .env och verklig data/scene.json är byteidentiska med före audit. Live-HA till 192.168.0.130:8123 blockeras av Windows connect EACCES; TCP-provet misslyckas. Status real/503 authenticated=false, upstream-WS 1011 och 0 verkliga entiteter verifierade. Ändra inte till simulator som tyst reserv och anta inte att token eller HA-server är fel. Nätåtkomst behöver lösas före fysisk/integrationsverifiering. Inga VPN-/brandväggsinställningar ändrades.
+
+## Beständigt döljda enheter, 1 november
+
+- Senare läsande kontroll samma dag: riktig HA är åter åtkomlig, autentisering och WebSocket fungerar och 752 entiteter läses. Auditens tidigare nätblockering är en historisk ögonblicksbild.
+- Användaren identifierade sin fungerande fönsterlampa som `switch.aktorb1_b3_port8_sovrum1_fonster`. Den ska inte förväxlas med `light.wled_viljar1`/`light.wled_viljar2`.
+- På användarens begäran har endast de två gamla WLED-posternas lokala `entityPreferences.hidden` satts till true. Övrig scenkonfiguration jämfördes och bevarades. Inga HA-entiteter raderades, bindningar flyttades eller riktiga styrkommandon skickades.
+- Den valfria hidden-flaggan återanvänder befintlig SceneConfig. Registrerade och automatiskt upptäckta enheter filtreras i enhetslistorna, inklusive sparade fallbackposter och hemmets lampgrupp. Sparade objekt/3D-placeringar bevaras. Kompletta enhetsöversikten behåller posterna och kan återställa visning genom att avmarkera Dölj från enhetslistan.
+- Verifiering för denna mindre visningsändring: TypeScript, hela enhets-/integrationssviten (63 backend + 98 frontend = 161), produktionsbygge och läsande Chromium-prov av kontrollpanel/belysning, omladdning och återställningsval. HTTP-skrivningar blockerades i webbläsarprovet och Spotify mockades. Hela Playwright-sviten kördes inte om för denna ändring; föregående audits 62/62 är historiskt resultat.

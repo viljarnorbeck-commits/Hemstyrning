@@ -19,7 +19,7 @@ export interface CameraView{position:Vec3;target:Vec3;zoom:number;fov:number}
 export interface EnergyRoute {id:string;name:string;points:Vec3[];sensor:string;unit:'W'|'kW';color:string;kind:'grid'|'solar'|'charging'|'other';confirmed:boolean}
 export interface StartPhoto {url:string;signature:string;createdAt:string;width:number;height:number;view:CameraView}
 export interface SceneConfig {
- entityPreferences?:Record<string,{control:boolean;details:boolean;allowCommands:boolean}>;
+ entityPreferences?:Record<string,{control:boolean;details:boolean;allowCommands:boolean;hidden?:boolean}>;
  sensorBindings?:Record<string,string>;
  startMode?:'live'|'photo';startPhoto?:StartPhoto;energyRoutes?:EnergyRoute[];
  startView?:CameraView;labels?:boolean;presets?:Preset[];

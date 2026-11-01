@@ -9,7 +9,7 @@ export function deviceRegistry(scene:SceneConfig,states:Map<string,HassState>,so
   const objects=scene.objects.filter(o=>o.type!=='light'||!!o.entityId&&(source==='simulator'||states.has(o.entityId)));
   const known=new Set(objects.map(o=>o.entityId));
   for(const s of states.values())if(s.entity_id.startsWith('light.')&&!known.has(s.entity_id))objects.push(discoveredLight(s));
-  return objects;
+  return objects.filter(o=>!scene.entityPreferences?.[o.entityId]?.hidden);
 }
 export function lightCapabilities(state:HassState|undefined) {
  const modes=Array.isArray(state?.attributes.supported_color_modes)?state.attributes.supported_color_modes as string[]:[];
