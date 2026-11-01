@@ -1,3 +1,4 @@
+import {smhiWeatherApi} from './smhi-weather.js';
 import {readRegistry} from './ha-registry.js';
 import {allowedOrigin} from './access.js';
 import {mediaSupports,robotSupports,available} from '../../../shared/ha-contract.js';
@@ -11,6 +12,7 @@ import type { SceneConfig } from './scene-config.js';
 export interface LiveTarget { url: string; token: string; commandsEnabled?: boolean }
 export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, delay: number, live?: LiveTarget) {
   const router = express.Router();
+  router.use('/weather',smhiWeatherApi(load,!!live));
   router.use((req, res, next) => {
     if (req.headers.origin && !allowedOrigin(req.headers.origin)) { res.sendStatus(403); return; }
     next();

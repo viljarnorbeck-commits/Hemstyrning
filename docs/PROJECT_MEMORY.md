@@ -128,3 +128,11 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - På användarens begäran har endast de två gamla WLED-posternas lokala `entityPreferences.hidden` satts till true. Övrig scenkonfiguration jämfördes och bevarades. Inga HA-entiteter raderades, bindningar flyttades eller riktiga styrkommandon skickades.
 - Den valfria hidden-flaggan återanvänder befintlig SceneConfig. Registrerade och automatiskt upptäckta enheter filtreras i enhetslistorna, inklusive sparade fallbackposter och hemmets lampgrupp. Sparade objekt/3D-placeringar bevaras. Kompletta enhetsöversikten behåller posterna och kan återställa visning genom att avmarkera Dölj från enhetslistan.
 - Verifiering för denna mindre visningsändring: TypeScript, hela enhets-/integrationssviten (63 backend + 98 frontend = 161), produktionsbygge och läsande Chromium-prov av kontrollpanel/belysning, omladdning och återställningsval. HTTP-skrivningar blockerades i webbläsarprovet och Spotify mockades. Hela Playwright-sviten kördes inte om för denna ändring; föregående audits 62/62 är historiskt resultat.
+
+## SMHI-väder för Kyrkås, 1 november
+
+- Alla tester, TypeScript-kontroller, byggen och automatiserade webbläsarprov är pausade på användarens uttryckliga begäran tills användaren återupptar dem. Inga sådana körningar gjordes för väderändringen.
+- Orsak: ingen weather-entitet finns i riktig HA och väderbindningen är tom. Direkt läsande SMHI-adapter använder aktuella SNOW1gv1 (PMP3gv2 är avvecklat), med timeout, validering, åldersgränser och tio minuters cache. Inga HA-konfigurationsändringar eller styrkommandon.
+- Valfri SceneConfig.weather sparar källa, platsnamn och prognospunkt i befintlig lokal konfiguration. Kyrkås, Östersund sparades lokalt utifrån HA:s hemposition avrundad till tre decimaler. Befintlig location och samtliga övriga inställningar jämfördes och bevarades; inga privata koordinater committas. Inställningssidan kan ändra väderkälla och punkt.
+- Vädervyn och 3D använder samma adapter. Prognos märks SMHI/prognos, verklig utomhusmätning visas separat och prioriteras när aktuell. Ingen syntetisk HA-entitet läggs i entitetskatalogen. Simulatorn behåller sitt eget väder.
+- Normal läsning av /connection-api/weather gav HTTP 200, available=true och prognos för Kyrkås. Ingen testsvit eller visuell granskning körd; dessa kvarstår enligt pausen.

@@ -1,3 +1,4 @@
+import {weatherSnapshot} from './weather-source';
 import {appConnection,startConnection} from './app-session';
 import{homeV2}from'./home-v2';
 import {available,robotSupports} from '../../../../shared/ha-contract.js';
@@ -66,8 +67,8 @@ function update(){
   $('connection-status').classList.toggle('offline',!connection.connected);
   $('mode-badge').hidden=connection.source!=='simulator';$('mode-badge').textContent='DEMO';
   if(!config.value)return;
-  const live=liveInputs(config.value,connection.states,connection.connected), weather=connection.states.get(config.value.bindings.weather);
-  const weatherAttrs=connection.connected&&freshState(weather,config.value.bindings.weatherMaxAge)?weather!.attributes:{};
+  const live=liveInputs(config.value,connection.states,connection.connected,Date.now(),connection.source), view=weatherSnapshot(config.value,connection.states,connection.connected,connection.source), weather=view.state;
+  const weatherAttrs=view.connected&&freshState(weather,config.value.bindings.weatherMaxAge)?weather!.attributes:{};
   const clock=weatherAttrs.simulated_datetime;
   const date=connection.source==='simulator'&&typeof clock==='string'?new Date(clock):new Date();
   hud?.update(config.value,date);

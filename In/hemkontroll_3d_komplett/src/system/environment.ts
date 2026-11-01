@@ -1,3 +1,4 @@
+import {weatherSnapshot} from './weather-source';
 import {moonPosition} from './astronomy';
 import type { EnvironmentFrame, EnvironmentInput, HassState, SceneConfig, Season, Vec3, Weather } from './types';
 export const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
@@ -60,20 +61,21 @@ export function weatherKind(state: string): Weather {
   if (state === 'fog') return 'fog';
   return ['cloudy', 'partlycloudy'].includes(state) ? 'cloudy' : 'clear';
 }
-export function liveInputs(config: SceneConfig, states: Map<string, HassState>, connected: boolean, now = Date.now()) {
-  const weather = states.get(config.bindings.weather);
+export function liveInputs(config: SceneConfig, states: Map<string, HassState>, connected: boolean, now = Date.now(), source = 'home-assistant') {
+  const view = weatherSnapshot(config, states, connected, source, now);
+  const weather = view.state;
   const cloud = config.bindings.cloud ? states.get(config.bindings.cloud) : weather;
   const luxState = states.get(config.bindings.lux);
-  const weatherValid = connected && freshState(weather, config.bindings.weatherMaxAge, now);
-  const cloudValid = connected && freshState(cloud, config.bindings.weatherMaxAge, now);
+  const weatherValid = view.connected && freshState(weather, config.bindings.weatherMaxAge, now);
+  const cloudValid = (config.bindings.cloud?connected:view.connected) && freshState(cloud, config.bindings.weatherMaxAge, now);
   const numeric=(value:unknown)=>typeof value==='number'||typeof value==='string'&&value.trim()!==''?Number(value):NaN;
   const rawCloud = cloudValid ? (config.bindings.cloud ? numeric(cloud!.state) : numeric(cloud!.attributes[config.bindings.cloudAttribute])) : NaN;
   const rawLux = connected && freshState(luxState, config.bindings.luxMaxAge, now) ? numeric(luxState!.state) : NaN;
   const lit = config.objects.filter(o => o.type === 'light' && states.get(o.entityId)?.state === 'on').length;
   const calibration = config.luxCalibration;
   const lux = Number.isFinite(rawLux) && rawLux >= 0 && rawLux <= 200000 ? Math.max(0, rawLux - (calibration.affectedByLights ? lit * calibration.artificialLux : 0)) * calibration.gain : null;
-  return { cloud: Number.isFinite(rawCloud) ? clamp(rawCloud / config.bindings.cloudMax, 0, 1) : 0.5, lux, weather: weatherValid ? weatherKind(weather!.state) : 'clear' as Weather,
-    warnings: [!weatherValid && 'Väder saknas eller är för gammalt', !Number.isFinite(rawCloud) && 'Molndata saknas: neutral uppskattning', lux === null && 'Lux saknas: sol och väder används'].filter(Boolean).join(' · ') };
+  return { cloud: Number.isFinite(rawCloud) ? clamp(rawCloud / (!config.bindings.cloud&&view.source==='smhi'?100:config.bindings.cloudMax), 0, 1) : 0.5, lux, weather: weatherValid ? weatherKind(weather!.state) : 'clear' as Weather,
+    warnings: [!weatherValid && (view.source==='smhi'?view.description:'Väder saknas eller är för gammalt'), !Number.isFinite(rawCloud) && 'Molndata saknas: neutral uppskattning', lux === null && 'Lux saknas: sol och väder används'].filter(Boolean).join(' · ') };
 }
 /** Snow switches require an explicitly confirmed local observation, not a weather forecast. */
 export function automaticSeason(config: SceneConfig, states: Map<string, HassState>, date: Date, connected: boolean): Season {

@@ -1,3 +1,4 @@
+import {weatherSnapshot} from './weather-source';
 import {workspaceContent,workspaceNavigation,handleWorkspace} from './editor-workspace';
 import {entityPicker} from './entity-picker';
 import{AdvancedEditor}from'./advanced-editor';
@@ -76,13 +77,13 @@ function syncConfig() {
 }
 function updateEnvironment() {
   if (!config.value) return;
-  const live = liveInputs(config.value, connection.states, connection.connected);
+  const live = liveInputs(config.value, connection.states, connection.connected,Date.now(),connection.source);
   const luxState = connection.states.get(config.value.bindings.lux);
   const stamp = `${config.value.bindings.lux}:${luxState?.last_reported ?? luxState?.last_updated}:${config.value.luxCalibration.gain}:${config.value.luxCalibration.artificialLux}:${live.lux}`;
   if (stamp !== lastLuxSample && live.lux !== null) { lastLuxSample = stamp; luxSamples.push(live.lux); luxSamples = luxSamples.slice(-5); }
   const filtered = [...luxSamples].sort((a, b) => a - b);
   const lux = mode === 'simulation' ? preview.lux : live.lux === null ? null : filtered[Math.floor(filtered.length / 2)] ?? live.lux;
-  const weather=connection.states.get(config.value.bindings.weather),attrs=connection.connected&&freshState(weather,config.value.bindings.weatherMaxAge)?weather!.attributes:{};
+  const view=weatherSnapshot(config.value,connection.states,connection.connected,connection.source),weather=view.state,attrs=view.connected&&freshState(weather,config.value.bindings.weatherMaxAge)?weather!.attributes:{};
   const date = mode === 'simulation' ? new Date(preview.date + 'Z') : connection.source==='simulator'&&typeof attrs.simulated_datetime==='string'?new Date(attrs.simulated_datetime):new Date();
   target = environmentTarget({ date, ...config.value.location, cloud: mode === 'simulation' ? preview.cloud / 100 : live.cloud, lux, weather: mode === 'simulation' ? preview.weather : live.weather, sensorWeight: config.value.luxCalibration.weight, brightness: mode === 'simulation' ? preview.brightness : 1,rainIntensity:typeof attrs.rain_intensity==='number'?attrs.rain_intensity:undefined,snowIntensity:typeof attrs.snow_intensity==='number'?attrs.snow_intensity:undefined,windSpeed:Number(attrs.wind_speed??0),windDirection:Number(attrs.wind_bearing??0),gust:Number(attrs.wind_gust_speed??0),visibility:Number(attrs.visibility??20) });
   const season = mode === 'live' ? automaticSeason(config.value, connection.states, date, connection.connected) : config.value.activeModel;
@@ -90,7 +91,7 @@ function updateEnvironment() {
   // Automatic switches need a real configured model; missing slots remain clearly labelled references.
   if (garden.models.active !== season && !garden.models.loading) void garden.models.select(season, config.value.models[season]);
   $('season-label').textContent = `${seasons[garden.models.active ?? season]}${config.value.models[garden.models.active ?? season].verified ? '' : ' · referens'}`;
-  $('data-status').textContent = mode === 'simulation' ? 'Datum och väder styrs lokalt. Lamplägen är simulerade.' : live.warnings || 'SMHI-prognos via HA + lokal luxsensor · simulatorvärden när simulator är vald';
+  $('data-status').textContent = mode === 'simulation' ? 'Datum och väder styrs lokalt. Lamplägen är simulerade.' : live.warnings || 'Vald väderkälla + lokal luxsensor';
   const metrics = $('environment-metrics');
   if (metrics) metrics.textContent = `Solhöjd ${target.elevation.toFixed(1)}° · azimut ${target.azimuth.toFixed(1)}° · lux ${lux === null ? 'saknas' : Math.round(lux)} · sensorkorrigering ${target.luxUsed ? 'aktiv' : 'inaktiv'}`;
 }
