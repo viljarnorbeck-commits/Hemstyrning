@@ -143,7 +143,7 @@ export function createSimulator(options: SimulatorOptions) {
   app.get('/downloads/:file',(req,res)=>{if(!/^[a-zA-Z0-9_.-]+\.(apk|exe|msi|ipa)$/.test(req.params.file)){res.sendStatus(404);return;}res.download(resolve(options.dataDirectory??resolve(import.meta.dirname,'../../../data'),'releases',req.params.file));});
   app.get('/app-api/info',(_req,res)=>res.json({name:'Hemstyrning',version:'2.0.0',protocol:1,source:options.live?'real':'simulator',role:access.role(_req)}));
   app.use(express.static(resolve(import.meta.dirname,'../../../In/hemkontroll_3d_komplett/dist')));
-  app.get(['/', '/control','/settings','/install','/device','/editor','/dev/simulator'],(_req,res)=>res.sendFile(resolve(import.meta.dirname,'../../../In/hemkontroll_3d_komplett/dist/index.html')));
+  app.get(['/', '/control','/energy','/cars','/climate','/lights','/mower','/security','/music','/settings','/install','/device','/editor','/dev/simulator'],(_req,res)=>res.sendFile(resolve(import.meta.dirname,'../../../In/hemkontroll_3d_komplett/dist/index.html')));
   const server = http.createServer(app);
   server.on('close',()=>hub.close());
   const webSockets = new WebSocketServer({ noServer: true });

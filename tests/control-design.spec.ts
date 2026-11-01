@@ -1,4 +1,6 @@
 import {test,expect} from './test';
+import{fixture}from'./fixtures';
+test.beforeEach(async({page})=>{await fixture(page);});
 test('ambient cards preserve animation and focus through confirmed commands',async({page,request})=>{
  const original=await request.get('/workspace-api/scene').then(r=>r.json());
  try{
@@ -13,7 +15,7 @@ test('ambient cards preserve animation and focus through confirmed commands',asy
   await expect(page.locator('#control-error')).toContainText('Bekräftat');
   expect(await page.evaluate(()=>document.querySelector('.device-control')===(window as any).card)).toBe(true);
   expect(await page.evaluate(()=>document.querySelector('.device-control')!.getAnimations({subtree:true}).find(a=>(a as CSSAnimation).animationName==='card-drift')===(window as any).animation)).toBe(true);
-  await page.locator('[data-preset="halloween"]').click();await expect(page.locator('[data-stop="true"]')).toBeVisible();await page.locator('[data-stop="true"]').click();await expect(page.locator('[data-stop="true"]')).toHaveCount(0);
+  await page.locator('[data-preset="halloween"]').click();await expect(page.locator('[data-preset="halloween"]')).toHaveAttribute('aria-checked','true');await page.locator('[data-preset="halloween"]').click();await expect(page.locator('[data-preset="halloween"]')).toHaveAttribute('aria-checked','false');
   for(const [name,width,height] of [['desktop',1440,1000],['tablet',900,1100],['mobile',390,844]] as const){
    await page.setViewportSize({width,height});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
    expect(await page.locator('.device-control').first().evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(60);

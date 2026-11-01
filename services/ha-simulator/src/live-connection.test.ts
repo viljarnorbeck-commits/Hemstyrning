@@ -26,6 +26,7 @@ it('keeps real REST and WebSocket on the same read-only source without leaking s
  try{
   expect(await fetch(base+'/connection-api/status').then(r=>r.json())).toMatchObject({mode:'real',authenticated:true,commandsEnabled:false,entityCount:1});
   expect((await fetch(base+'/connection-api/equipment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({entity_id:'lock.entredorr_2',action:'unlock',confirmed:true})})).status).toBe(403);
+  expect((await fetch(base+'/connection-api/entity-action',{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify({entity_id:'input_boolean.audit',action:'turn_on'})})).status).toBe(403);
   const received:string[]=[];client=new WebSocket(base.replace('http:','ws:')+'/connection-ws');
   const finished=new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Gateway did not respond')),3000);client!.on('error',reject);client!.on('message',raw=>{
    received.push(String(raw));const m=JSON.parse(String(raw));

@@ -1,7 +1,11 @@
+import{fixture}from'./fixtures';
 import {test,expect} from './test';
+test.beforeEach(async({page})=>{await fixture(page);});
 test('shared sensor picker searches, saves, survives reload, drives cards and resets',async({page,request})=>{
  const original=await request.get('/workspace-api/scene').then(r=>r.json());
+ const previousSolar=(await request.get('/dev-api/states').then(r=>r.json())).find((s:any)=>s.entity_id==='sensor.ferroamp_solar_power');
  try{
+  await request.post('/dev-api/states/sensor.ferroamp_solar_power',{data:{state:'2500',attributes:{unit_of_measurement:'W'}}});
   await page.goto('/settings');
   const panel=page.locator('.entity-binding-panel');
   await expect(panel.locator('[data-count]')).toContainText('entiteter med aktuellt state');
@@ -23,5 +27,5 @@ test('shared sensor picker searches, saves, survives reload, drives cards and re
   await page.goto('/settings');await panel.locator('[data-binding-reset]').click();
   await expect(panel.locator('[data-binding-status]')).toHaveText('Sparat på disk');
   expect((await request.get('/workspace-api/scene').then(r=>r.json())).sensorBindings['sensor.ferroamp_grid_power']).toBeUndefined();
- }finally{await request.put('/workspace-api/scene',{data:original});}
+ }finally{await request.put('/workspace-api/scene',{data:original});if(previousSolar)await request.post('/dev-api/states/sensor.ferroamp_solar_power',{data:{state:previousSolar.state,attributes:previousSolar.attributes}});}
 });

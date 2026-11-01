@@ -1,4 +1,6 @@
+import{fixture}from'./fixtures';
 import{test,expect,type Page}from'./test';
+test.beforeEach(async({page})=>{await fixture(page);});
 async function setup(page:Page,authorized=true,canControl=true,confirmTransfer=true){
  const commands:any[]=[];let current='speaker-kitchen';let tokenCalls=0;
  await page.route('https://sdk.scdn.co/spotify-player.js',route=>route.fulfill({contentType:'application/javascript',body:`
@@ -25,7 +27,7 @@ test('browser registers without autoplay, appears in the device list, transfers 
  await page.reload();await expect(page.locator('[data-spotify-device="browser-2"]')).toBeVisible({timeout:30000});await expect(page.locator('[data-spotify-device="browser-1"]')).toHaveCount(0);expect(mock.commands).toHaveLength(1);
  expect(await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}))).not.toContain('fake-sdk-access');
  await page.evaluate(()=>(window as any).__sdk.players[0].emit('autoplay_failed'));await expect(page.getByRole('button',{name:'Tillåt ljud'})).toBeVisible();await page.getByRole('button',{name:'Tillåt ljud'}).click();await expect(page.getByRole('button',{name:'Tillåt ljud'})).toHaveCount(0);
- await page.clock.install();await page.clock.pauseAt(new Date());await page.evaluate(()=>(window as any).__sdk.players[0].emit('not_ready'));await expect(page.locator('[data-spotify-device="browser-2"]')).toHaveCount(0);await expect(page.locator('.browser-speaker-status')).toContainText('Återansluter');await page.screenshot({path:'/tmp/hem-spotify-devices.png'});
+ await page.clock.install();await page.clock.pauseAt(new Date(Date.now()+60000));await page.evaluate(()=>(window as any).__sdk.players[0].emit('not_ready'));await expect(page.locator('[data-spotify-device="browser-2"]')).toHaveCount(0);await expect(page.locator('.browser-speaker-status')).toContainText('Återansluter');await page.screenshot({path:'/tmp/hem-spotify-devices.png'});
 });
 test('old permissions request reauthorization without fetching SDK tokens or transferring music',async({page})=>{
  const mock=await setup(page,false);await page.goto('/music');await expect(page.locator('.embedded-music')).toContainText('Testmusik');await expect(page.getByRole('button',{name:'Godkänn webbläsaruppspelning'})).toBeVisible();expect(mock.commands).toHaveLength(0);expect(mock.tokenCalls).toBe(0);expect(await page.locator('script[src="https://sdk.scdn.co/spotify-player.js"]').count()).toBe(0);

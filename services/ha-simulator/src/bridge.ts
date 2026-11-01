@@ -44,11 +44,11 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
    if(res.locals.hemRole==='viewer'||req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
    const id=req.body?.entity_id,action=req.body?.action,value=req.body?.value,config=await load();
    if(typeof id!=='string'||!config.entityPreferences?.[id]?.allowCommands){res.sendStatus(403);return;}
-   const domain=id.split('.')[0],data:Record<string,unknown>={entity_id:id};let service='';
+   const domain=id.split('.')[0]!,data:Record<string,unknown>={entity_id:id};let service='';
    const state=(await read('states')as {entity_id:string;state:string;attributes:Record<string,unknown>}[]).find(s=>s.entity_id===id);
    if(!available(state)){res.status(409).json({message:'Entiteten är otillgänglig'});return;}
    if(['switch','input_boolean','automation'].includes(domain)&&['turn_on','turn_off'].includes(action)&&['on','off'].includes(state!.state))service=action;
-   if(['number','input_number'].includes(domain)&&action==='set_value'){const a=state!.attributes;if(typeof value==='number'&&Number.isFinite(value)&&typeof a.min==='number'&&typeof a.max==='number'&&value>=a.min&&value<=a.max){service='set_value';data.value=value;}}
+   if(['number','input_number'].includes(domain)&&action==='set_value'){const a=state!.attributes;if(typeof value==='number'&&Number.isFinite(value)&&typeof a.min==='number'&&typeof a.max==='number'&&value>=a.min&&value<=a.max&&(typeof a.step!=='number'||a.step<=0||Math.abs((value-a.min)/a.step-Math.round((value-a.min)/a.step))<1e-7)){service='set_value';data.value=value;}}
    if(['select','input_select'].includes(domain)&&action==='select_option'&&Array.isArray(state!.attributes.options)&&state!.attributes.options.includes(value)){service='select_option';data.option=value;}
    if(!service){res.status(400).json({message:'Ingen tillåten och annonserad funktion för detta värde'});return;}
    try{if(live){const r=await fetch(live.url+'/api/services/'+domain+'/'+service,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error();}else store.set(id,action==='turn_on'?'on':action==='turn_off'?'off':String(value));res.json({accepted:true,confirmed:false});}catch{res.status(502).json({message:'Home Assistant avvisade kommandot'});}

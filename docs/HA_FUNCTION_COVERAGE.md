@@ -1,8 +1,10 @@
 # Home Assistant – funktionstäckning
 
-Statisk kodgranskning 2026-10-31 mot `HOME_ASSISTANT_INVENTERING.md` och aktuell arbetsgren. **Inga tester, webbläsarprov eller fysiska styrkommandon har körts.** ”Implementerad – ej testad” beskriver kod, inte bevisad funktion. Inventeringens tillgänglighet är historisk, inte en ny liveavläsning. HA_ALLOW_CONTROL och lokala bindningar har inte ändrats.
+Ursprunglig statisk kodgranskning 2026-10-31 mot `HOME_ASSISTANT_INVENTERING.md`. Vid denna första kartläggning kördes inga tester, webbläsarprov eller fysiska styrkommandon. **Aktuell verifieringsstatus efter systemtest finns i [SYSTEM_AUDIT_2026-10-31.md](SYSTEM_AUDIT_2026-10-31.md).** ”Implementerad – ej testad” beskriver kod, inte bevisad funktion. Inventeringens tillgänglighet är historisk, inte en ny liveavläsning. HA_ALLOW_CONTROL och lokala bindningar har inte ändrats.
 
 Inventeringen skiljer enhetsregister, entitetsregister, state och tjänstebeskrivningar. 406 tjänster betyder inte 406 fungerande fysiska funktioner. Registerkatalogen i appen läser bara entity/device/area; state kommer från befintlig WebSocket. Avaktiverade entiteter visas som avaktiverade även om annan metadata finns. Registerfel visas och ersätts inte med påhittade områden.
+
+## Historisk matris före systemtest
 
 | Funktion | Home Assistant-entitet/integration | Plats i Hemstyrning | Status | Återstående arbete |
 |---|---|---|---|---|
@@ -58,6 +60,8 @@ Inventeringen skiljer enhetsregister, entitetsregister, state och tjänstebeskri
 
 ## Säkerhet och återstående verifiering
 
-Inga tester eller verkliga enhetskommandon har körts. Ingen ändring i Home Assistants konfiguration eller HA_ALLOW_CONTROL. Befintlig readonly-middleware och användarroller gäller även nya endpoints. Att registrera en funktion i Hemstyrning aktiverar inte serverns styrbehörighet och skickar inget HA-kommando. Läs inventeringens gamla tillgänglighetsuppgifter som historiska; återställ först de integrationer som saknar kontakt. Registrera därefter rätt sensorbindningar och explicit tillåtna funktioner.
+Uppdatering efterföljande systemgranskning: se [SYSTEM_AUDIT_2026-10-31.md](SYSTEM_AUDIT_2026-10-31.md). Tabellen och texten nedan beskriver det tidigare implementeringsuppdraget. Katalogens registerläsning, explicit sparad registrering, hjälparstyrning, disabled/tillgänglighetsstatus och skrivskydd har nu kompletterats med isolerade simulator-/mocktester. Numeriska steg valideras även i backend. Att en domäns programkod verifierats med simulator innebär fortfarande inte fysisk verifiering av KNX, Hue, WLED, Shelly, ESPHome, Easee, Yale eller andra integrationer.
+
+Under den ursprungliga kartläggningen kördes inga tester eller verkliga enhetskommandon. Ingen ändring i Home Assistants konfiguration eller HA_ALLOW_CONTROL. Befintlig readonly-middleware och användarroller gäller även nya endpoints. Att registrera en funktion i Hemstyrning aktiverar inte serverns styrbehörighet och skickar inget HA-kommando. Läs inventeringens gamla tillgänglighetsuppgifter som historiska; återställ först de integrationer som saknar kontakt. Registrera därefter rätt sensorbindningar och explicit tillåtna funktioner.
 
 Komplett domänstyrning för covers, fans, timers, termostater, robotlägen och säker kameraström återstår. Dessa luckor redovisas i tabellen i stället för att döljas bakom generiska serviceanrop. TypeScript, bygge, simulatorprov och fysiska funktioner måste verifieras i ett senare uppdrag.

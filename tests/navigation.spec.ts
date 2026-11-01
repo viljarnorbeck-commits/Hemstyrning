@@ -1,4 +1,6 @@
 import {test,expect} from './test';
+import{fixture}from'./fixtures';
+test.beforeEach(async({page})=>{await fixture(page);});
 test('shared navigation, vertical lamp list, horizontal detail rows and responsive pages',async({page})=>{
  await page.setViewportSize({width:1440,height:600});await page.goto('/control');await expect(page.locator('#control-status')).toContainText('Ansluten');
  await expect(page.getByRole('navigation',{name:'Huvudnavigation'})).toBeVisible();
