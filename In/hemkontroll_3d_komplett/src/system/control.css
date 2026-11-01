@@ -1,12 +1,4 @@
-/* Related category colours with stable, subtle per-device variations. */
-body[data-app-route="/control"] .device-control[data-device-group=heaters]{--c1:#e48838;--c2:#ad542f;--c3:#823d51}
-body[data-app-route="/control"] .device-control[data-device-group=heaters]:is(.palette-1,.palette-4){--c1:#dd7b43;--c2:#b05d35;--c3:#794452}
-body[data-app-route="/control"] .device-control[data-device-group=heaters]:is(.palette-2,.palette-5){--c1:#d99840;--c2:#a66030;--c3:#8b4851}
-body[data-app-route="/control"] .device-control[data-device-group=heaters]:is(.palette-3,.palette-6){--c1:#e38d4d;--c2:#a85339;--c3:#754451}
-body[data-app-route="/control"] .device-control[data-device-group=outlets]{--c1:#24a9b0;--c2:#287e9f;--c3:#445589}
-body[data-app-route="/control"] .device-control[data-device-group=outlets]:is(.palette-1,.palette-4){--c1:#2aa3bb;--c2:#2f779d;--c3:#4c5886}
-body[data-app-route="/control"] .device-control[data-device-group=outlets]:is(.palette-2,.palette-5){--c1:#29b0a6;--c2:#268797;--c3:#415e89}
-body[data-app-route="/control"] .device-control[data-device-group=outlets]:is(.palette-3,.palette-6){--c1:#349fb4;--c2:#327d9c;--c3:#4b548b}
+/* Shared category colours are supplied by control-appearance, identical within each group. */
 /* One vertical lamp list and two independent right-hand surfaces. */
 body[data-app-route="/control"] .lights-section{position:relative;gap:0}
 body[data-app-route="/control"] #control-lights{padding-top:0}
@@ -52,3 +44,5 @@ body[data-app-route="/control"] #control-search-toggle:focus-visible,body[data-a
 /* Heater list icons mirror only confirmed on/off state. */
 #control-lights [data-device-group="heaters"] .device-select>span{color:#b3bdc9;transition:color .3s,filter .3s}
 #control-lights [data-device-group="heaters"].heater-active .device-select>span{color:#8ed0ff;filter:drop-shadow(0 0 5px #6abbff66)}
+
+.device-control .device-category-label{display:block;font-size:10px;font-weight:450;line-height:1.35;color:#ffffffd6;white-space:normal;overflow-wrap:anywhere}

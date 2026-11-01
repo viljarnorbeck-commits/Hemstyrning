@@ -7,6 +7,7 @@ export function lightLocation(o:SceneObject,states:Map<string,HassState>,catalog
  const classify=(value:string):LightLocation=>{
   const text=value.toLocaleLowerCase('sv-SE').replace(/[_-]/g,' ');
   if(/\b(?:ute\w*|utomhus|utanför|outdoor|outside|garden|trädgård|altan|terrass|fasad|uppfart|driveway|patio|bron|brobelysning|stolp\w*|easee)\b/u.test(text))return'outside';
+  if(/(?:^|\s)(?:uppe|nere|[öo]verv[åa]ning\w*|ovanv[åa]ning\w*|nederv[åa]ning\w*|bottenv[åa]ning\w*|entr[ée]plan|upstairs|downstairs)(?:\s|$)/u.test(text))return'inside';
   if(/\b(?:inne|inomhus|huset|entré|entre|allrum|indoor|inside|kök\w*|köks\w*|sov\w*|badrum\w*|badrummet|vardagsrum\w*|matsal\w*|hall\w*|trapp\w*|bastu\w*|källar\w*|tvätt\w*|kontor\w*|hyll\w*|living|bedroom|kitchen|bathroom|garage|verkstad|hönshus)\b/u.test(text))return'inside';
   return'uncertain';
  };
