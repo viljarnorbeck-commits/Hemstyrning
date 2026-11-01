@@ -1,0 +1,8 @@
+/* Lighting has only three full-height lamp lists; no inspector or media panels. */
+body[data-app-route="/lights"] .lights-page{display:flex;flex-direction:column;height:100dvh;min-height:0;padding:8px 20px 0;gap:8px;overflow:hidden}
+body[data-app-route="/lights"] .lights-lists{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;flex:1;min-height:0;min-width:0;overflow:hidden}
+body[data-app-route="/lights"] .lights-column{display:flex;flex-direction:column;gap:7px;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;touch-action:pan-y;padding:3px 5px env(safe-area-inset-bottom,0px)}
+body[data-app-route="/lights"] .lights-column .lamp-card{flex:0 0 auto}
+body[data-app-route="/lights"] .lights-column:focus-visible{outline:1px solid #ffffff45;outline-offset:-1px;border-radius:10px}
+@media(max-width:700px){body[data-app-route="/lights"] .lights-page{padding:64px 10px 0}body[data-app-route="/lights"] .lights-lists{display:flex;flex-direction:column;gap:7px;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;padding-bottom:env(safe-area-inset-bottom,0px)}body[data-app-route="/lights"] .lights-column{flex:none;overflow:visible;padding:0 4px;min-height:auto}}
+@media(max-height:500px) and (min-width:701px){body[data-app-route="/lights"] .lights-page{padding:6px 10px 0}body[data-app-route="/lights"] .lights-lists{gap:10px}}

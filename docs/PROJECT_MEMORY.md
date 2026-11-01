@@ -409,3 +409,10 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Den gamla förenklade dammsugarsektionen på robotsidan ersätts av samma komponent som i kontrollpanelen: illustration, status, verifierat batteri, rapporttid, stödda start/paus/stopp/docka/locate-funktioner, sugkraft och samtliga sparade rum/tömningsmål i den överliggande animerade platsmenyn.
 - Gemensam renderer, illustration och kommandokontroller ligger i vacuum-panel.ts. Båda sidorna använder samma VacuumActions och befintliga Connection/HA-endpoints; ingen separat kopia av tjänsteanrop eller ny behörighet. Kontrollpanelens gamla separata målhandler borttagen. Gemensamma vakuum-/popoverstilar gäller båda värdytorna och robotsidans kort har responsiv tvåkolumnslayout.
 - Endast källgranskning och diffkontroll. Tester, typkontroll, bygge och push är fortsatt pausade enligt användaren. Ingen robot eller annan verklig enhet styrdes; den nya robotsidesvyn är ännu inte granskad i webbläsaren. Utvecklingsservern och wifi-proxyn behålls.
+
+## Belysning som tre rena lamplistor, 1 november
+
+- /lights har en egen enkel listyta inom den befintliga kontrollsidans data- och styrlogik. Bara lampkort, fördelade alfabetiskt i tre jämna vertikala listor över sidans bredd, visas. Sök-/filterfält, KNX-hjälptext, detaljpanel, förinställningar och Spotify finns inte i vyn och musik-/presetkomponenterna monteras inte där.
+- Samma färgstarka lampkort, bekräftade på/av-status, dimmer, verifierade KNX-lampor och befintliga behörigheter används. Klick på lampnamnet startar inte längre något 3D-fokus från /lights. Kontrollpanelens separata layout och funktioner bevaras.
+- Desktop/surfplatta har tre fullhöjdslistor med egna skrollytor. Mobil under 701 px sammanfogar de tre alfabetiska delarna till en fullbred skrollyta utan horisontell skrollning. Gemensam navigation bevaras.
+- Endast källgranskning och diffkontroll. Inga tester, byggen, typkontroller, verkliga HA-kommandon eller push kördes. Visuell webbläsargranskning återstår enligt användarens testpaus. Servrarna lämnas igång.
