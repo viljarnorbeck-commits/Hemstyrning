@@ -4,7 +4,7 @@ export function available(state){return !!state && !['unknown','unavailable'].in
 export function mediaSupports(state,service){return available(state)&&Object.hasOwn(MEDIA_FEATURES,service)&&(Number(state.attributes.supported_features??0)&MEDIA_FEATURES[service])!==0;}
 export function robotSupports(state,action){
  if(!available(state))return false;
- const bits={mower_start:1,mower_pause:2,mower_dock:4,vacuum_start:8192,vacuum_pause:4,vacuum_dock:16};
+ const bits={mower_start:1,mower_pause:2,mower_dock:4,vacuum_start:8192,vacuum_pause:4,vacuum_dock:16,vacuum_stop:8,vacuum_locate:512,vacuum_spot:1024,vacuum_fan:32};
  return Object.hasOwn(bits,action)&&(Number(state.attributes.supported_features??0)&bits[action])!==0;
 }
 /** A short Spotify link alone cannot establish that its destination is a Jam. */

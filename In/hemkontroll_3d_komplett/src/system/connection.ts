@@ -117,18 +117,21 @@ export class Connection extends EventTarget {
   async preset(p:import('./types').Preset,stop=false){const before=this.states.get(p.entityId),old=before?.attributes.last_triggered??before?.state;await this.confirmRequest('/presets/'+encodeURIComponent(p.id),{action:stop?'stop':'activate'},()=>{const s=this.states.get(p.entityId);return !!s&&(stop?s.state==='off':(s.attributes.last_triggered??s.state)!==old);});}
   async light(object:import('./types').SceneObject,on:boolean,options:{brightness?:number;kelvin?:number;rgb?:number[]}={}){await this.confirmRequest('/light',{object_id:object.id,on,...options},()=>{const s=this.states.get(object.entityId);return s?.state===(on?'on':'off')&&(options.brightness===undefined||Math.abs(Number(s.attributes.brightness)-options.brightness)<2)&&(options.kelvin===undefined||Math.abs(Number(s.attributes.color_temp_kelvin)-options.kelvin)<100)&&(options.rgb===undefined||JSON.stringify(s.attributes.rgb_color)===JSON.stringify(options.rgb));});}
   async history(entityId:string){const response=await fetch(`${this.base}/history?entity_id=${encodeURIComponent(entityId)}`).then(check);return response.json();}
-  async command(object:import('./types').SceneObject,action:string){
+  async command(object:import('./types').SceneObject,action:string,value?:string){
     if(!this.connected||!this.commandsEnabled)throw new Error('Frånkopplad eller skrivskyddad');
+    // Locate does not change state: report only that HA accepted the service call.
+    if(action==='vacuum_locate'){await fetch(this.base+'/commands',{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify({object_id:object.id,action}),signal:AbortSignal.timeout(10000)}).then(check);return;}
     const matches=()=>{
       const state=this.states.get(object.entityId);
+      if(action==='vacuum_fan')return state?.attributes.fan_speed===value;
       if(action.startsWith('climate')){const entity=object.bindings?.climate,target=entity?this.states.get(entity):null;return target?(action==='climate_off'?target.state==='off':!['off','unknown','unavailable'].includes(target.state)):state?.attributes.climate_on===(action==='climate_on');}
       if(action.startsWith('device_'))return state?.state===(action==='device_on'?'on':'off');
       if(action.startsWith('charge')){const entity=object.bindings?.charging,target=entity?this.states.get(entity):null;return target?target.state===(action==='charge_on'?'on':'off'):state?.attributes.charging===(action==='charge_on');}
-      const expected:Record<string,string[]>={mower_start:['mowing'],mower_pause:['paused'],mower_dock:['returning','docked'],vacuum_start:['cleaning'],vacuum_pause:['paused'],vacuum_dock:['returning','docked']};return expected[action]?.includes(state?.state??'')??false;
+      const expected:Record<string,string[]>={mower_start:['mowing'],mower_pause:['paused'],mower_dock:['returning','docked'],vacuum_start:['cleaning'],vacuum_pause:['paused'],vacuum_dock:['returning','docked'],vacuum_stop:['idle','paused','docked'],vacuum_spot:['cleaning']};return expected[action]?.includes(state?.state??'')??false;
     };
-    let cleanup=()=>{};
-    const confirmed=new Promise<void>((resolve,reject)=>{const finish=()=>{if(matches()){cleanup();resolve();}};const connection=()=>{if(!this.connected){cleanup();reject(new Error('Anslutningen bröts'));}};const timer=setTimeout(()=>{cleanup();reject(new Error('Ingen bekräftelse inom 10 sekunder'));},10000);cleanup=()=>{clearTimeout(timer);this.removeEventListener('state',finish);this.removeEventListener('connection',connection);};this.addEventListener('state',finish);this.addEventListener('connection',connection);});
-    try{await Promise.all([confirmed,fetch(this.base+'/commands',{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify({object_id:object.id,action}),signal:AbortSignal.timeout(10000)}).then(check)]);}finally{cleanup();}
+    let cleanup=()=>{},confirmState=()=>{};
+    const confirmed=new Promise<void>((resolve,reject)=>{const finish=()=>{if(matches()){cleanup();resolve();}};confirmState=finish;const connection=()=>{if(!this.connected){cleanup();reject(new Error('Anslutningen bröts'));}};const timer=setTimeout(()=>{cleanup();reject(new Error('Ingen bekräftelse inom 10 sekunder'));},10000);cleanup=()=>{clearTimeout(timer);this.removeEventListener('state',finish);this.removeEventListener('connection',connection);};this.addEventListener('state',finish);this.addEventListener('connection',connection);});
+    try{await Promise.all([confirmed,fetch(this.base+'/commands',{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify({object_id:object.id,action,...(value!==undefined?{value}:{})}),signal:AbortSignal.timeout(10000)}).then(check).then(()=>confirmState())]);}finally{cleanup();}
   }
   stop() { this.stopped = true; ++this.serial; clearTimeout(this.retry); this.socket?.close(); this.offline(); }
 }

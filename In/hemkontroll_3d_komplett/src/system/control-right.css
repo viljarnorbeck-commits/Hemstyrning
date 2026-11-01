@@ -21,3 +21,20 @@
 
 /* Overflow must start at a reachable heading, including WebViews without safe alignment. */
 .reference-right .device-stage-content{justify-content:flex-start;justify-content:safe center}
+
+/* Vacuum details use their own compact controls, without location/3D fields. */
+#control-details .vacuum-detail{display:flex;flex-direction:column;gap:12px;min-width:0;width:100%}
+#control-details .vacuum-summary{display:flex;flex-wrap:wrap;gap:10px 24px}
+#control-details .vacuum-summary>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+#control-details .vacuum-summary small,#control-details .vacuum-fan label{font-size:12px;color:var(--text-muted)}
+#control-details .vacuum-summary strong{font-size:20px;font-variant-numeric:tabular-nums}
+#control-details .vacuum-summary span{font-size:12px;font-variant-numeric:tabular-nums}
+#control-details .vacuum-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#control-details .vacuum-controls button{min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 10px;font-size:13px;white-space:normal;line-height:1.25}
+#control-details .vacuum-controls button svg{width:20px;height:20px;flex-shrink:0}
+#control-details .vacuum-controls button[data-action=vacuum_start]{border-color:#efa93470;background:#efa93412}
+#control-details .vacuum-fan{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+#control-details .vacuum-fan select{flex:1;min-width:100px;min-height:44px;color:var(--text-primary);background:#292d33;border:1px solid #ffffff26;border-radius:10px;padding:8px;font:inherit}
+#control-details .vacuum-fan button{min-height:44px;font-size:13px}
+.reference-right .device-visual>.vacuum-illustration{width:min(90%,270px);height:auto;max-height:270px}
+@media(max-width:1000px){#control-details .vacuum-controls{grid-template-columns:repeat(2,minmax(0,1fr))}#control-details .vacuum-detail{gap:9px}}

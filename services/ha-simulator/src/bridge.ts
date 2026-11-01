@@ -153,16 +153,18 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
   router.post('/commands',async(req,res)=>{
     if(req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
     const scene=await load(),object=scene.objects.find(o=>o.id===req.body.object_id);if(!object){res.sendStatus(403);return;}
-    const actions:Record<string,[string,string,string]>={climate_on:['car','climate','turn_on'],climate_off:['car','climate','turn_off'],charge_on:['car','switch','turn_on'],charge_off:['car','switch','turn_off'],mower_start:['mower','lawn_mower','start_mowing'],mower_pause:['mower','lawn_mower','pause'],mower_dock:['mower','lawn_mower','dock'],vacuum_start:['vacuum','vacuum','start'],vacuum_pause:['vacuum','vacuum','pause'],vacuum_dock:['vacuum','vacuum','return_to_base'],device_on:['device','switch','turn_on'],device_off:['device','switch','turn_off']};
+    const actions:Record<string,[string,string,string]>={climate_on:['car','climate','turn_on'],climate_off:['car','climate','turn_off'],charge_on:['car','switch','turn_on'],charge_off:['car','switch','turn_off'],mower_start:['mower','lawn_mower','start_mowing'],mower_pause:['mower','lawn_mower','pause'],mower_dock:['mower','lawn_mower','dock'],vacuum_start:['vacuum','vacuum','start'],vacuum_pause:['vacuum','vacuum','pause'],vacuum_dock:['vacuum','vacuum','return_to_base'],vacuum_stop:['vacuum','vacuum','stop'],vacuum_locate:['vacuum','vacuum','locate'],vacuum_spot:['vacuum','vacuum','clean_spot'],vacuum_fan:['vacuum','vacuum','set_fan_speed'],device_on:['device','switch','turn_on'],device_off:['device','switch','turn_off']};
     const action=actions[String(req.body.action)];if(!action||object.type!==action[0]){res.sendStatus(403);return;}
     const [kind,domain,service]=action;let entity=object.entityId;
     if(kind==='car'){const binding=domain==='climate'?'climate':'charging',attrs=store.get(object.entityId)?.attributes.command_entities as Record<string,string>|undefined;entity=object.bindings[binding]??(!live?attrs?.[binding]:'')??'';}
     if(!entity.startsWith(domain+'.')){res.sendStatus(403);return;}
     const target=(await read('states') as {entity_id:string;state:string;attributes:Record<string,unknown>}[]).find(s=>s.entity_id===entity);
     if(!available(target)||(!['car','device'].includes(kind)&&!robotSupports(target,String(req.body.action)))){res.status(400).json({message:'Enheten är otillgänglig eller saknar stöd'});return;}
+    const payload:{entity_id:string;fan_speed?:string}={entity_id:entity};
+    if(service==='set_fan_speed'){const value=req.body.value,speeds=target?.attributes.fan_speed_list;if(typeof value!=='string'||!Array.isArray(speeds)||!speeds.includes(value)){res.status(400).json({message:'Välj ett sugläge som dammsugaren stöder'});return;}payload.fan_speed=value;}
     if(kind==='car'&&domain==='climate'&&(Number(target?.attributes.supported_features??0)&(service==='turn_on'?256:128))===0){res.status(400).json({message:'Klimatentiteten saknar stöd'});return;}
-    if(live){const response=await fetch(`${live.url}/api/services/${domain}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify({entity_id:entity}),signal:AbortSignal.timeout(10000)});if(!response.ok){res.sendStatus(502);return;}}
-    else await callService(store,{domain,service,serviceData:{entity_id:entity}},delay);
+    if(live){const response=await fetch(`${live.url}/api/services/${domain}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});if(!response.ok){res.sendStatus(502);return;}}
+    else await callService(store,{domain,service,serviceData:payload},delay);
     res.json({accepted:true});
   });
   router.get('/states', async (_req, res) => res.json(await read('states')));

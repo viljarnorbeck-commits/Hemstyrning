@@ -30,11 +30,12 @@ export async function callService(store:StateStore,call:ServiceCall,delayMs:numb
   }
   return;
  }
- const allowed:Record<string,string[]>={light:['turn_on','turn_off','toggle'],climate:['turn_on','turn_off'],switch:['turn_on','turn_off'],lawn_mower:['start_mowing','pause','dock'],vacuum:['start','pause','return_to_base']};
+ const allowed:Record<string,string[]>={light:['turn_on','turn_off','toggle'],climate:['turn_on','turn_off'],switch:['turn_on','turn_off'],lawn_mower:['start_mowing','pause','dock'],vacuum:['start','pause','return_to_base','stop','locate','clean_spot','set_fan_speed']};
  if(!allowed[domain]?.includes(service))throw new ServiceError(`Unsupported service ${domain}.${service}`);
  const expand=(id:string,seen=new Set<string>()):string[]=>{if(seen.has(id))throw new ServiceError('Cyclic light group');seen.add(id);const members=store.get(id)?.attributes.entity_id;return domain==='light'&&Array.isArray(members)?members.flatMap(member=>expand(String(member),new Set(seen))):[id];};
  const targets=[...new Set(ids.flatMap(id=>expand(id)))];
  for(const id of targets){const s=store.get(id);if(!s)throw new ServiceError(`Entity not found: ${id}`,404);if(!id.startsWith(domain+'.'))throw new ServiceError(`${id} is not a ${domain}`);if(['unknown','unavailable'].includes(s.state))throw new ServiceError(`${id} is unavailable`,503);}
+ if(domain==='vacuum'&&service==='set_fan_speed'){const speed=call.serviceData.fan_speed;for(const id of targets){const speeds=store.get(id)!.attributes.fan_speed_list;if(typeof speed!=='string'||!Array.isArray(speeds)||!speeds.includes(speed))throw new ServiceError('Unsupported fan speed');}}
  const brightness=call.serviceData.brightness;if(brightness!==undefined&&(!Number.isFinite(brightness)||Number(brightness)<0||Number(brightness)>255))throw new ServiceError('brightness must be 0–255');
  const kelvin=call.serviceData.color_temp_kelvin;if(kelvin!==undefined&&(!Number.isFinite(kelvin)||Number(kelvin)<1000||Number(kelvin)>12000))throw new ServiceError('Invalid color temperature');
  const rgb=call.serviceData.rgb_color;if(rgb!==undefined&&(!Array.isArray(rgb)||rgb.length!==3||!rgb.every(c=>Number.isFinite(c)&&c>=0&&c<=255)))throw new ServiceError('Invalid RGB color');
@@ -46,6 +47,10 @@ export async function callService(store:StateStore,call:ServiceCall,delayMs:numb
   }else if(domain==='climate')store.set(id,service==='turn_on'?'heat':'off',{},'simulator-user');
   else if(domain==='switch')store.set(id,service==='turn_on'?'on':'off',{},'simulator-user');
   else if(domain==='lawn_mower')store.set(id,service==='start_mowing'?'mowing':service==='pause'?'paused':'returning',{},'simulator-user');
+  else if(domain==='vacuum'&&service==='locate')store.set(id,current.state,{last_locate_at:new Date().toISOString()},'simulator-user');
+  else if(domain==='vacuum'&&service==='set_fan_speed')store.set(id,current.state,{fan_speed:call.serviceData.fan_speed},'simulator-user');
+  else if(domain==='vacuum'&&service==='stop')store.set(id,'idle',{},'simulator-user');
+  else if(domain==='vacuum'&&service==='clean_spot')store.set(id,'cleaning',{task:'Punktstädning'},'simulator-user');
   else store.set(id,service==='start'?'cleaning':service==='pause'?'paused':'returning',service==='start'&&Number(current.attributes.progress??0)>=100?{progress:0}:{},'simulator-user');
  }
  for(const group of store.all().filter(s=>s.entity_id.startsWith('light.')&&Array.isArray(s.attributes.entity_id))){const members=(group.attributes.entity_id as string[]).map(id=>store.get(id));store.set(group.entity_id,members.some(s=>s?.state==='on')?'on':members.every(s=>s?.state==='off')?'off':'unavailable');}

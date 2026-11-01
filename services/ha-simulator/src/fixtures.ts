@@ -90,7 +90,8 @@ export function createInitialStates(): HassState[] {
     state("vacuum.downstairs", "docked", {
       friendly_name: "Nedervåning",
       battery_level: 100,
-      supported_features: 8192|4|16,
+      supported_features: 8192|4|16|8|32|512|1024,
+      fan_speed_list:["Silent","Standard","Medium","Turbo","Gentle","Auto"],fan_speed:"Standard",
     }),
     state("sensor.car_one_battery", "72", {
       friendly_name: "Bil 1 batteri",

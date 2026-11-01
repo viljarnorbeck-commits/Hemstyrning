@@ -157,3 +157,12 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 
 - På användarens begäran tas de två automatiskt tillagda Easee-statuskorten bort från controlDevices. Bilkorten, bilsidans laddboxdata, energikopplingar och HA-entiteter bevaras. Ingen lokal konfiguration eller fysisk enhet ändras.
 - Inga tester, TypeScript-körningar eller byggen enligt den fortsatta testpausen.
+
+## Dammsugarens stora kontrollruta, 1 november
+
+- Läsande HA-inspektion: vacuum.xiaomi_vacuum_cleaner är dockad och rapporterar supported_features=14140 samt suglägen Silent/Standard/Medium/Turbo/Gentle/Auto. Batteriattribut saknas; visa fortsatt Saknar data. Ingen annan vacuum-entitet används som ersättare.
+- Stor kontrollruta har egen robotdammsugarillustration och dammsugarikon i listan. Endast för dammsugaren tas framsteg, GPS och 3D-fokus bort; val av den skickar inte heller kamerafokus. Övriga enheter behåller sina fält/fokus.
+- Visar stödda knappar Städa allt, Pausa, Stoppa, Till laddstation, Punktstäda och Var är jag?, plus val av rapporterat sugläge. Turbo finns, inget påhittat Max-läge. Funktionsbitar följer HA:s officiella vacuum/const.py och aktuell tjänstekatalog.
+- Gemensamma robotSupports och registrerad-object /commands utökas med stop/locate/clean_spot/set_fan_speed. Befintliga serverbehörigheter, HA_ALLOW_CONTROL, sparad objekttyp och aktuellt funktionsstöd krävs; fan_speed kontrolleras mot aktuell fan_speed_list även i backend. Inga generella send_command eller godtyckliga tjänster öppnas.
+- Tillstånd/sugläge bekräftas mot HA-state. Locate saknar tillståndsändring och visar därför endast att HA tagit emot tjänsteanropet. Simulatorns tjänster och fixtur är förberedda för motsvarande funktioner, utan att någon simulator/testkörning utförts.
+- Alla tester, TypeScript, bygge och automatiserade webbläsarprov fortsatt pausade. Endast läsande states/services-anrop och kodgranskning; inga fysiska kommandon skickade. Visuell och fysisk funktion återstår att verifiera senare.
