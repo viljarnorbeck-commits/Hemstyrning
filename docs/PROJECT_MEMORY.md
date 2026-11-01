@@ -416,3 +416,10 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Samma färgstarka lampkort, bekräftade på/av-status, dimmer, verifierade KNX-lampor och befintliga behörigheter används. Klick på lampnamnet startar inte längre något 3D-fokus från /lights. Kontrollpanelens separata layout och funktioner bevaras.
 - Desktop/surfplatta har tre fullhöjdslistor med egna skrollytor. Mobil under 701 px sammanfogar de tre alfabetiska delarna till en fullbred skrollyta utan horisontell skrollning. Gemensam navigation bevaras.
 - Endast källgranskning och diffkontroll. Inga tester, byggen, typkontroller, verkliga HA-kommandon eller push kördes. Visuell webbläsargranskning återstår enligt användarens testpaus. Servrarna lämnas igång.
+
+## Spotify visas endast på Spotify och kontrollpanelen, 1 november
+
+- Användaren vill ha Spotify enbart på /music och /control. HomeControls skapar/monterar inte längre musikspelaren, och musikwidget, hemöversiktens Spotify-sektion samt mobilhemmets musikknapp är borttagna. Kalenderdelen finns kvar.
+- Appens routing återställer inte längre en hemwidget vid återgång till Hem. Alla andra sidor, inklusive /lights, använder suspendMusicView, som stänger spelarens synliga panel/enhetsväljare och tar bort kompaktvyn utan att stoppa ljuduppspelning eller Spotify-sessionen. Spelarens äldre show-ingång tillåter bara de två angivna sidorna.
+- Singleton-spelaren skapas först när kontrollpanelen eller Spotify behöver den. Gamla hemwidgeten monteras inte i DOM och panelen börjar dold. Sidbyten uppdaterar även spelarens aktuella konfigurationsreferens så befintliga Jam-/konto-inställningar kommer från den aktiva sidan. Autentisering, token, Spotify Connect, uppspelning och förinställningarnas valfria Spotify-funktion ändras inte.
+- Endast källgranskning och diffkontroll. Tester, typkontroll, bygge och push fortsatt pausade. Ingen uppspelning eller HA-styrning utfördes; visuell granskning återstår. Servrarna behålls.

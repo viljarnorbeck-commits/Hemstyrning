@@ -1,4 +1,4 @@
-import {restoreHomeMusic,suspendMusicView} from './music-session';
+import {suspendMusicView} from './music-session';
 import {startConnection} from './app-session';
 const routes=['/','/control','/lights','/music','/energy','/cars','/climate','/mower','/security','/settings'];
 type MountedPage={ready:Promise<unknown>;activate():void;dispose():void};
@@ -24,7 +24,7 @@ export async function startShell(){
  if(n!==serial){candidate.dispose();next.remove();return;}
  }
  const first=!current;saveScroll();mounted?.dispose();mounted=undefined;
- if(candidate&&next){outlet.replaceChildren(next);next.hidden=false;mounted=candidate;if(!['/control','/lights','/music'].includes(route))suspendMusicView();candidate.activate();}else{restoreHomeMusic();outlet.replaceChildren();}
+ if(candidate&&next){outlet.replaceChildren(next);next.hidden=false;mounted=candidate;if(!['/control','/music'].includes(route))suspendMusicView();candidate.activate();}else{suspendMusicView();outlet.replaceChildren();}
  document.body.classList.remove('control-mode','control-layout','lights-page','function-mode','settings-page','nav-open');document.querySelector('.nav-mobile')?.setAttribute('aria-expanded','false');
  document.body.classList.toggle('app-feature',route!=='/');document.body.classList.toggle('home-mode',route==='/');
  if(route==='/control'||route==='/lights')document.body.classList.add('control-mode','control-layout',...(route==='/lights'?['lights-page']:[]));else if(route==='/settings')document.body.classList.add('settings-page');else if(route!=='/')document.body.classList.add('control-mode','function-mode');

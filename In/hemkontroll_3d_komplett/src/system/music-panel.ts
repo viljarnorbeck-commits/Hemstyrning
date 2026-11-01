@@ -41,7 +41,7 @@ export class MusicPanel{
   this.speaker.addEventListener('playback',()=>{if(!this.stopped&&Date.now()-this.sdkRefreshAt>5000){this.sdkRefreshAt=Date.now();void this.refresh();}});
   this.root.className='music-widget glass';this.root.setAttribute('aria-label','Spotify – direktanslutning');
   this.dialog.className='music-panel spotify-direct';this.dialog.id='spotify-player';
-  document.body.append(this.root,this.dialog);
+  this.root.hidden=true;this.dialog.hidden=true;document.body.append(this.dialog);
   this.root.addEventListener('click',e=>{
    const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');
    if(!b)return;
@@ -91,12 +91,11 @@ export class MusicPanel{
   void this.refresh();
   this.update();
  }
- private homeHost:ParentNode|null=null;
- setNotify(notify:(text:string)=>void){this.notify=notify;}
+
+ setNotify(notify:(text:string)=>void,config?:Configuration){this.notify=notify;if(config)this.config=config;}
  suspendView(){this.picker.close(false);this.compactMode=false;this.compact.remove();this.root.hidden=true;this.open=false;this.embedded=false;this.dialog.removeAttribute("open");this.dialog.hidden=true;document.body.append(this.dialog);}
- mountHome(){this.picker.close(false);this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.embedded=false;this.open=false;this.root.hidden=false;this.dialog.removeAttribute("open");this.dialog.classList.remove("embedded-music","compact-player");document.body.append(this.dialog);if(this.homeHost)this.homeHost.append(this.root);}
- mountPage(container:HTMLElement){this.picker.close(false);this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.homeHost??=this.root.parentNode;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab=new URLSearchParams(location.search).get('tab')==='devices'?'devices':'search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadDevices();void this.loadPlaylists();void this.loadQueue();}
- mountCompact(container:HTMLElement){this.picker.close(false);this.homeHost??=this.root.parentNode;this.compactMode=true;this.embedded=false;this.open=false;this.root.hidden=true;this.dialog.removeAttribute('open');this.dialog.hidden=true;container.append(this.compact);this.renderCompact();}
+ mountPage(container:HTMLElement){this.picker.close(false);this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab=new URLSearchParams(location.search).get('tab')==='devices'?'devices':'search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadDevices();void this.loadPlaylists();void this.loadQueue();}
+ mountCompact(container:HTMLElement){this.picker.close(false);this.compactMode=true;this.embedded=false;this.open=false;this.root.hidden=true;this.dialog.removeAttribute('open');this.dialog.hidden=true;container.append(this.compact);this.renderCompact();}
  private renderCompact(){
   const p=this.state,output=this.chosenOutput()??this.activeOutput(),t=p.track,src=cover(t?.cover??''),allow=this.setup.connected&&this.setup.canControl&&!this.busy;
   const position=Math.min(t?.durationMs??0,p.progressMs+(p.playing&&this.lastRefresh?Math.min(15000,Math.max(0,Date.now()-this.lastRefresh)):0));
@@ -165,6 +164,7 @@ export class MusicPanel{
   return `<section class="spotify-connect" data-dom-key="spotify-connect"><h3>Spotify Connect-enheter</h3><ul aria-label="Spotify Connect-enheter">${devices.map(d=>{const active=this.activeOutput()?.id===d.id;return `<li><button type="button" data-spotify-device="${esc(d.id)}" aria-pressed="${active}" ${allow&&!d.is_restricted?'':'disabled'}><span aria-hidden="true">${/computer/i.test(d.type)?'▣':/smartphone/i.test(d.type)?'▯':'◉'}</span><span><strong>${esc(d.name)}</strong><small>${esc(d.type)}${d.id===sdkId?' · den här webbläsaren':''}${active?' · Aktiv':d.id===this.chosenDeviceId?' · Vald för nästa låt':''}${d.is_restricted?' · Kan inte styras':''}</small></span><b aria-hidden="true">${active?'✓':'→'}</b></button></li>`;}).join('')}</ul>${!devices.length?'<p>Inga tillgängliga enheter rapporteras av Spotify.</p>':''}<p class="browser-speaker-status" role="status">${esc(this.speaker.message)}</p>${this.speaker.needsGesture?'<button type="button" data-spotify="allow-audio">Tillåt ljud</button>':''}${!this.setup.webPlaybackAuthorized&&this.setup.canControl?`<p>Godkänn webbläsaruppspelning för att lägga till den här fliken. Spotify Premium krävs.</p>${this.setup.canConfigure?'<button type="button" data-spotify="connect">Godkänn webbläsaruppspelning</button>':''}`:''}<button type="button" data-spotify="devices">Uppdatera enhetslista</button></section>`;
  }
  show(){
+  if(!['/control','/music'].includes(location.pathname))return;
   this.open=true;this.onVisibilityChange(true);this.renderDialog();if(!this.dialog.open&&!this.embedded)this.dialog.showModal();
   void this.loadDevices();void this.loadPlaylists();void this.refresh();
  }
