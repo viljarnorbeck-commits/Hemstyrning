@@ -1,4 +1,14 @@
 /* Reference composition, strictly scoped to the control workspace's right side. */
+.reference-right .heater-visual>.motor-heater-car{width:min(94%,310px);height:auto;max-height:290px}
+.reference-right .heater-car-body{fill:#48515c;stroke:#9eabb8;stroke-width:2;transition:fill .35s,stroke .35s,filter .35s}
+.reference-right .heater-car-glass{fill:#28333e;stroke:#8794a1;stroke-width:1.5;transition:fill .35s}
+.reference-right .heater-car-lights{fill:#92979c;transition:fill .35s}
+.reference-right .heater-warmth{opacity:0;transition:opacity .35s}
+.reference-right .heater-visual.is-on .heater-car-body{fill:#408bc6;stroke:#b5e4ff;filter:drop-shadow(0 0 12px #65bdff42)}
+.reference-right .heater-visual.is-on .heater-car-glass{fill:#85c9e0}
+.reference-right .heater-visual.is-on .heater-car-lights{fill:#ffd183}
+.reference-right .heater-visual.is-on .heater-warmth{opacity:.85}
+@media(prefers-reduced-motion:reduce){.reference-right .heater-car-body,.reference-right .heater-car-glass,.reference-right .heater-car-lights,.reference-right .heater-warmth{transition:none}}
 .control-layout .reference-right{grid-template-rows:minmax(90px,.8fr) minmax(180px,1.8fr) minmax(125px,1fr);gap:14px}
 .reference-right>#control-presets{min-height:0;min-width:0;overflow:hidden}.reference-right .preset-panel{height:100%;padding:0;margin:0;background:none;border:0}.reference-right .preset-panel>.section-heading{display:none}.reference-right .preset-message:empty{display:none}.reference-right .preset-message{font-size:11px;margin:0 0 4px}.reference-right .preset-grid{height:100%;display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x;padding:2px;box-sizing:border-box}.reference-right .preset-card{flex:1 0 120px;max-width:240px;height:100%;min-height:0;padding:10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-radius:18px;border:1px solid #ffffff22;background:radial-gradient(ellipse at 30% 0%,#ffffff25,transparent 70%),linear-gradient(160deg,var(--accent),#24262ce0);box-shadow:inset 0 1px 1px #ffffff1c,0 4px 14px #0002}.reference-right .preset-icon{font-size:26px;line-height:1;color:white}.reference-right .preset-card strong{font-size:clamp(12px,1.4vw,18px);text-align:center;line-height:1.1;color:#fff;margin:0}.reference-right .preset-card .preset-go{min-height:32px;height:32px;padding:5px 10px;width:auto;min-width:48px;color:white;border-color:#ffffff55}.reference-right .preset-card .preset-switch{margin-top:0}.reference-right .preset-card .preset-availability:empty{display:none}
 .reference-right .device-stage,.reference-right .control-music{border:1px solid #ffffff1f;background:linear-gradient(120deg,#ffffff05,#ffffff00),rgba(39,42,48,.9);border-radius:20px;box-shadow:inset 0 1px 1px #ffffff20,0 8px 22px #0002;backdrop-filter:blur(12px);box-sizing:border-box;min-width:0;min-height:0}

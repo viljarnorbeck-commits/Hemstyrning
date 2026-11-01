@@ -49,3 +49,6 @@ body[data-app-route="/control"] #control-search-toggle:focus-visible,body[data-a
 
 /* Complete KNX catalogue shares the existing vertical list. */
 .control-search{box-sizing:border-box;width:100%;min-width:0;min-height:40px;padding:9px 12px;color:var(--text-primary);background:#292d33bb;border:1px solid #ffffff26;border-radius:10px;font:inherit;font-size:13px}.control-knx-status{margin:0;font-size:11px;line-height:1.4;color:var(--text-muted)}
+/* Heater list icons mirror only confirmed on/off state. */
+#control-lights [data-device-group="heaters"] .device-select>span{color:#b3bdc9;transition:color .3s,filter .3s}
+#control-lights [data-device-group="heaters"].heater-active .device-select>span{color:#8ed0ff;filter:drop-shadow(0 0 5px #6abbff66)}
