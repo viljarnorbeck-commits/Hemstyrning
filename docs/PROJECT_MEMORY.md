@@ -180,3 +180,8 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - På användarens begäran tas hela control-toolbar bort: Ansluten, Gemensam visning, Översikt och Avsluta följning. Tillhörande DOM-uppdateringar och CSS tas bort, så raden inte lämnar kvar utrymme. Sidans övre padding minskas till 8 px.
 - Förinställningslistan inklusive Halloween, vänsterlistan, enhetsrutan, Spotify och ScreenLink/config-synk är bevarade. Nödvändiga fel- och behörighetsmeddelanden finns kvar.
 - Inga tester, TypeScript-körningar, byggen eller automatiserade webbläsarprov enligt den fortsatta testpausen.
+
+## Kontrollpanelens lista till nederkanten, 1 november
+
+- Tar bort sidans 16 px nedre padding och listans 10 px extra bottenpadding, så den befintliga flex-/gridlistan kan sträcka sig ända ner. Även det låga liggande lägets nedre 6 px marginal tas bort. Listan behåller safe-area-inset-bottom för enheter med systemfält. Mobilens stående staplade layout bevaras.
+- Endast layoutändring; inga tester, TypeScript-körningar eller byggen enligt användarens testpaus.
