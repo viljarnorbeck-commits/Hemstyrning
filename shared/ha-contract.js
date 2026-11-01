@@ -14,3 +14,12 @@ export function canonicalJamUrl(input){
 export function spotifyShortUrl(input){
  try{const u=new URL(String(input).trim());return u.protocol==='https:'&&u.hostname==='spotify.link'&&!u.username&&!u.password&&!u.port&&!u.hash&&/^\/[A-Za-z0-9]{5,100}$/.test(u.pathname)&&u.href.length<=1000?u.href:null;}catch{return null;}
 }
+
+/** Shared identification of lighting, without treating a general power outlet as a lamp. */
+export function isLightingEntity(entityId,attributes={}){
+ if(entityId.startsWith('light.'))return true;
+ if(!entityId.startsWith('switch.'))return false;
+ const name=(entityId+' '+String(attributes.friendly_name??'')).toLowerCase();
+ if(/motor|varmare|värmare|ladd|kyl|micro|vatten|matning|konstant|bastu|_nil/.test(name))return false;
+ return attributes.device_class==='light'||/belysning|lampa|lamptuttag|takspot/.test(name)||entityId==='switch.aktorb1_b3_port8_sovrum1_fonster';
+}

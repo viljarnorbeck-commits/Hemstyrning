@@ -1,3 +1,4 @@
+import {isLightingEntity} from '../../../shared/ha-contract.js';
 import type {HassState} from './types.js';
 
 export type EffectStatus={running:boolean;restoring:boolean;remainingSeconds:number;targetCount:number;message:string};
@@ -6,14 +7,7 @@ type Snapshot={id:string;on:boolean;brightness?:number};
 type Run={id:string;snapshots:Snapshot[];ends:number;phase:number;stopping:boolean;pending?:Promise<void>;timer?:ReturnType<typeof setTimeout>;deadline?:ReturnType<typeof setTimeout>;done?:Promise<void>};
 
 /** Only lighting is eligible; never infer that a general KNX power outlet is a lamp. */
-export function halloweenLighting(s:Pick<HassState,'entity_id'|'attributes'>):boolean{
- if(s.entity_id.startsWith('light.'))return true;
- if(!s.entity_id.startsWith('switch.'))return false;
- const name=(s.entity_id+' '+String(s.attributes.friendly_name??'')).toLowerCase();
- if(/motor|varmare|värmare|ladd|kyl|micro|vatten|matning|konstant|bastu|_nil/.test(name))return false;
- return s.attributes.device_class==='light'||/belysning|lampa|lamptuttag|takspot/.test(name)||s.entity_id==='switch.aktorb1_b3_port8_sovrum1_fonster';
-}
-
+export function halloweenLighting(s:Pick<HassState,'entity_id'|'attributes'>):boolean{return isLightingEntity(s.entity_id,s.attributes);}
 /** One bounded, server-owned lighting effect. The browser never schedules physical commands. */
 export class HalloweenEffect{
  private run:Run|undefined;private last=new Map<string,EffectStatus>();
