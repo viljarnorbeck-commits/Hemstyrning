@@ -1,0 +1,517 @@
+From baf8ab20508eda4adb39b4d21e86a589fe23f969 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sun, 1 Nov 2026 20:39:25 +0100
+Subject: [PATCH] Show locally discovered Spotify and Cast receivers in the
+ music app
+
+---
+ .../src/system/music-panel.ts                 |   5 +-
+ .../src/system/spotify-network.css            |   1 +
+ .../src/system/spotify-network.ts             |  57 +++++++
+ docs/PROJECT_MEMORY.md                        |   5 +
+ docs/SPOTIFY_DIRECT.md                        |  31 ++++
+ package.json                                  |   1 +
+ scripts/spotify-discovery-requirements.txt    |   1 +
+ scripts/spotify-discovery.py                  | 156 ++++++++++++++++++
+ scripts/test_spotify_discovery.py             |  42 +++++
+ services/ha-simulator/src/spotify-api.ts      |   2 +
+ .../ha-simulator/src/spotify-local.test.ts    |  31 ++++
+ services/ha-simulator/src/spotify-local.ts    |  14 ++
+ tests/spotify-local.spec.ts                   |  16 ++
+ 13 files changed, 361 insertions(+), 1 deletion(-)
+ create mode 100644 In/hemkontroll_3d_komplett/src/system/spotify-network.css
+ create mode 100644 In/hemkontroll_3d_komplett/src/system/spotify-network.ts
+ create mode 100644 scripts/spotify-discovery-requirements.txt
+ create mode 100644 scripts/spotify-discovery.py
+ create mode 100644 scripts/test_spotify_discovery.py
+ create mode 100644 services/ha-simulator/src/spotify-local.test.ts
+ create mode 100644 services/ha-simulator/src/spotify-local.ts
+ create mode 100644 tests/spotify-local.spec.ts
+
+diff --git a/In/hemkontroll_3d_komplett/src/system/music-panel.ts b/In/hemkontroll_3d_komplett/src/system/music-panel.ts
+index cd74294..c4c997b 100644
+--- a/In/hemkontroll_3d_komplett/src/system/music-panel.ts
++++ b/In/hemkontroll_3d_komplett/src/system/music-panel.ts
+@@ -1,3 +1,4 @@
++import {SpotifyNetwork} from './spotify-network';
+ import {libraryRows,type SpotifyItem,type CatalogResult,type BrowseResult} from './spotify-library';
+ import{connectDevices}from'./spotify-connect';
+ import {SpotifyDevicePicker,type ConnectDevice} from './spotify-device-picker';
+@@ -25,6 +26,7 @@ function cover(url:string){try{const u=new URL(url);return u.protocol==='https:'
+ const blank:Player={connected:false,playing:false,track:null,progressMs:0,device:null};
+ export class MusicPanel{
+  readonly root=document.createElement('aside');
++ private network=new SpotifyNetwork();
+  private compact=document.createElement('section');private compactMode=false;
+  private picker=new SpotifyDevicePicker(id=>this.chooseDevice(id),()=>this.loadDevices(true));
+  private progressTimer:ReturnType<typeof setInterval>;private deviceError='';
+@@ -201,6 +203,7 @@ export class MusicPanel{
+   <section class="music-devices" data-dom-key="music-devices" ${panel('devices')}>${this.deviceList(allow)}${this.deviceError?`<p role="status">${esc(this.deviceError)}</p>`:''}${connected&&this.setup.webPlaybackAuthorized&&!this.speaker.deviceId?'<button type="button" data-spotify="browser-retry">Återanslut den här webbläsaren</button>':''}</section>
+   <section class="jam-section" data-dom-key="jam-section" ${panel('jam')}><h3>Lyssna tillsammans</h3><p>Starta en Jam i Spotify och dela inbjudan här.</p>${preset?'<button type="button" data-spotify="jam">Visa Jam QR-kod</button>':'<p>Ingen Jam-inbjudan sparad ännu.</p>'}${this.qr?`<figure class="jam-qr"><img src="${this.qr}" alt="${esc(this.qrLabel)}"><figcaption>${esc(this.qrLabel)}</figcaption></figure>`:''}<details class="music-settings" data-dom-key="music-settings"><summary>Jam-länk och konto</summary>${this.setup.canConfigure?`<label for="jam-url">Jam-inbjudningslänk</label><input id="jam-url" type="url" placeholder="https://open.spotify.com/socialsession/…" value="${esc(preset)}"><div class="music-settings-actions"><button type="button" data-spotify="save-jam">Spara länk</button><button type="button" data-spotify="remove-jam" ${preset?'':'disabled'}>Ta bort länk</button>${this.setup.configured?'<button type="button" data-spotify="connect">Förnya inloggning</button>':''}${connected?'<button type="button" data-spotify="disconnect">Koppla bort konto</button>':''}</div>`:'<p>En administratör kan ändra konto och Jam-länk.</p>'}</details></section></div>`);
+   const settings=this.dialog.querySelector<HTMLDetailsElement>('.music-settings');if(settings)settings.open=settingsOpen;
++  this.dialog.querySelector('.music-devices')?.append(this.network.root);
+   this.picker.update(this.connectDevices(),this.activeOutput()?.id??null,allow,this.deviceLoading,this.deviceError||(!connected?this.setup.message:!this.speaker.deviceId?this.speaker.message:''),this.chosenOutput()?.id??null);
+  }
+ 
+@@ -245,5 +248,5 @@ export class MusicPanel{
+   this.qr=await QRCode.toDataURL(url,{width:360,margin:4,errorCorrectionLevel:'M',color:{dark:'#071710',light:'#ffffff'}});
+   this.qrLabel='Öppna Spotify Jam · aktuell session kan inte verifieras';this.renderDialog();
+  }
+- dispose(){this.picker.dispose();clearInterval(this.progressTimer);this.compact.remove();this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
++ dispose(){this.network.dispose();this.picker.dispose();clearInterval(this.progressTimer);this.compact.remove();this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
+ }
+diff --git a/In/hemkontroll_3d_komplett/src/system/spotify-network.css b/In/hemkontroll_3d_komplett/src/system/spotify-network.css
+new file mode 100644
+index 0000000..ae0ed12
+--- /dev/null
++++ b/In/hemkontroll_3d_komplett/src/system/spotify-network.css
+@@ -0,0 +1 @@
++.spotify-network{margin-top:20px;border-top:1px solid #ffffff26;padding-top:12px}.spotify-network h3{font-size:1.05rem}.spotify-network>div{display:grid;gap:8px;max-height:340px;overflow:auto}.spotify-network .network-receiver{display:grid;gap:4px;padding:10px 12px;border:1px solid #ffffff24;border-radius:10px;background:#ffffff08}.spotify-network .network-receiver small,.spotify-network .network-receiver span,.spotify-network .network-note{font-size:.8rem;opacity:.8;overflow-wrap:anywhere}.spotify-network button{margin-bottom:10px}
+diff --git a/In/hemkontroll_3d_komplett/src/system/spotify-network.ts b/In/hemkontroll_3d_komplett/src/system/spotify-network.ts
+new file mode 100644
+index 0000000..9bf7f7f
+--- /dev/null
++++ b/In/hemkontroll_3d_komplett/src/system/spotify-network.ts
+@@ -0,0 +1,57 @@
++import './spotify-network.css';
++
++export interface NetworkReceiver {id:string;name:string;model:string;protocol:string;announced:boolean;lastSeen:number}
++export function networkReceivers(value:unknown):NetworkReceiver[]{
++ const rows=(value as {devices?:unknown})?.devices;
++ if(!Array.isArray(rows))throw new Error('Ogiltigt svar från lokal upptäckt');
++ return rows.slice(0,200).filter((r):r is NetworkReceiver=>!!r&&typeof r==='object'&&
++  typeof r.id==='string'&&typeof r.name==='string'&&typeof r.protocol==='string'&&
++  typeof r.model==='string'&&typeof r.announced==='boolean'&&typeof r.lastSeen==='number');
++}
++
++/** Independent of HA state and Spotify playback. Keeps the same DOM across panel updates. */
++export class SpotifyNetwork extends EventTarget{
++ readonly root=document.createElement('section');
++ private status=document.createElement('p');private list=document.createElement('div');
++ private refresh=document.createElement('button');private controller?:AbortController;
++ private timer?:ReturnType<typeof setTimeout>;private disposed=false;
++ count=0;
++ constructor(){super();this.root.className='spotify-network';this.root.setAttribute('aria-label','Spotify-enheter på nätverket');
++  const title=document.createElement('h3');title.textContent='Enheter på nätverket · även utan uppspelning';
++  this.status.setAttribute('role','status');this.refresh.textContent='Sök på nätverket';
++  const note=document.createElement('p');note.className='network-note';note.textContent='Lokal upptäckt startar ingen musik. En nätverksannons bekräftar inte uppspelningsstatus. Mottagare som saknas i Spotifys lista kan ännu inte väljas här.';
++  this.root.append(title,this.status,this.refresh,this.list,note);this.refresh.onclick=()=>void this.update();
++  void this.update();
++ }
++ async update(){
++  if(this.disposed||this.controller)return;clearTimeout(this.timer);this.refresh.disabled=true;
++  this.controller=new AbortController();const timeout=setTimeout(()=>this.controller?.abort(),5000);
++  try{
++   // The loopback helper is available on this computer. Remote/mobile deployments
++   // use the same-origin backend route, never the phone's own loopback address.
++
++   const url='/spotify-api/local-devices';
++   const response=await fetch(url,{cache:'no-store',signal:this.controller.signal});
++   if(!response.ok)throw new Error('Lokal upptäckt är inte tillgänglig');
++   const data=await response.json();if(data.available!==true)throw new Error('Discovery offline');const rows=networkReceivers(data);if(this.disposed)return;
++   this.list.replaceChildren();
++   for(const device of rows){const row=document.createElement('article');row.className='network-receiver';
++    const name=document.createElement('strong');name.textContent=device.name;
++    const detail=document.createElement('small');detail.textContent=`${device.protocol}${device.model?' · '+device.model:''}`;
++    const state=document.createElement('span');state.textContent=device.announced?'Annonserar på nätverket':'Tidigare upptäckt · tillgänglighet obekräftad';
++    row.append(name,detail,state);this.list.append(row);
++   }
++   this.count=rows.filter(r=>r.announced).length;
++   this.status.textContent=rows.length?'Lokalt upptäckta mottagare. Ingen uppspelning krävs.':'Inga nätverksannonser hittades. Sovande eller avstängda mottagare kan vara osynliga.';
++   this.dispatchEvent(new Event('change'));
++  }catch{
++   if(this.disposed)return;this.count=0;this.status.textContent='Lokal upptäckt är frånkopplad. Eventuella rader nedan är tidigare resultat, inte bekräftat tillgängliga.';
++   this.list.querySelectorAll('article span').forEach(row=>row.textContent='Tidigare upptäckt · tillgänglighet obekräftad');
++   this.dispatchEvent(new Event('change'));
++  }finally{clearTimeout(timeout);this.controller=undefined;this.refresh.disabled=false;
++   if(!this.disposed)this.timer=setTimeout(()=>{if(!document.hidden)void this.update();else this.schedule();},10000);
++  }
++ }
++ private schedule(){if(!this.disposed)this.timer=setTimeout(()=>{if(!document.hidden)void this.update();else this.schedule();},10000);}
++ dispose(){this.disposed=true;clearTimeout(this.timer);this.controller?.abort();this.root.remove();}
++}
+diff --git a/docs/PROJECT_MEMORY.md b/docs/PROJECT_MEMORY.md
+index fc093c3..4b89368 100644
+--- a/docs/PROJECT_MEMORY.md
++++ b/docs/PROJECT_MEMORY.md
+@@ -2,6 +2,11 @@
+ 
+ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; äldre installationsspecifika mätningar och miljöuppgifter ska hållas i lokal inventering, inte i denna publicerade utvecklingsöversikt.
+ 
++## Lokala Spotify-/Cast-mottagare – 2026-11-01
++
++- Musikvyns Enheter-flik visar nu även läsande mDNS-upptäckt av Spotify Connect och Google Cast utan uppspelning. Samma komponent finns i musikpanelen. Namn/protokoll/tillgänglighetskälla visas; nätverksupptäckt är separat från styrbara Spotify-API-enheter och kan ännu inte väcka/aktivera mottagare.
++- Windows-hjälpare med låst Zeroconf-version skriver atomisk ignorerad snapshot. Backend rollskyddar `/spotify-api/local-devices`, filtrerar fält och förkastar snapshot äldre än30s. Klienter använder appens eget API, även på mobilen. Se `docs/SPOTIFY_DIRECT.md` för start och drift. Inga konto-/HA-inställningar ändrade och inga verkliga uppspelningskommandon skickade under verifiering.
++
+ ## Körning och säkerhet
+ 
+ - Windows/PowerShell, Node och projektets npm-skript används. Om global npm saknas finns den lokala utvecklingswrappen i ignorerade `.build-tools`; lägg den katalogen i PATH.
+diff --git a/docs/SPOTIFY_DIRECT.md b/docs/SPOTIFY_DIRECT.md
+index 10a3199..aea408f 100644
+--- a/docs/SPOTIFY_DIRECT.md
++++ b/docs/SPOTIFY_DIRECT.md
+@@ -1,5 +1,36 @@
+ # Direkt Spotify i Hemstyrning (utan Home Assistant)
+ 
++## Lokal upptäckt av mottagare utan uppspelning
++
++Under **Spotify → Enheter** visas även mottagare som annonserar Spotify Connect
++eller Google Cast på serverdatorns nätverk, även när de saknas i konto-API:t.
++Detta startar ingen uppspelning och kräver ingen ny Spotify-inloggning.
++En nätverksannons är inte ett bevis på uppspelningsstatus eller Spotify-styrbarhet.
++Enheter som bara upptäckts lokalt kan ännu inte väljas/väckas från listan.
++Protokollen visas separat; namn används inte som automatisk enhetsidentifiering.
++
++Windows-hjälparen körs separat från appens backend:
++
++```powershell
++python -m pip install -r scripts/spotify-discovery-requirements.txt
++npm run dev:spotify-discovery
++```
++
++Hjälparen använder mDNS och läsande getInfo från annonserade privata IP-adresser,
++utan proxy/redirects, kontoregistrering eller uppspelningskommandon. Den skriver
++en atomisk namnsnapshot var femte sekund till ignorerade
++`data/spotify-local-devices.json`. Backend lämnar endast tillåtna visningsfält
++via rollskyddad GET `/spotify-api/local-devices`, aldrig IP-adresser eller token.
++En snapshot äldre än 30 sekunder förkastas. UI märker kvarvarande rader som
++obekräftade om tjänsten försvinner. Enheter som aldrig annonserar kan inte garanteras
++upptäckt. Inställningarna för Spotify-kontot och Home Assistant ändras inte.
++
++Mobilklienter använder samma origin/API som appen, aldrig telefonens loopback.
++En separat omvänd proxy behöver tillåta exakt denna GET-väg. Den lokala
++wifi-proxyn har uppdaterats med denna enda nya läsväg; dess övriga skydd bevaras.
++För specialinstallation med HA_DATA_DIRECTORY: ange samma katalog i hjälparens
++`--output`-argument. Hjälparen måste vara igång på serverdatorn för lokal upptäckt.
++
+ Hemstyrning använder nu **Spotifys officiella Web API direkt från sin egen backend**.
+ Home Assistant behövs fortfarande för husets enheter men **inte** för musik.
+ Webbgränssnitt, Windows/iOS/Android-klienter och Google TV delar samma centrala
+diff --git a/package.json b/package.json
+index daed89f..e4d6da9 100644
+--- a/package.json
++++ b/package.json
+@@ -10,6 +10,7 @@
+   "scripts": {
+     "dev": "concurrently --kill-others --names HA,APP --prefix-colors yellow,cyan \"npm:dev:simulator\" \"npm:dev:dashboard\"",
+     "dev:dashboard": "npm run dev --workspace @hemkontroll/dashboard",
++    "dev:spotify-discovery": "python scripts/spotify-discovery.py --output data/spotify-local-devices.json",
+     "dev:simulator": "npm run dev --workspace @hemkontroll/ha-simulator",
+     "start:simulator": "npm run start --workspace @hemkontroll/ha-simulator",
+     "test": "npm run test --workspaces --if-present",
+diff --git a/scripts/spotify-discovery-requirements.txt b/scripts/spotify-discovery-requirements.txt
+new file mode 100644
+index 0000000..65ab575
+--- /dev/null
++++ b/scripts/spotify-discovery-requirements.txt
+@@ -0,0 +1 @@
++zeroconf==0.153.0
+diff --git a/scripts/spotify-discovery.py b/scripts/spotify-discovery.py
+new file mode 100644
+index 0000000..92a1ffe
+--- /dev/null
++++ b/scripts/spotify-discovery.py
+@@ -0,0 +1,156 @@
++"""Read-only mDNS discovery. Never launches a receiver or starts playback."""
++import argparse
++import hashlib
++import json
++import threading
++import time
++import os
++from pathlib import Path
++import ipaddress
++from concurrent.futures import ThreadPoolExecutor
++from urllib.parse import urlencode
++from urllib.request import Request, ProxyHandler, HTTPRedirectHandler, build_opener
++from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
++from zeroconf import IPVersion, ServiceBrowser, ServiceListener, Zeroconf
++
++TYPES = ['_spotify-connect._tcp.local.', '_googlecast._tcp.local.']
++
++
++class Devices(ServiceListener):
++    def __init__(self):
++        self.lock = threading.Lock()
++        self.rows = {}
++        self.probes = ThreadPoolExecutor(max_workers=4)
++
++    def add_service(self, zc, type_, name):
++        info = zc.get_service_info(type_, name, timeout=2000)
++        if info is None:
++            return
++        props = info.decoded_properties
++        with self.lock:
++            self.rows[name] = {
++                'id': hashlib.sha256(name.encode()).hexdigest()[:24],
++                'name': props.get('fn') or name.removesuffix('.' + type_),
++                'model': props.get('md', ''),
++                'protocol': 'Google Cast' if type_ == TYPES[1] else 'Spotify Connect',
++                'announced': True,
++                'lastSeen': time.time(),
++            }
++        if type_ == TYPES[0]:
++            self.probes.submit(self.friendly_name, info, name)
++
++    def friendly_name(self, info, name):
++        # Only read getInfo from an advertised RFC1918 receiver, without redirects,
++        # proxies, credentials, account association, or playback commands.
++        addresses = info.parsed_addresses()
++        address = next((a for a in addresses if any(ipaddress.ip_address(a) in ipaddress.ip_network(n)
++                        for n in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'))), None)
++        path = info.decoded_properties.get('CPath', '/')
++        if not address or not path.startswith('/') or any(c in path for c in ('?', '#', '\r', '\n')):
++            return
++        class NoRedirect(HTTPRedirectHandler):
++            def redirect_request(self, *_args, **_kwargs):
++                return None
++        try:
++            opener = build_opener(ProxyHandler({}), NoRedirect())
++            url = f'http://{address}:{info.port}{path}?' + urlencode({'action': 'getInfo'})
++            with opener.open(Request(url), timeout=2) as response:
++                data = json.loads(response.read(16385))
++            label = data.get('remoteName')
++            if isinstance(label, str) and 0 < len(label) <= 200:
++                with self.lock:
++                    if name in self.rows:
++                        self.rows[name]['name'] = label
++        except (OSError, ValueError):
++            pass
++
++    def update_service(self, zc, type_, name):
++        self.add_service(zc, type_, name)
++
++    def remove_service(self, zc, type_, name):
++        with self.lock:
++            if name in self.rows:
++                self.rows[name]['announced'] = False
++
++    def snapshot(self):
++        with self.lock:
++            return {'devices': sorted((dict(r) for r in self.rows.values()), key=lambda r: r['name'].casefold()),
++                    'source': 'mdns', 'readOnly': True}
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument('--port', type=int, default=8766)
++    parser.add_argument('--scan', action='store_true')
++    parser.add_argument('--output', help='Private JSON snapshot for the WSL app backend')
++    args = parser.parse_args()
++    devices = Devices()
++    zc = Zeroconf(ip_version=IPVersion.V4Only)
++    browser = ServiceBrowser(zc, TYPES, devices)
++    stop_writer = threading.Event()
++    writer = None
++    if args.output:
++        output = Path(args.output)
++        def publish():
++            while not stop_writer.is_set():
++                try:
++                    payload = {**devices.snapshot(), 'observedAt': time.time() * 1000}
++                    output.parent.mkdir(parents=True, exist_ok=True)
++                    temporary = output.with_suffix('.tmp')
++                    with temporary.open('w', encoding='utf-8') as stream:
++                        json.dump(payload, stream, ensure_ascii=False)
++                    os.replace(temporary, output)
++                except OSError:
++                    print('Local discovery snapshot could not be written.', flush=True)
++                stop_writer.wait(5)
++        writer = threading.Thread(target=publish, daemon=True)
++        writer.start()
++
++    class Handler(BaseHTTPRequestHandler):
++        def do_GET(self):
++            if self.headers.get('Host') not in (f'127.0.0.1:{args.port}', f'localhost:{args.port}'):
++                self.send_error(403)
++                return
++            origin = self.headers.get('Origin')
++            if origin and origin not in ('http://127.0.0.1:8765', 'http://localhost:8765',
++                                         'http://127.0.0.1:5173', 'http://localhost:5173'):
++                self.send_error(403)
++                return
++            if self.path != '/devices':
++                self.send_error(404)
++                return
++            body = json.dumps(devices.snapshot(), ensure_ascii=False).encode()
++            self.send_response(200)
++            if origin:
++                self.send_header('Access-Control-Allow-Origin', origin)
++                self.send_header('Vary', 'Origin')
++            self.send_header('Content-Type', 'application/json; charset=utf-8')
++            self.send_header('Cache-Control', 'no-store')
++            self.send_header('Content-Length', str(len(body)))
++            self.end_headers()
++            self.wfile.write(body)
++
++        def log_message(self, *_):
++            pass
++
++    try:
++        if args.scan:
++            time.sleep(8)
++            print(json.dumps(devices.snapshot(), ensure_ascii=False))
++        else:
++            server = ThreadingHTTPServer(('127.0.0.1', args.port), Handler)
++            try:
++                server.serve_forever()
++            finally:
++                server.server_close()
++    finally:
++        stop_writer.set()
++        if writer:
++            writer.join(timeout=3)
++        browser.cancel()
++        devices.probes.shutdown(wait=False, cancel_futures=True)
++        zc.close()
++
++
++if __name__ == '__main__':
++    main()
+diff --git a/scripts/test_spotify_discovery.py b/scripts/test_spotify_discovery.py
+new file mode 100644
+index 0000000..17a8cb8
+--- /dev/null
++++ b/scripts/test_spotify_discovery.py
+@@ -0,0 +1,42 @@
++"""State regression: absent announcements must not masquerade as available."""
++import importlib.util
++from pathlib import Path
++import unittest
++
++spec = importlib.util.spec_from_file_location('discovery', Path(__file__).with_name('spotify-discovery.py'))
++module = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(module)
++
++
++class DiscoveryTest(unittest.TestCase):
++    def test_idle_receiver_and_removal(self):
++        devices = module.Devices()
++        class Info:
++            decoded_properties = {'fn': 'HT-A9', 'md': 'HT-A9'}
++        class FakeZc:
++            def get_service_info(self, *_args, **_kwargs):
++                return Info()
++        kind = module.TYPES[1]
++        name = 'receiver.' + kind
++        devices.add_service(FakeZc(), kind, name)
++        snapshot = devices.snapshot()
++        self.assertTrue(snapshot['readOnly'])
++        self.assertEqual(snapshot['devices'][0]['name'], 'HT-A9')
++        self.assertTrue(snapshot['devices'][0]['announced'])
++        devices.remove_service(None, kind, name)
++        self.assertFalse(devices.snapshot()['devices'][0]['announced'])
++        self.assertTrue(snapshot['devices'][0]['announced'])
++        devices.probes.shutdown()
++
++    def test_unresolved_advertisement_not_added(self):
++        devices = module.Devices()
++        class FakeZc:
++            def get_service_info(self, *_args, **_kwargs):
++                return None
++        devices.add_service(FakeZc(), module.TYPES[1], 'unresolved')
++        self.assertEqual(devices.snapshot()['devices'], [])
++        devices.probes.shutdown()
++
++
++if __name__ == '__main__':
++    unittest.main()
+diff --git a/services/ha-simulator/src/spotify-api.ts b/services/ha-simulator/src/spotify-api.ts
+index cff7e8c..0715f2b 100644
+--- a/services/ha-simulator/src/spotify-api.ts
++++ b/services/ha-simulator/src/spotify-api.ts
+@@ -1,3 +1,4 @@
++import {localSpotifyDevices} from './spotify-local.js';
+ import {spotifyCatalog,playbackSelection} from './spotify-catalog.js';
+ import {allowedOrigin} from './access.js';
+ import {randomBytes} from 'node:crypto';
+@@ -81,6 +82,7 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
+   if(write&&r==='viewer'){textStatus(res,403,'Denna skärm får inte styra musik.');return false;}
+   return true;
+  }
++ router.get('/local-devices',async(req,res)=>{if(!requireRole(req,res))return;res.set('Cache-Control','no-store, private');res.json(await localSpotifyDevices(directory));});
+  router.get('/status',async(req,res)=>{if(!requireRole(req,res))return;await load();res.json({configured:!!configured(),connected:!!tokens,webPlaybackAuthorized:!!tokens?.scope?.split(' ').includes('streaming'),canControl:role(req)!=='viewer',canConfigure:role(req)==='admin',message:!configured()?'Ange SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET och SPOTIFY_REDIRECT_URI i serverns .env.':!tokens?'Anslut ditt Spotify-konto via musikpanelen.':'Ansluten till Spotify.'});});
+  // The official playback SDK requires a short-lived access token in browser memory.
+  // Client secret and refresh token never leave this server.
+diff --git a/services/ha-simulator/src/spotify-local.test.ts b/services/ha-simulator/src/spotify-local.test.ts
+new file mode 100644
+index 0000000..83852a5
+--- /dev/null
++++ b/services/ha-simulator/src/spotify-local.test.ts
+@@ -0,0 +1,31 @@
++import {it,expect} from 'vitest';
++import {mkdtemp,writeFile,rm} from 'node:fs/promises';
++import {join} from 'node:path';
++import {tmpdir} from 'node:os';
++import {localSpotifyDevices} from './spotify-local.js';
++import express from 'express';
++import {spotifyApi} from './spotify-api.js';
++import type {AddressInfo} from 'node:net';
++it('lists local idle receivers without Spotify credentials, strips extra fields and rejects stale snapshots',async()=>{
++ const dir=await mkdtemp(join(tmpdir(),'spotify-local-'));
++ try{
++  expect((await localSpotifyDevices(dir)).available).toBe(false);
++  const now=Date.now(),file=join(dir,'spotify-local-devices.json');
++  await writeFile(file,JSON.stringify({observedAt:now,devices:[{id:'receiver',name:'HT-A9',model:'HT-A9',protocol:'Google Cast',announced:true,lastSeen:now/1000,token:'must-not-leave-server'}]}));
++  const result=await localSpotifyDevices(dir,now);expect(result.available).toBe(true);expect(result.devices).toHaveLength(1);expect(result.devices[0].name).toBe('HT-A9');expect(JSON.stringify(result)).not.toContain('must-not-leave-server');
++  expect((await localSpotifyDevices(dir,now+31000)).available).toBe(false);
++  await writeFile(file,'broken');expect((await localSpotifyDevices(dir,now)).available).toBe(false);
++ }finally{await rm(dir,{recursive:true,force:true});}
++});
++it('protects local discovery with the existing app role without requiring a Spotify account',async()=>{
++ const dir=await mkdtemp(join(tmpdir(),'spotify-local-role-'));
++ const app=express();app.use('/spotify-api',spotifyApi(dir,req=>req.headers['x-role']==='viewer'?'viewer':undefined));
++ const server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));
++ const url='http://127.0.0.1:'+(server.address() as AddressInfo).port+'/spotify-api/local-devices';
++ try{
++  expect((await fetch(url)).status).toBe(401);
++  const response=await fetch(url,{headers:{'x-role':'viewer'}});
++  expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toContain('no-store');
++  expect(await response.json()).toMatchObject({available:false,devices:[]});
++ }finally{await new Promise<void>(r=>server.close(()=>r()));await rm(dir,{recursive:true,force:true});}
++});
+diff --git a/services/ha-simulator/src/spotify-local.ts b/services/ha-simulator/src/spotify-local.ts
+new file mode 100644
+index 0000000..ad5ff81
+--- /dev/null
++++ b/services/ha-simulator/src/spotify-local.ts
+@@ -0,0 +1,14 @@
++import {readFile} from 'node:fs/promises';
++import {join} from 'node:path';
++
++/** The Windows mDNS helper publishes names only. No tokens, IP addresses or commands. */
++export async function localSpotifyDevices(directory:string,now=Date.now()){
++ try{
++  const text=await readFile(join(directory,'spotify-local-devices.json'),'utf8');
++  if(text.length>200000)throw new Error('Snapshot too large');
++  const raw=JSON.parse(text);
++  if(!Number.isFinite(raw.observedAt)||raw.observedAt>now+5000||now-raw.observedAt>30000||!Array.isArray(raw.devices))throw new Error('Stale snapshot');
++  const devices=raw.devices.slice(0,200).filter((d:any)=>d&&typeof d.id==='string'&&typeof d.name==='string'&&typeof d.model==='string'&&['Google Cast','Spotify Connect'].includes(d.protocol)&&typeof d.announced==='boolean'&&Number.isFinite(d.lastSeen)).map((d:any)=>({id:d.id.slice(0,100),name:d.name.slice(0,200),model:d.model.slice(0,200),protocol:d.protocol,announced:d.announced,lastSeen:d.lastSeen}));
++  return {available:true,devices,observedAt:raw.observedAt};
++ }catch{return {available:false,devices:[],observedAt:null};}
++}
+diff --git a/tests/spotify-local.spec.ts b/tests/spotify-local.spec.ts
+new file mode 100644
+index 0000000..c6e0e39
+--- /dev/null
++++ b/tests/spotify-local.spec.ts
+@@ -0,0 +1,16 @@
++import {test,expect} from '@playwright/test';
++test('network receivers appear in the app without playback or Spotify login, and become unconfirmed after discovery loss',async({page})=>{
++ let available=true;
++ await page.route('**/spotify-api/**',async route=>{
++  const path=new URL(route.request().url()).pathname;
++  if(path==='/spotify-api/local-devices')return route.fulfill({json:{available,devices:[{id:'cast',name:'Idle speaker',model:'Cast',protocol:'Google Cast',announced:true,lastSeen:Date.now()/1000},{id:'previous',name:'Previous speaker',model:'',protocol:'Spotify Connect',announced:false,lastSeen:1}]}});
++  return route.fulfill({json:{configured:false,connected:false,canControl:false,canConfigure:false,message:'Test: no Spotify account'}});
++ });
++ await page.goto('/music');await page.getByRole('tab',{name:'Enheter',exact:true}).click();
++ const network=page.getByRole('region',{name:'Spotify-enheter på nätverket'});
++ await expect(network).toContainText('Idle speaker');await expect(network).toContainText('Annonserar på nätverket');await expect(network).toContainText('Previous speaker');
++ await expect(network).toContainText('Tidigare upptäckt · tillgänglighet obekräftad');
++ available=false;await network.getByRole('button',{name:'Sök på nätverket'}).click();
++ await expect(network).toContainText('Lokal upptäckt är frånkopplad');
++ await expect(network.getByText('Annonserar på nätverket',{exact:true})).toHaveCount(0);
++});
+-- 
+2.53.0.windows.3
+

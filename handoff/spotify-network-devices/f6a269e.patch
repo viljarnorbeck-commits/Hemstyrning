@@ -1,0 +1,260 @@
+From f6a269ee599d3b5ed545ffe2f88e7df8a9aa1057 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sun, 1 Nov 2026 21:03:54 +0100
+Subject: [PATCH] Unify music device chooser and prefer Spotify Connect
+ receivers
+
+---
+ .../src/system/music-panel.ts                 | 14 +++++-----
+ .../src/system/spotify-connect.test.ts        |  7 ++++-
+ .../src/system/spotify-connect.ts             |  9 +++++++
+ .../src/system/spotify-network.ts             |  7 ++---
+ docs/PROJECT_MEMORY.md                        |  4 +++
+ docs/SPOTIFY_DIRECT.md                        | 10 ++++---
+ scripts/spotify-discovery.py                  |  3 +++
+ services/ha-simulator/src/spotify-local.ts    |  1 +
+ tests/spotify-local.spec.ts                   | 26 +++++++++++--------
+ 9 files changed, 55 insertions(+), 26 deletions(-)
+
+diff --git a/In/hemkontroll_3d_komplett/src/system/music-panel.ts b/In/hemkontroll_3d_komplett/src/system/music-panel.ts
+index c4c997b..670bb66 100644
+--- a/In/hemkontroll_3d_komplett/src/system/music-panel.ts
++++ b/In/hemkontroll_3d_komplett/src/system/music-panel.ts
+@@ -1,6 +1,6 @@
+ import {SpotifyNetwork} from './spotify-network';
+ import {libraryRows,type SpotifyItem,type CatalogResult,type BrowseResult} from './spotify-library';
+-import{connectDevices}from'./spotify-connect';
++import{connectDevices,mergeNetworkDevices}from'./spotify-connect';
+ import {SpotifyDevicePicker,type ConnectDevice} from './spotify-device-picker';
+ import{updateMarkup}from'./card-design';
+ import{icon}from'./app-navigation';
+@@ -41,6 +41,7 @@ export class MusicPanel{
+  constructor(_connection:Connection,private config:Configuration,private notify:(message:string)=>void){
+   this.speaker.addEventListener('change',()=>{if(this.stopped)return;if(this.speaker.deviceId&&this.readyDevice!==this.speaker.deviceId){this.readyDevice=this.speaker.deviceId;if(this.open)void this.loadDevices();}this.update();});
+   this.speaker.addEventListener('playback',()=>{if(!this.stopped&&Date.now()-this.sdkRefreshAt>5000){this.sdkRefreshAt=Date.now();void this.refresh();}});
++  this.network.addEventListener('change',()=>{if(!this.stopped)this.update();});
+   this.root.className='music-widget glass';this.root.setAttribute('aria-label','Spotify – direktanslutning');
+   this.dialog.className='music-panel spotify-direct';this.dialog.id='spotify-player';
+   this.root.hidden=true;this.dialog.hidden=true;document.body.append(this.dialog);
+@@ -169,10 +170,10 @@ export class MusicPanel{
+  private async chooseDevice(id:string){
+   if(this.busy||!this.setup.canControl)return;
+   if(!this.connectDevices().some(d=>d.id===id&&!d.is_restricted)){this.report('Enheten är inte längre tillgänglig. Uppdatera enhetslistan.');return;}this.chosenDeviceId=id;
+-  try{if(id===this.speaker.deviceId)await this.speaker.activate();if(!this.state.track&&!this.state.playing){this.commandError=false;this.report('Enheten är vald. Välj en låt eller spellista för att starta uppspelningen här.');this.update();return;}await this.command('transfer',{deviceId:id,play:this.state.playing});}
++  try{if(id===this.speaker.deviceId)await this.speaker.activate();await this.command('transfer',{deviceId:id,play:this.state.playing});}
+   catch(error){this.report(error instanceof Error?error.message:String(error));}
+  }
+- private connectDevices(){return connectDevices(this.devices,this.speaker.deviceId,this.speaker.name,this.speaker.retiredDeviceIds);}
++ private connectDevices(){return connectDevices(mergeNetworkDevices(this.devices,this.network.receivers),this.speaker.deviceId,this.speaker.name,this.speaker.retiredDeviceIds);}
+  private chosenOutput(){return this.connectDevices().find(d=>d.id===this.chosenDeviceId)??null;}
+  private activeOutput(){const device=this.state.device;if(device?.id&&!this.speaker.retiredDeviceIds.has(device.id))return device;const d=this.connectDevices().find(d=>d.is_active);return d?{id:d.id,name:d.name,volume_percent:d.volume_percent}:null;}
+  private deviceList(allow:boolean){
+@@ -196,14 +197,13 @@ export class MusicPanel{
+   updateMarkup(this.dialog,`<header data-dom-key="music-header"><div><small>DIN MUSIK</small><h2>Spotify</h2></div><div class="music-account"><span class="music-connection ${connected?'is-connected':''}">${connected?'Ansluten':esc(this.setup.message)}</span><button type="button" data-spotify="refresh" aria-label="Uppdatera Spotify">↻</button>${this.embedded?'':'<button type="button" data-spotify="close" aria-label="Stäng musik">×</button>'}</div></header>
+   <section class="music-now" data-dom-key="music-now" aria-label="Aktuell uppspelning"><div class="music-artwork">${art?`<img class="large-cover" src="${art}" alt="Albumomslag" referrerpolicy="no-referrer">`:'<div class="large-cover empty-cover" aria-hidden="true">♪</div>'}</div><div class="music-player-copy"><span class="music-eyebrow">${playing?'SPELAR NU':track?'PAUSAD':'REDO FÖR MUSIK'}</span><h3>${esc(track?.name??(connected?'Vad vill du lyssna på?':'Din musik, hemma.'))}</h3><p class="music-artist">${esc(track?.artist??(connected?'Sök efter en låt eller välj en spellista nedan.':this.setup.message))}</p>${track?.album?`<p class="music-album">${esc(track.album)}</p>`:''}<div class="music-buttons compact-transport" data-dom-key="music-buttons">${this.controls()}</div><div class="music-progress" data-dom-key="music-progress"><input data-music-seek type="range" aria-label="Position i låten" min="0" max="${Math.max(1,duration)}" step="1000" value="${position}" ${allow&&track?'':'disabled'}><div class="music-times"><span data-music-elapsed>${trackTime(position/1000)}</span><span>${trackTime(duration/1000)}</span></div></div><div class="music-player-output"><button type="button" class="compact-device-button" data-compact-devices aria-label="Välj uppspelningsenhet" aria-haspopup="menu" aria-controls="${this.picker.id}" aria-expanded="${this.picker.isOpen}"><span aria-hidden="true">◉</span><strong>${esc(output?.name??'Välj uppspelningsenhet')}</strong><span aria-hidden="true">⌄</span></button><label class="music-volume" for="spotify-volume">${icon('volume')}<span class="music-sr-only">Volym</span><input id="spotify-volume" type="range" aria-label="Spotify-volym" min="0" max="100" value="${output?.volume_percent??0}" ${allow&&output?.volume_percent!=null?'':'disabled'}></label></div>${!connected&&this.setup.configured&&this.setup.canConfigure?'<button type="button" data-spotify="connect">Anslut Spotify</button>':''}</div></section>
+   <p id="music-feedback" class="music-feedback" role="status" data-dom-key="music-feedback">${esc(this.feedback||(!connected?this.setup.message:!this.setup.canControl?'Kontot är anslutet utan styrbehörighet.':''))}</p>
+-  <div class="music-library" data-dom-key="music-library"><nav class="music-tabs" role="tablist" aria-label="Musiksektioner">${[['search','Sök'],['playlists','Spellistor'],['queue','Kö'],['devices','Enheter'],['jam','Jam']].map(([id,label])=>`<button type="button" role="tab" id="music-tab-${id}" data-music-tab="${id}" aria-controls="music-section-${id}" aria-selected="${tab===id}" aria-pressed="${tab===id}">${label}</button>`).join('')}</nav>
++  <div class="music-library" data-dom-key="music-library"><nav class="music-tabs" role="tablist" aria-label="Musiksektioner">${[['search','Sök'],['playlists','Spellistor'],['queue','Kö'],['jam','Jam']].map(([id,label])=>`<button type="button" role="tab" id="music-tab-${id}" data-music-tab="${id}" aria-controls="music-section-${id}" aria-selected="${tab===id}" aria-pressed="${tab===id}">${label}</button>`).join('')}</nav>
+   <section class="spotify-browser" data-dom-key="spotify-browser" ${panel('search')} aria-label="Sök i Spotify"><form data-spotify-search><label for="spotify-query" class="music-sr-only">Sök låtar, artister, album och spellistor</label><input id="spotify-query" name="q" type="search" minlength="2" maxlength="100" placeholder="Sök låt, artist, album eller spellista" value="${esc(this.searchTerm)}" ${connected?'':'disabled'}><button type="submit" ${connected&&!this.searching?'':'disabled'}>${this.searching?'Söker…':'Sök musik'}</button></form><div class="music-search-filters" role="group" aria-label="Typ av sökresultat">${[['all','Alla'],['tracks','Låtar'],['artists','Artister'],['albums','Album'],['playlists','Spellistor']].map(([id,name])=>`<button type="button" data-search-kind="${id}" aria-pressed="${this.searchKind===id}">${name}</button>`).join('')}</div>${this.searchError?`<p role="status">${esc(this.searchError)}</p>`:''}${this.browseUri&&this.browseTab==='search'?this.browseMarkup(allow):`<div class="music-search-results" aria-busy="${this.searching}">${([['artists','Artister'],['tracks','Låtar'],['albums','Album'],['playlists','Spellistor']]as const).filter(([key])=>this.searchKind==='all'||this.searchKind===key).map(([key,name])=>this.catalog[key].length?`<section class="music-result-group"><h3>${name}</h3><div class="spotify-hits">${rows(this.catalog[key])}</div></section>`:'').join('')}${this.searched&&!this.searching&&!Object.values(this.catalog).some(items=>items.length)&&!this.searchError?'<p>Inga träffar. Prova ett annat sökord.</p>':''}</div>`}</section>
+   <section class="spotify-browser" data-dom-key="spotify-playlists" ${panel('playlists')} aria-label="Dina spellistor"><div class="music-section-heading"><h3>Dina spellistor</h3><button type="button" data-spotify="playlists" ${connected?'':'disabled'}>Uppdatera</button></div>${this.playlistError?`<p role="status">${esc(this.playlistError)}</p>`:''}${this.browseUri&&this.browseTab==='playlists'?this.browseMarkup(allow):`<div class="spotify-hits music-playlists">${rows(this.playlists)||`<p>${connected?'Dina spellistor visas här när de har hämtats.':'Anslut Spotify för att se dina spellistor.'}</p>`}</div>${this.playlistsNext!==null?`<button type="button" data-playlists-more ${this.playlistsLoading?'disabled':''}>Visa fler spellistor</button>`:''}`}</section>
+   <section class="spotify-queue" data-dom-key="spotify-queue" ${panel('queue')}><div class="music-section-heading"><div><h3>Nästa i kön</h3><p>Musiken som väntar på den aktiva enheten. Uppspelningen fortsätter i valt album eller spellista.</p><p class="music-autoplay-note">Vill du fortsätta med liknande musik efter sista låten? Aktivera Automatisk uppspelning i Spotify. <a class="settings-link" href="https://support.spotify.com/se/article/autoplay/" target="_blank" rel="noopener noreferrer">Visa hur ↗</a></p></div><button type="button" data-spotify="refresh-queue" ${connected?'':'disabled'}>Uppdatera kö</button></div>${this.queueError?`<p role="status">${esc(this.queueError)}</p>`:this.queue.map((t,i)=>`<article data-dom-key="queue-${i}"><span class="music-queue-number">${i+1}</span><div><b>${esc(t.name)}</b><small>${esc(t.artist??'')}</small></div></article>`).join('')||'<p>Kön är tom eller ingen uppspelning är aktiv. Välj en låt för att börja.</p>'}</section>
+-  <section class="music-devices" data-dom-key="music-devices" ${panel('devices')}>${this.deviceList(allow)}${this.deviceError?`<p role="status">${esc(this.deviceError)}</p>`:''}${connected&&this.setup.webPlaybackAuthorized&&!this.speaker.deviceId?'<button type="button" data-spotify="browser-retry">Återanslut den här webbläsaren</button>':''}</section>
+   <section class="jam-section" data-dom-key="jam-section" ${panel('jam')}><h3>Lyssna tillsammans</h3><p>Starta en Jam i Spotify och dela inbjudan här.</p>${preset?'<button type="button" data-spotify="jam">Visa Jam QR-kod</button>':'<p>Ingen Jam-inbjudan sparad ännu.</p>'}${this.qr?`<figure class="jam-qr"><img src="${this.qr}" alt="${esc(this.qrLabel)}"><figcaption>${esc(this.qrLabel)}</figcaption></figure>`:''}<details class="music-settings" data-dom-key="music-settings"><summary>Jam-länk och konto</summary>${this.setup.canConfigure?`<label for="jam-url">Jam-inbjudningslänk</label><input id="jam-url" type="url" placeholder="https://open.spotify.com/socialsession/…" value="${esc(preset)}"><div class="music-settings-actions"><button type="button" data-spotify="save-jam">Spara länk</button><button type="button" data-spotify="remove-jam" ${preset?'':'disabled'}>Ta bort länk</button>${this.setup.configured?'<button type="button" data-spotify="connect">Förnya inloggning</button>':''}${connected?'<button type="button" data-spotify="disconnect">Koppla bort konto</button>':''}</div>`:'<p>En administratör kan ändra konto och Jam-länk.</p>'}</details></section></div>`);
+   const settings=this.dialog.querySelector<HTMLDetailsElement>('.music-settings');if(settings)settings.open=settingsOpen;
+-  this.dialog.querySelector('.music-devices')?.append(this.network.root);
++
+   this.picker.update(this.connectDevices(),this.activeOutput()?.id??null,allow,this.deviceLoading,this.deviceError||(!connected?this.setup.message:!this.speaker.deviceId?this.speaker.message:''),this.chosenOutput()?.id??null);
+  }
+ 
+@@ -229,7 +229,7 @@ export class MusicPanel{
+   }catch(e){
+    const details=(e as {spotifyError?:{upstreamStatus?:number}})?.spotifyError;
+    if(details?.upstreamStatus===404){await this.loadDevices(true);await this.refresh(true);if(this.chosenDeviceId&&!this.chosenOutput())this.chosenDeviceId=null;}
+-   this.commandError=true;this.report(e instanceof Error?e.message:String(e));
++   this.commandError=true;this.report(details?.upstreamStatus===404&&!this.devices.some(d=>d.id===target)?'Mottagaren finns på nätverket men Spotify har inte aktiverat den för kontot. Enhetsbytet är inte bekräftat.':e instanceof Error?e.message:String(e));
+   }finally{this.busy=false;this.update();}
+  }
+ 
+diff --git a/In/hemkontroll_3d_komplett/src/system/spotify-connect.test.ts b/In/hemkontroll_3d_komplett/src/system/spotify-connect.test.ts
+index 700d4b9..c8b3744 100644
+--- a/In/hemkontroll_3d_komplett/src/system/spotify-connect.test.ts
++++ b/In/hemkontroll_3d_komplett/src/system/spotify-connect.test.ts
+@@ -1,4 +1,9 @@
+-import{it,expect}from'vitest';import{connectDevices}from'./spotify-connect';import type{ConnectDevice}from'./spotify-device-picker';
++import{it,expect}from'vitest';import{connectDevices,mergeNetworkDevices}from'./spotify-connect';import type{ConnectDevice}from'./spotify-device-picker';
+ const device=(id:string,is_active=false):ConnectDevice=>({id,name:id,type:'Speaker',is_active,is_restricted:false,supports_volume:true,volume_percent:25});
+ it('merges only an actual ready SDK ID with real provider devices without duplicates or claiming active playback',()=>{const api=[device('speaker',true),device('browser')],result=connectDevices(api,'browser','Hemstyrning',new Set());expect(result).toHaveLength(2);expect(result[1]).toMatchObject({id:'browser',is_local:true,is_active:false});expect(api[1]).not.toHaveProperty('is_local');const early=connectDevices([device('speaker')],'ready-local','Hemstyrning',new Set());expect(early[1]).toMatchObject({id:'ready-local',is_active:false,is_local:true,volume_percent:null});});
+ it('omits failed or retired SDK IDs and never creates a browser row before ready',()=>{expect(connectDevices([device('old'),device('speaker')],'','Hemstyrning',new Set(['old'])).map(d=>d.id)).toEqual(['speaker']);expect(connectDevices([],'','Hemstyrning',new Set())).toEqual([]);expect(connectDevices([],'invalid id','Hemstyrning',new Set())).toEqual([]);});
++it('prefers Connect over a Cast duplicate and uses only a real Spotify receiver ID as a command target',()=>{
++ const base={model:'',announced:true,lastSeen:1};const rows=[{...base,id:'cast',name:'Living room',protocol:'Google Cast'},{...base,id:'connect',name:'Living room',protocol:'Spotify Connect',spotifyId:'real-spotify-id'},{...base,id:'cast-only',name:'Bedroom',protocol:'Google Cast'}];
++ const result=mergeNetworkDevices([],rows);expect(result).toHaveLength(2);expect(result[0]).toMatchObject({id:'real-spotify-id',type:'Spotify Connect',is_restricted:false});expect(result[1].is_restricted).toBe(true);
++ const reported={...device('api-id'),name:'Living room'};expect(mergeNetworkDevices([reported],rows).filter(d=>d.name==='Living room')).toEqual([reported]);
++});
+diff --git a/In/hemkontroll_3d_komplett/src/system/spotify-connect.ts b/In/hemkontroll_3d_komplett/src/system/spotify-connect.ts
+index f21790d..cdddc81 100644
+--- a/In/hemkontroll_3d_komplett/src/system/spotify-connect.ts
++++ b/In/hemkontroll_3d_komplett/src/system/spotify-connect.ts
+@@ -1,4 +1,13 @@
+ import type{ConnectDevice}from'./spotify-device-picker';
++import type{NetworkReceiver}from'./spotify-network';
++export function mergeNetworkDevices(reported:readonly ConnectDevice[],network:readonly NetworkReceiver[]):ConnectDevice[]{
++ const result=reported.map(d=>({...d}));const name=(s:string)=>s.normalize('NFKC').replace(/\s/g,'').toLocaleLowerCase();
++ const preferred=network.filter(d=>d.protocol==='Spotify Connect'||!network.some(other=>other.protocol==='Spotify Connect'&&name(other.name)===name(d.name)));
++ for(const d of preferred){if(result.some(other=>other.id===d.spotifyId||name(other.name)===name(d.name)))continue;
++  const usable=d.announced&&d.protocol==='Spotify Connect'&&!!d.spotifyId;
++  result.push({id:usable?d.spotifyId!:'discovered-'+d.id,name:d.name,type:usable?'Spotify Connect':d.protocol==='Google Cast'?'Google Cast · Spotify-aktivering saknas':'Spotify Connect · inte tillgänglig',is_active:false,is_restricted:!usable,supports_volume:false,volume_percent:null});
++ }return result;
++}
+ /** Provider devices plus only the current SDK's actual ready device; IDs stay in memory. */
+ export function connectDevices(reported:readonly ConnectDevice[],localId:string,localName:string,retired:ReadonlySet<string>):ConnectDevice[]{
+  const result:ConnectDevice[]=[],seen=new Set<string>();
+diff --git a/In/hemkontroll_3d_komplett/src/system/spotify-network.ts b/In/hemkontroll_3d_komplett/src/system/spotify-network.ts
+index 9bf7f7f..ea592c3 100644
+--- a/In/hemkontroll_3d_komplett/src/system/spotify-network.ts
++++ b/In/hemkontroll_3d_komplett/src/system/spotify-network.ts
+@@ -1,6 +1,6 @@
+ import './spotify-network.css';
+ 
+-export interface NetworkReceiver {id:string;name:string;model:string;protocol:string;announced:boolean;lastSeen:number}
++export interface NetworkReceiver {id:string;name:string;model:string;protocol:string;announced:boolean;lastSeen:number;spotifyId?:string}
+ export function networkReceivers(value:unknown):NetworkReceiver[]{
+  const rows=(value as {devices?:unknown})?.devices;
+  if(!Array.isArray(rows))throw new Error('Ogiltigt svar från lokal upptäckt');
+@@ -16,6 +16,7 @@ export class SpotifyNetwork extends EventTarget{
+  private refresh=document.createElement('button');private controller?:AbortController;
+  private timer?:ReturnType<typeof setTimeout>;private disposed=false;
+  count=0;
++ receivers:NetworkReceiver[]=[];
+  constructor(){super();this.root.className='spotify-network';this.root.setAttribute('aria-label','Spotify-enheter på nätverket');
+   const title=document.createElement('h3');title.textContent='Enheter på nätverket · även utan uppspelning';
+   this.status.setAttribute('role','status');this.refresh.textContent='Sök på nätverket';
+@@ -34,7 +35,7 @@ export class SpotifyNetwork extends EventTarget{
+    const response=await fetch(url,{cache:'no-store',signal:this.controller.signal});
+    if(!response.ok)throw new Error('Lokal upptäckt är inte tillgänglig');
+    const data=await response.json();if(data.available!==true)throw new Error('Discovery offline');const rows=networkReceivers(data);if(this.disposed)return;
+-   this.list.replaceChildren();
++   this.receivers=rows;this.list.replaceChildren();
+    for(const device of rows){const row=document.createElement('article');row.className='network-receiver';
+     const name=document.createElement('strong');name.textContent=device.name;
+     const detail=document.createElement('small');detail.textContent=`${device.protocol}${device.model?' · '+device.model:''}`;
+@@ -45,7 +46,7 @@ export class SpotifyNetwork extends EventTarget{
+    this.status.textContent=rows.length?'Lokalt upptäckta mottagare. Ingen uppspelning krävs.':'Inga nätverksannonser hittades. Sovande eller avstängda mottagare kan vara osynliga.';
+    this.dispatchEvent(new Event('change'));
+   }catch{
+-   if(this.disposed)return;this.count=0;this.status.textContent='Lokal upptäckt är frånkopplad. Eventuella rader nedan är tidigare resultat, inte bekräftat tillgängliga.';
++   if(this.disposed)return;this.receivers=[];this.count=0;this.status.textContent='Lokal upptäckt är frånkopplad. Eventuella rader nedan är tidigare resultat, inte bekräftat tillgängliga.';
+    this.list.querySelectorAll('article span').forEach(row=>row.textContent='Tidigare upptäckt · tillgänglighet obekräftad');
+    this.dispatchEvent(new Event('change'));
+   }finally{clearTimeout(timeout);this.controller=undefined;this.refresh.disabled=false;
+diff --git a/docs/PROJECT_MEMORY.md b/docs/PROJECT_MEMORY.md
+index 4b89368..f451871 100644
+--- a/docs/PROJECT_MEMORY.md
++++ b/docs/PROJECT_MEMORY.md
+@@ -443,3 +443,7 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; 
+ - Spotifys egen rekommenderade fortsättning efter sista låten är separat Automatisk uppspelning. Den offentliga dokumenterade spelar-API:n erbjuder ingen inställningsendpoint för detta. Inget automatiskt kontoinställningsbyte påstås eller utförs. Kön har en kort hjälptext med länk till https://support.spotify.com/se/article/autoplay/. Spelarkontext dokumenterad på https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback och katalogsök på motsvarande /search.
+ - Nya GET /spotify-api/browse/{artist|album|playlist}/{id} har samma läsbehörighet som tidigare Spotify-anrop. Befintlig OAuth/tokenhantering, Connect, Jam och kö bevaras. Playlist-items använder aktuell /items-väg och en avgränsad äldre /tracks-reserv enbart vid 404. Inga spellistor eller kontoinställningar ändras. Lokala wifi-proxyn har motsvarande exakta GET-allowlist och dess identifierade process startades om; kodfri wifi-åtkomst och token-/adminspärrar bevaras.
+ - Endast källgranskning och diffkontroll. Inga automatiska tester, TypeScript-kontroller, byggen, verklig uppspelning eller push utfördes enligt den kvarstående pausen. Katalog-/uppspelningsflödena är inte praktiskt verifierade ännu. Devserver och wifi-proxy lämnas igång.
++
++## Spotify-enhetsväljare – 2026-11-01
++- Nätverksmottagare visas nu endast i Välj uppspelningsenhet. Spotify Connect prioriteras visuellt framför Cast med samma normaliserade namn; API-identiteter prioriteras och endast getInfo-deviceID får användas för lokala Connect-mål. Ingen automatisk musikstart vid val av pausad enhet. Bekräftelse krävs även utan tidigare låt.
++- Verifierat i riktiga LAN-appen och mockat webbläsartest; tre sammanslagningstester passerar. Uppspelning är inte färdig: ett verkligt transfer-test utan uppspelning gav404 Device not found för en nätverksupptäckt mottagare. Aktivering/association till Spotify-kontot återstår; befintliga OAuth-inställningar har inte ändrats.
+diff --git a/docs/SPOTIFY_DIRECT.md b/docs/SPOTIFY_DIRECT.md
+index aea408f..1f10c41 100644
+--- a/docs/SPOTIFY_DIRECT.md
++++ b/docs/SPOTIFY_DIRECT.md
+@@ -2,12 +2,12 @@
+ 
+ ## Lokal upptäckt av mottagare utan uppspelning
+ 
+-Under **Spotify → Enheter** visas även mottagare som annonserar Spotify Connect
++Under **Välj uppspelningsenhet** visas även mottagare som annonserar Spotify Connect
+ eller Google Cast på serverdatorns nätverk, även när de saknas i konto-API:t.
+ Detta startar ingen uppspelning och kräver ingen ny Spotify-inloggning.
+ En nätverksannons är inte ett bevis på uppspelningsstatus eller Spotify-styrbarhet.
+-Enheter som bara upptäckts lokalt kan ännu inte väljas/väckas från listan.
+-Protokollen visas separat; namn används inte som automatisk enhetsidentifiering.
++Upptäckta Connect-mottagare med verifierat getInfo-deviceID kan väljas; Spotify måste bekräfta bytet. Enbart lokal upptäckt räcker inte för kontoaktivering.
++Vid samma normaliserade namn visas Spotify Connect framför Cast enligt användarens val. Befintliga API-ID:n prioriteras. Namn används endast för visuell dubblettrensning, aldrig för att skapa ett uppspelnings-ID.
+ 
+ Windows-hjälparen körs separat från appens backend:
+ 
+@@ -20,7 +20,7 @@ Hjälparen använder mDNS och läsande getInfo från annonserade privata IP-adre
+ utan proxy/redirects, kontoregistrering eller uppspelningskommandon. Den skriver
+ en atomisk namnsnapshot var femte sekund till ignorerade
+ `data/spotify-local-devices.json`. Backend lämnar endast tillåtna visningsfält
+-via rollskyddad GET `/spotify-api/local-devices`, aldrig IP-adresser eller token.
++via rollskyddad GET `/spotify-api/local-devices`, inklusive validerat Spotify-deviceID men aldrig IP-adresser eller token.
+ En snapshot äldre än 30 sekunder förkastas. UI märker kvarvarande rader som
+ obekräftade om tjänsten försvinner. Enheter som aldrig annonserar kan inte garanteras
+ upptäckt. Inställningarna för Spotify-kontot och Home Assistant ändras inte.
+@@ -192,3 +192,5 @@ Dokumentation: [Web Playback SDK](https://developer.spotify.com/documentation/we
+ Automatiska browsertester använder en uttryckligen falsk SDK och Spotify-API.
+ De bevisar registrering/livscykel/UI, inte att DRM eller riktig ljuduppspelning
+ fungerar på en fysisk enhet. Verklig uppspelning kräver ditt godkännande hos Spotify.
++
++Verifierat: enhetsväljartest och tre enhetstester för sammanslagning passerar. Läsande getInfo ger riktiga Spotify-ID:n. Verkligt HT-A9-test med transfer/play=false gav Spotify404 Device not found; automatisk mottagaraktivering är fortfarande inte löst. Ingen musik startades. Separata listan och Enheter-fliken är borttagna.
+diff --git a/scripts/spotify-discovery.py b/scripts/spotify-discovery.py
+index 92a1ffe..29dd7bd 100644
+--- a/scripts/spotify-discovery.py
++++ b/scripts/spotify-discovery.py
+@@ -61,6 +61,9 @@ class Devices(ServiceListener):
+                 with self.lock:
+                     if name in self.rows:
+                         self.rows[name]['name'] = label
++                        device_id = data.get('deviceID')
++                        if isinstance(device_id, str) and 0 < len(device_id) <= 100 and all(c.isalnum() or c in '-_' for c in device_id):
++                            self.rows[name]['spotifyId'] = device_id
+         except (OSError, ValueError):
+             pass
+ 
+diff --git a/services/ha-simulator/src/spotify-local.ts b/services/ha-simulator/src/spotify-local.ts
+index ad5ff81..72b5a23 100644
+--- a/services/ha-simulator/src/spotify-local.ts
++++ b/services/ha-simulator/src/spotify-local.ts
+@@ -9,6 +9,7 @@ export async function localSpotifyDevices(directory:string,now=Date.now()){
+   const raw=JSON.parse(text);
+   if(!Number.isFinite(raw.observedAt)||raw.observedAt>now+5000||now-raw.observedAt>30000||!Array.isArray(raw.devices))throw new Error('Stale snapshot');
+   const devices=raw.devices.slice(0,200).filter((d:any)=>d&&typeof d.id==='string'&&typeof d.name==='string'&&typeof d.model==='string'&&['Google Cast','Spotify Connect'].includes(d.protocol)&&typeof d.announced==='boolean'&&Number.isFinite(d.lastSeen)).map((d:any)=>({id:d.id.slice(0,100),name:d.name.slice(0,200),model:d.model.slice(0,200),protocol:d.protocol,announced:d.announced,lastSeen:d.lastSeen}));
++  for(const device of devices){const original=raw.devices.find((d:any)=>d.id===device.id);if(device.protocol==='Spotify Connect'&&typeof original?.spotifyId==='string'&&/^[-\w]{1,100}$/.test(original.spotifyId))Object.assign(device,{spotifyId:original.spotifyId});}
+   return {available:true,devices,observedAt:raw.observedAt};
+  }catch{return {available:false,devices:[],observedAt:null};}
+ }
+diff --git a/tests/spotify-local.spec.ts b/tests/spotify-local.spec.ts
+index c6e0e39..d2e47c1 100644
+--- a/tests/spotify-local.spec.ts
++++ b/tests/spotify-local.spec.ts
+@@ -1,16 +1,20 @@
+ import {test,expect} from '@playwright/test';
+-test('network receivers appear in the app without playback or Spotify login, and become unconfirmed after discovery loss',async({page})=>{
+- let available=true;
++test('device chooser merges local idle Connect receivers and hides their Cast duplicates without starting music',async({page})=>{
++ const commands:any[]=[];let chosen=false;
+  await page.route('**/spotify-api/**',async route=>{
+   const path=new URL(route.request().url()).pathname;
+-  if(path==='/spotify-api/local-devices')return route.fulfill({json:{available,devices:[{id:'cast',name:'Idle speaker',model:'Cast',protocol:'Google Cast',announced:true,lastSeen:Date.now()/1000},{id:'previous',name:'Previous speaker',model:'',protocol:'Spotify Connect',announced:false,lastSeen:1}]}});
+-  return route.fulfill({json:{configured:false,connected:false,canControl:false,canConfigure:false,message:'Test: no Spotify account'}});
++  if(route.request().method()==='POST'){commands.push(route.request().postDataJSON());chosen=true;}
++  let json:any={playlists:[],queue:[],tracks:[],artists:[],albums:[]};
++  if(path.endsWith('/status'))json={configured:true,connected:true,canControl:true,canConfigure:false,webPlaybackAuthorized:false,message:'Test'};
++  if(path.endsWith('/playback'))json={connected:true,playing:false,track:null,device:chosen?{id:'receiver-real-id',name:'Idle speaker',volume_percent:20}:null,progressMs:0};
++  if(path.endsWith('/devices'))json={devices:[]};
++  if(path.endsWith('/local-devices'))json={available:true,devices:[{id:'cast',name:'Idle speaker',model:'',protocol:'Google Cast',announced:true,lastSeen:1},{id:'connect',name:'Idle speaker',model:'',protocol:'Spotify Connect',announced:true,lastSeen:1,spotifyId:'receiver-real-id'}]};
++  return route.fulfill({json});
+  });
+- await page.goto('/music');await page.getByRole('tab',{name:'Enheter',exact:true}).click();
+- const network=page.getByRole('region',{name:'Spotify-enheter på nätverket'});
+- await expect(network).toContainText('Idle speaker');await expect(network).toContainText('Annonserar på nätverket');await expect(network).toContainText('Previous speaker');
+- await expect(network).toContainText('Tidigare upptäckt · tillgänglighet obekräftad');
+- available=false;await network.getByRole('button',{name:'Sök på nätverket'}).click();
+- await expect(network).toContainText('Lokal upptäckt är frånkopplad');
+- await expect(network.getByText('Annonserar på nätverket',{exact:true})).toHaveCount(0);
++ await page.goto('/music');await page.getByRole('button',{name:'Välj uppspelningsenhet',exact:true}).click();
++ const menu=page.getByRole('menu',{name:'Välj uppspelningsenhet'});
++ await expect(menu.getByRole('menuitemradio')).toHaveCount(1);
++ await expect(menu).toContainText('Idle speaker');await expect(menu).toContainText('Spotify Connect');
++ await expect(page.getByRole('region',{name:'Spotify-enheter på nätverket'})).toHaveCount(0);
++ await menu.getByRole('menuitemradio').click();await expect.poll(()=>commands).toEqual([{action:'transfer',deviceId:'receiver-real-id',play:false}]);
+ });
+-- 
+2.53.0.windows.3
+
