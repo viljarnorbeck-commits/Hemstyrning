@@ -1,5 +1,12 @@
 import{it,expect}from'vitest';import{connectDevices,mergeNetworkDevices}from'./spotify-connect';import type{ConnectDevice}from'./spotify-device-picker';
 const device=(id:string,is_active=false):ConnectDevice=>({id,name:id,type:'Speaker',is_active,is_restricted:false,supports_volume:true,volume_percent:25});
+it('omits unsupported receivers and provider-restricted rows from the shared chooser while preserving real and activatable targets',()=>{
+ const rows=mergeNetworkDevices([device('active'),{...device('restricted'),is_restricted:true}],[
+  {id:'cast',name:'Cast only',model:'',protocol:'Google Cast',announced:true,lastSeen:1},
+  {id:'supported',name:'Supported',model:'',protocol:'Spotify Connect',announced:true,lastSeen:1,spotifyId:'actual-id',activationSupported:true},
+ ]);
+ expect(connectDevices(rows,'','',new Set()).map(d=>d.id)).toEqual(['active','discovered-supported']);
+});
 it('offers local activation only when the helper confirms support, without claiming active account playback',()=>{
  const row={id:'a'.repeat(24),name:'Speaker',model:'',protocol:'Spotify Connect',announced:true,lastSeen:1,spotifyId:'hardware-id',activationSupported:true};
  expect(mergeNetworkDevices([],[row])[0]).toMatchObject({id:'discovered-'+row.id,requiresActivation:true,is_restricted:false,is_active:false});
