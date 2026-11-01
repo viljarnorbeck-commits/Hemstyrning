@@ -1,3 +1,4 @@
+import {SpotifyNetwork} from './spotify-network';
 import {libraryRows,type SpotifyItem,type CatalogResult,type BrowseResult} from './spotify-library';
 import{connectDevices}from'./spotify-connect';
 import {SpotifyDevicePicker,type ConnectDevice} from './spotify-device-picker';
@@ -25,6 +26,7 @@ function cover(url:string){try{const u=new URL(url);return u.protocol==='https:'
 const blank:Player={connected:false,playing:false,track:null,progressMs:0,device:null};
 export class MusicPanel{
  readonly root=document.createElement('aside');
+ private network=new SpotifyNetwork();
  private compact=document.createElement('section');private compactMode=false;
  private picker=new SpotifyDevicePicker(id=>this.chooseDevice(id),()=>this.loadDevices(true));
  private progressTimer:ReturnType<typeof setInterval>;private deviceError='';
@@ -201,6 +203,7 @@ export class MusicPanel{
   <section class="music-devices" data-dom-key="music-devices" ${panel('devices')}>${this.deviceList(allow)}${this.deviceError?`<p role="status">${esc(this.deviceError)}</p>`:''}${connected&&this.setup.webPlaybackAuthorized&&!this.speaker.deviceId?'<button type="button" data-spotify="browser-retry">Återanslut den här webbläsaren</button>':''}</section>
   <section class="jam-section" data-dom-key="jam-section" ${panel('jam')}><h3>Lyssna tillsammans</h3><p>Starta en Jam i Spotify och dela inbjudan här.</p>${preset?'<button type="button" data-spotify="jam">Visa Jam QR-kod</button>':'<p>Ingen Jam-inbjudan sparad ännu.</p>'}${this.qr?`<figure class="jam-qr"><img src="${this.qr}" alt="${esc(this.qrLabel)}"><figcaption>${esc(this.qrLabel)}</figcaption></figure>`:''}<details class="music-settings" data-dom-key="music-settings"><summary>Jam-länk och konto</summary>${this.setup.canConfigure?`<label for="jam-url">Jam-inbjudningslänk</label><input id="jam-url" type="url" placeholder="https://open.spotify.com/socialsession/…" value="${esc(preset)}"><div class="music-settings-actions"><button type="button" data-spotify="save-jam">Spara länk</button><button type="button" data-spotify="remove-jam" ${preset?'':'disabled'}>Ta bort länk</button>${this.setup.configured?'<button type="button" data-spotify="connect">Förnya inloggning</button>':''}${connected?'<button type="button" data-spotify="disconnect">Koppla bort konto</button>':''}</div>`:'<p>En administratör kan ändra konto och Jam-länk.</p>'}</details></section></div>`);
   const settings=this.dialog.querySelector<HTMLDetailsElement>('.music-settings');if(settings)settings.open=settingsOpen;
+  this.dialog.querySelector('.music-devices')?.append(this.network.root);
   this.picker.update(this.connectDevices(),this.activeOutput()?.id??null,allow,this.deviceLoading,this.deviceError||(!connected?this.setup.message:!this.speaker.deviceId?this.speaker.message:''),this.chosenOutput()?.id??null);
  }
 
@@ -245,5 +248,5 @@ export class MusicPanel{
   this.qr=await QRCode.toDataURL(url,{width:360,margin:4,errorCorrectionLevel:'M',color:{dark:'#071710',light:'#ffffff'}});
   this.qrLabel='Öppna Spotify Jam · aktuell session kan inte verifieras';this.renderDialog();
  }
- dispose(){this.picker.dispose();clearInterval(this.progressTimer);this.compact.remove();this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
+ dispose(){this.network.dispose();this.picker.dispose();clearInterval(this.progressTimer);this.compact.remove();this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
 }

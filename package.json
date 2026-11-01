@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "concurrently --kill-others --names HA,APP --prefix-colors yellow,cyan \"npm:dev:simulator\" \"npm:dev:dashboard\"",
     "dev:dashboard": "npm run dev --workspace @hemkontroll/dashboard",
+    "dev:spotify-discovery": "python scripts/spotify-discovery.py --output data/spotify-local-devices.json",
     "dev:simulator": "npm run dev --workspace @hemkontroll/ha-simulator",
     "start:simulator": "npm run start --workspace @hemkontroll/ha-simulator",
     "test": "npm run test --workspaces --if-present",

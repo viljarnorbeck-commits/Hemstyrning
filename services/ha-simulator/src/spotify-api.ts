@@ -1,3 +1,4 @@
+import {localSpotifyDevices} from './spotify-local.js';
 import {spotifyCatalog,playbackSelection} from './spotify-catalog.js';
 import {allowedOrigin} from './access.js';
 import {randomBytes} from 'node:crypto';
@@ -81,6 +82,7 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   if(write&&r==='viewer'){textStatus(res,403,'Denna skärm får inte styra musik.');return false;}
   return true;
  }
+ router.get('/local-devices',async(req,res)=>{if(!requireRole(req,res))return;res.set('Cache-Control','no-store, private');res.json(await localSpotifyDevices(directory));});
  router.get('/status',async(req,res)=>{if(!requireRole(req,res))return;await load();res.json({configured:!!configured(),connected:!!tokens,webPlaybackAuthorized:!!tokens?.scope?.split(' ').includes('streaming'),canControl:role(req)!=='viewer',canConfigure:role(req)==='admin',message:!configured()?'Ange SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET och SPOTIFY_REDIRECT_URI i serverns .env.':!tokens?'Anslut ditt Spotify-konto via musikpanelen.':'Ansluten till Spotify.'});});
  // The official playback SDK requires a short-lived access token in browser memory.
  // Client secret and refresh token never leave this server.

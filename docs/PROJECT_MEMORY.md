@@ -2,6 +2,11 @@
 
 Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; äldre installationsspecifika mätningar och miljöuppgifter ska hållas i lokal inventering, inte i denna publicerade utvecklingsöversikt.
 
+## Lokala Spotify-/Cast-mottagare – 2026-11-01
+
+- Musikvyns Enheter-flik visar nu även läsande mDNS-upptäckt av Spotify Connect och Google Cast utan uppspelning. Samma komponent finns i musikpanelen. Namn/protokoll/tillgänglighetskälla visas; nätverksupptäckt är separat från styrbara Spotify-API-enheter och kan ännu inte väcka/aktivera mottagare.
+- Windows-hjälpare med låst Zeroconf-version skriver atomisk ignorerad snapshot. Backend rollskyddar `/spotify-api/local-devices`, filtrerar fält och förkastar snapshot äldre än30s. Klienter använder appens eget API, även på mobilen. Se `docs/SPOTIFY_DIRECT.md` för start och drift. Inga konto-/HA-inställningar ändrade och inga verkliga uppspelningskommandon skickade under verifiering.
+
 ## Körning och säkerhet
 
 - Windows/PowerShell, Node och projektets npm-skript används. Om global npm saknas finns den lokala utvecklingswrappen i ignorerade `.build-tools`; lägg den katalogen i PATH.

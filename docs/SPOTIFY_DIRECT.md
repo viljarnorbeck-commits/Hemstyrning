@@ -1,5 +1,36 @@
 # Direkt Spotify i Hemstyrning (utan Home Assistant)
 
+## Lokal upptäckt av mottagare utan uppspelning
+
+Under **Spotify → Enheter** visas även mottagare som annonserar Spotify Connect
+eller Google Cast på serverdatorns nätverk, även när de saknas i konto-API:t.
+Detta startar ingen uppspelning och kräver ingen ny Spotify-inloggning.
+En nätverksannons är inte ett bevis på uppspelningsstatus eller Spotify-styrbarhet.
+Enheter som bara upptäckts lokalt kan ännu inte väljas/väckas från listan.
+Protokollen visas separat; namn används inte som automatisk enhetsidentifiering.
+
+Windows-hjälparen körs separat från appens backend:
+
+```powershell
+python -m pip install -r scripts/spotify-discovery-requirements.txt
+npm run dev:spotify-discovery
+```
+
+Hjälparen använder mDNS och läsande getInfo från annonserade privata IP-adresser,
+utan proxy/redirects, kontoregistrering eller uppspelningskommandon. Den skriver
+en atomisk namnsnapshot var femte sekund till ignorerade
+`data/spotify-local-devices.json`. Backend lämnar endast tillåtna visningsfält
+via rollskyddad GET `/spotify-api/local-devices`, aldrig IP-adresser eller token.
+En snapshot äldre än 30 sekunder förkastas. UI märker kvarvarande rader som
+obekräftade om tjänsten försvinner. Enheter som aldrig annonserar kan inte garanteras
+upptäckt. Inställningarna för Spotify-kontot och Home Assistant ändras inte.
+
+Mobilklienter använder samma origin/API som appen, aldrig telefonens loopback.
+En separat omvänd proxy behöver tillåta exakt denna GET-väg. Den lokala
+wifi-proxyn har uppdaterats med denna enda nya läsväg; dess övriga skydd bevaras.
+För specialinstallation med HA_DATA_DIRECTORY: ange samma katalog i hjälparens
+`--output`-argument. Hjälparen måste vara igång på serverdatorn för lokal upptäckt.
+
 Hemstyrning använder nu **Spotifys officiella Web API direkt från sin egen backend**.
 Home Assistant behövs fortfarande för husets enheter men **inte** för musik.
 Webbgränssnitt, Windows/iOS/Android-klienter och Google TV delar samma centrala
