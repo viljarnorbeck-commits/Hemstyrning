@@ -49,9 +49,6 @@
 :is(#control-details,.robot-vacuum-card) .vacuum-target small{font-size:10px;color:var(--text-muted)}
 :is(#control-details,.robot-vacuum-card) .vacuum-room-grid .vacuum-empty{border-color:#efb35744;background:#efb3570a}
 @media(max-width:1000px){:is(#control-details,.robot-vacuum-card) .vacuum-room-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-:is(#control-details,.robot-vacuum-card) .vacuum-fan{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-:is(#control-details,.robot-vacuum-card) .vacuum-fan select{flex:1;min-width:100px;min-height:44px;color:var(--text-primary);background:#292d33;border:1px solid #ffffff26;border-radius:10px;padding:8px;font:inherit}
-:is(#control-details,.robot-vacuum-card) .vacuum-fan button{min-height:44px;font-size:13px}
 .reference-right .device-visual>.vacuum-illustration{width:min(90%,270px);height:auto;max-height:270px}
 @media(max-width:1000px){:is(#control-details,.robot-vacuum-card) .vacuum-controls{grid-template-columns:repeat(2,minmax(0,1fr))}:is(#control-details,.robot-vacuum-card) .vacuum-detail{gap:9px}}
 

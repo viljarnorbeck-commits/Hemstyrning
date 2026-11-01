@@ -14,3 +14,5 @@ body :is(#control-details,.robot-vacuum-card) .vacuum-menu-toggle[aria-expanded=
 @keyframes vacuum-unfold{from{opacity:0;transform:translateY(-9px) scaleY(.88);clip-path:inset(0 0 70% 0 round 19px)}to{opacity:1;transform:translateY(0) scaleY(1);clip-path:inset(0 round 19px)}}
 @media(max-height:450px){body :is(#control-details,.robot-vacuum-card) .vacuum-target-menu[popover]{padding:12px}body :is(#control-details,.robot-vacuum-card) .vacuum-target-menu .vacuum-target{min-height:44px;padding:7px 9px}body :is(#control-details,.robot-vacuum-card) .vacuum-target-menu .vacuum-menu-heading small{display:none}}
 @media(prefers-reduced-motion:reduce){body :is(#control-details,.robot-vacuum-card) .vacuum-target-menu:popover-open{animation:none}body :is(#control-details,.robot-vacuum-card) .vacuum-menu-toggle>span:last-child{transition:none}}
+
+body :is(#control-details,.robot-vacuum-card) .vacuum-target-menu .vacuum-target[aria-pressed="true"]{border-color:#efb35799;background:#efb35724;box-shadow:inset 0 0 0 1px #efb35730}
