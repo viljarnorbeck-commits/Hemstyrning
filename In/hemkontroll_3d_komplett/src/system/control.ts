@@ -40,7 +40,8 @@ function showDetails(o:SceneObject,html:string){
 }
 function vacuumDetails(o:SceneObject){
  const s=connection.states.get(o.entityId),a=s?.attributes??{},disabled=!connection.connected||!connection.commandsEnabled||!isSaved(o)||busy;
- const battery=typeof a.battery_level==='number'&&a.battery_level>=0&&a.battery_level<=100?a.battery_level:null;
+ const boundBattery=o.bindings?.battery_level?measurement(connection.states,o.bindings.battery_level,connection.connected,'%'):null;
+ const battery=typeof a.battery_level==='number'&&a.battery_level>=0&&a.battery_level<=100?a.battery_level:boundBattery?.value!=null&&boundBattery.value>=0&&boundBattery.value<=100?boundBattery.value:null;
  const reported=s?.last_reported??s?.last_updated,stamp=reported?Date.parse(reported):NaN;
  const speedNames:Record<string,string>={Silent:'Tyst',Standard:'Standard',Medium:'Medel',Turbo:'Turbo',Gentle:'Skonsam',Auto:'Automatisk'};
  const speeds=Array.isArray(a.fan_speed_list)?a.fan_speed_list.filter((v):v is string=>typeof v==='string'):[];
