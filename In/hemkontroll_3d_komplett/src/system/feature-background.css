@@ -1,0 +1,23 @@
+/* Reuse the existing live camera. Never filter a container holding controls. */
+body.app-feature:not([data-app-route="/control"]) #garden{
+ opacity:.82;
+ filter:blur(60px) saturate(2.2) contrast(1.4);
+ transform:scale(1.24);transform-origin:center;
+ pointer-events:none;
+}
+body.app-feature:not([data-app-route="/control"]) #app-outlet{
+ background:rgba(18,19,25,.18);
+}
+/* Static, broad colour fields enrich neutral parts of the model without another render loop.
+   Overscan and clipping keep the softened edges outside the viewport. */
+body.app-feature:not([data-app-route="/control"]) #app-outlet::before{
+ content:"";position:fixed;inset:-160px;z-index:-1;pointer-events:none;
+ background:
+  radial-gradient(ellipse at 12% 9%,#ff7900b8,transparent 48%),
+  radial-gradient(ellipse at 91% 12%,#126bffb0,transparent 48%),
+  radial-gradient(ellipse at 9% 95%,#d61460a6,transparent 45%),
+  radial-gradient(ellipse at 92% 87%,#6e16d99e,transparent 48%),
+  radial-gradient(ellipse at 55% 50%,#00b8bb66,transparent 40%);
+ filter:blur(60px);opacity:.65;
+ clip-path:inset(100px);
+}
