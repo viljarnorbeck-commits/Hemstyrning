@@ -1,0 +1,58 @@
+/* Compact Spotify only; surrounding controls and the full music page keep their design. */
+#control-music{display:flex;align-items:center;container-type:inline-size;padding:12px 16px;background:linear-gradient(115deg,#ffffff06,transparent 60%),rgba(36,39,44,.9);border:1px solid #ffffff22;border-radius:20px;box-shadow:inset 0 1px #ffffff16,0 8px 24px #0003;backdrop-filter:blur(14px);overflow:hidden}
+#control-music .spotify-compact{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(142px,1fr) minmax(135px,1fr);gap:6px 18px;align-items:center;width:100%;min-width:0;min-height:0;max-width:none;overflow:visible}
+#control-music .compact-playing{display:grid;grid-template-columns:clamp(75px,13cqw,95px) minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+#control-music .compact-art{display:grid;width:100%;height:auto;max-height:95px;aspect-ratio:1;flex-shrink:0;border-radius:10px;background:#ffffff07;box-shadow:0 4px 14px #0003}
+#control-music .compact-art img{display:block;width:100%;height:100%;object-fit:cover}
+#control-music .compact-track{min-width:0}
+#control-music .compact-track h3{display:block;margin:0 0 6px;font-size:clamp(16px,2.4cqw,23px);font-weight:700;letter-spacing:-.025em;line-height:1.25;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#control-music .compact-track p{margin:0;font-size:clamp(12px,1.7cqw,15px);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-muted)}
+#control-music .compact-playback{display:flex;flex-direction:column;align-items:stretch;min-width:0;gap:4px}
+#control-music .compact-transport{display:flex;justify-content:center;align-items:center;gap:5px}
+#control-music .compact-transport button{width:44px;height:44px;min-width:44px;min-height:44px;padding:10px;border:0;background:transparent;border-radius:50%;box-shadow:none;display:grid;place-items:center;touch-action:manipulation}
+#control-music .compact-transport button:is([data-spotify=play],[data-spotify=pause]){width:56px;height:56px;min-width:56px;border:1px solid #efa934;background:#ffffff05;box-shadow:0 0 14px #efa93418}
+#control-music .compact-transport button svg{width:23px;height:23px}
+#control-music .compact-timeline{min-width:0;margin:0}
+#control-music .compact-times{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums;line-height:1.2}
+#control-music .compact-output{display:flex;flex-direction:column;grid-column:auto;gap:7px;padding:0 0 0 16px;border:0;border-left:1px solid #ffffff20;min-width:0}
+#control-music .compact-device-button{width:100%;max-width:100%;min-width:0;min-height:44px;display:flex;align-items:center;gap:8px;padding:8px 10px;text-align:left;color:var(--text-primary);border:1px solid #ffffff10;background:#ffffff06;border-radius:10px;box-shadow:none;font:inherit;touch-action:manipulation}
+#control-music .compact-device-button>span:first-child{color:#1ed760;font-size:24px;line-height:1}
+#control-music .compact-device-button strong{display:block;flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#control-music .compact-device-button[aria-expanded=true]{border-color:#efa93480;background:#ffffff0c}
+#control-music .compact-volume{display:flex;align-items:center;flex-direction:row;gap:9px;margin:0;min-width:0}
+#control-music .compact-volume svg{width:20px;height:20px;flex-shrink:0}
+#control-music input[type=range]{display:block;width:100%;min-width:0;margin:0;height:24px;accent-color:#ffa20c}
+#control-music .compact-volume input{flex:1;min-height:28px}
+#control-music input::-webkit-slider-runnable-track{height:5px;background:#ffffff36}
+#control-music input::-webkit-slider-thumb{width:16px;height:16px;margin-top:-5.5px}
+#control-music .compact-feedback{grid-column:1/-1;margin:0;font-size:11px;line-height:1.3;color:var(--text-muted);overflow-wrap:anywhere}
+#control-music .compact-feedback:empty{display:none}
+#control-music button:focus-visible,.spotify-device-popover button:focus-visible{outline:2px solid #efa934;outline-offset:2px}
+@container(max-width:560px){
+ #control-music .spotify-compact{grid-template-columns:minmax(0,1fr) 148px;gap:5px 12px}
+ #control-music .compact-playing{grid-template-columns:56px minmax(0,1fr);gap:10px}
+ #control-music .compact-art{max-height:56px}
+ #control-music .compact-track h3{font-size:16px}
+ #control-music .compact-track p{font-size:12px}
+ #control-music .compact-transport button:is([data-spotify=play],[data-spotify=pause]){width:48px;height:48px;min-width:48px}
+ #control-music .compact-playback{gap:0}
+ #control-music .compact-output{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,.8fr);align-items:center;border:0;border-top:1px solid #ffffff16;padding:4px 0 0;gap:14px}
+ #control-music .compact-device-button{padding:5px 8px}
+ #control-music .compact-times{font-size:10px}
+}
+@container(max-width:320px){#control-music .spotify-compact{grid-template-columns:minmax(0,1fr) 132px;gap:5px 6px}#control-music .compact-playing{grid-template-columns:40px minmax(0,1fr);gap:6px}#control-music .compact-track h3{font-size:14px}#control-music .compact-transport{gap:0}#control-music .compact-output{gap:8px}}
+/* Portalled to the top layer, never part of the panel's scrollable layout. */
+.spotify-device-popover{position:fixed;inset:auto;margin:0;z-index:2147483000;box-sizing:border-box;width:310px;max-width:calc(100vw - 20px);padding:10px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;color:#f2f3f5;background:rgba(39,42,48,.97);backdrop-filter:blur(18px);border:1px solid #ffffff2b;border-radius:12px;box-shadow:0 14px 48px #0008;font-family:inherit}
+.spotify-device-popover[hidden]{display:none!important}
+.spotify-device-popover::backdrop{background:transparent;pointer-events:none}
+.spotify-device-popover h3{margin:4px 7px 9px;font-size:13px;line-height:1.4;letter-spacing:0;text-transform:none;color:#f2f3f5}
+.spotify-device-popover>p{margin:6px 7px;font-size:12px;line-height:1.45;color:#c4c7cd}
+.spotify-device-popover>p:empty{display:none}
+.spotify-device-popover button{display:grid;grid-template-columns:22px minmax(0,1fr) 16px;align-items:center;gap:9px;width:100%;min-width:0;min-height:48px;margin:3px 0;padding:8px;border:1px solid transparent;border-radius:8px;background:transparent;box-shadow:none;color:#f2f3f5;text-align:left;font:inherit;touch-action:manipulation}
+.spotify-device-popover button[aria-checked=true]{background:#efa9340e;border-color:#efa93455}
+.spotify-device-popover button:hover:not(:disabled){background:#ffffff0c}
+.spotify-device-popover button>span:first-child{color:#a8b1bf;font-size:20px}
+.spotify-device-popover button[aria-checked=true]>:is(b,span:first-child){color:#efb357}
+.spotify-device-popover button strong{display:block;font-size:13px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.spotify-device-popover button small{display:block;font-size:11px;line-height:1.4;color:#b4bbc5;overflow-wrap:anywhere}
+.spotify-device-popover button:disabled{opacity:.5}

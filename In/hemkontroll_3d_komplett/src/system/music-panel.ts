@@ -1,3 +1,4 @@
+import {SpotifyDevicePicker,type ConnectDevice} from './spotify-device-picker';
 import{updateMarkup}from'./card-design';
 import{icon}from'./app-navigation';
 import {BrowserSpeaker} from './browser-speaker';
@@ -10,7 +11,7 @@ import type {Configuration} from './configuration';
 
 type Track={name:string;artist:string;album:string;cover:string;durationMs:number;url:string|null};
 type Player={connected:boolean;playing:boolean;track:Track|null;progressMs:number;device:{id:string|null;name:string;volume_percent:number|null}|null};
-type Device={id:string;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null};
+type Device=ConnectDevice;
 type Setup={configured:boolean;connected:boolean;canControl:boolean;canConfigure:boolean;webPlaybackAuthorized?:boolean;message:string};
 type SpotifyItem={uri:string;name:string;artist?:string;owner?:string;cover?:string;image?:string};
 async function api<T>(path:string,options?:RequestInit):Promise<T>{
@@ -24,6 +25,8 @@ const blank:Player={connected:false,playing:false,track:null,progressMs:0,device
 export class MusicPanel{
  readonly root=document.createElement('aside');
  private compact=document.createElement('section');private compactMode=false;
+ private picker=new SpotifyDevicePicker(id=>this.chooseDevice(id),()=>this.loadDevices());
+ private progressTimer:ReturnType<typeof setInterval>;private deviceError='';
  readonly dialog=document.createElement('dialog');private embedded=false;private queue:SpotifyItem[]=[];
  private state:Player=blank;private setup:Setup={configured:false,connected:false,canControl:false,canConfigure:false,message:'Ansluter till Spotify…'};
  private devices:Device[]=[];private busy=false;private commandError=false;private feedback='';private open=false;private qr='';private qrLabel='';private timer:ReturnType<typeof setInterval>;
@@ -44,7 +47,8 @@ export class MusicPanel{
    else this.show();
   });
   this.compact.className='spotify-compact';this.compact.setAttribute('aria-label','Spotify-spelare');
-  this.compact.addEventListener('click',e=>{const b=(e.target as Element).closest<HTMLElement>('[data-spotify]');if(b&&!b.matches(':disabled'))void this.command(b.dataset.spotify!);});
+  this.compact.addEventListener('click',e=>{e.stopPropagation();const trigger=(e.target as Element).closest<HTMLButtonElement>('[data-compact-devices]');if(trigger){e.preventDefault();this.picker.toggle(trigger);return;}const b=(e.target as Element).closest<HTMLElement>('[data-spotify]');if(b&&!b.matches(':disabled'))void this.command(b.dataset.spotify!);});
+  this.compact.addEventListener('keydown',e=>{const trigger=(e.target as Element).closest<HTMLButtonElement>('[data-compact-devices]');if(trigger&&['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();if(!this.picker.isOpen)this.picker.show(trigger,e.key==='ArrowUp');}});
   this.compact.addEventListener('change',e=>{const input=e.target as HTMLInputElement;if(input.hasAttribute('data-compact-seek')){void this.command('seek',{positionMs:Math.round(Number(input.value))});return;}if(input.hasAttribute('data-compact-volume'))void this.command('volume',{volume:Math.round(Number(input.value))});});
   this.dialog.addEventListener('click',e=>{
    const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');if(!b)return;
@@ -74,17 +78,24 @@ export class MusicPanel{
    if(el.id==='spotify-volume')void this.command('volume',{volume:Math.round(Number(el.value))});
   });
   this.dialog.addEventListener('close',()=>{this.open=false;this.qr='';this.onVisibilityChange(false);});
-  this.timer=setInterval(()=>{if(!this.stopped&&!document.hidden){void this.refresh();if(this.open)void this.loadDevices();}},7000);
+  this.timer=setInterval(()=>{if(!this.stopped&&!document.hidden){void this.refresh();if(this.open||this.picker.isOpen)void this.loadDevices();}},7000);
+  this.progressTimer=setInterval(()=>{if(this.compactMode&&!document.hidden&&this.state.playing)this.renderCompact();},1000);
   void this.refresh();
   this.update();
  }
  private homeHost:ParentNode|null=null;
  setNotify(notify:(text:string)=>void){this.notify=notify;}
- suspendView(){this.compactMode=false;this.compact.remove();this.root.hidden=true;this.open=false;this.embedded=false;this.dialog.removeAttribute("open");this.dialog.hidden=true;document.body.append(this.dialog);}
- mountHome(){this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.embedded=false;this.open=false;this.root.hidden=false;this.dialog.removeAttribute("open");this.dialog.classList.remove("embedded-music","compact-player");document.body.append(this.dialog);if(this.homeHost)this.homeHost.append(this.root);}
- mountPage(container:HTMLElement){this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.homeHost??=this.root.parentNode;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab=new URLSearchParams(location.search).get('tab')==='devices'?'devices':'search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadDevices();void this.loadPlaylists();void this.loadQueue();}
- mountCompact(container:HTMLElement){this.homeHost??=this.root.parentNode;this.compactMode=true;this.embedded=false;this.open=false;this.root.hidden=true;this.dialog.removeAttribute('open');this.dialog.hidden=true;container.append(this.compact);this.renderCompact();}
- private renderCompact(){const p=this.state,t=p.track,src=cover(t?.cover??''),allow=this.setup.connected&&this.setup.canControl&&!this.busy;updateMarkup(this.compact,`<div class="compact-playing" data-dom-key="compact-playing"><div class="compact-art">${src?'<img src="'+src+'" alt="Albumomslag" referrerpolicy="no-referrer">':'<span aria-hidden="true">♪</span>'}</div><div class="compact-track"><h3>${esc(this.summary)}</h3><p>${esc(t?.artist??this.setup.message)}</p><small>${trackTime(p.progressMs/1000)} / ${trackTime((t?.durationMs??0)/1000)}</small></div></div><div class="compact-playback" data-dom-key="compact-playback"><div class="compact-transport">${this.controls()}</div><input class="compact-seek" data-compact-seek type="range" aria-label="Position i låten" min="0" max="${Math.max(1,t?.durationMs??1)}" step="1000" value="${Math.min(p.progressMs,t?.durationMs??0)}" ${!allow||!t?'disabled':''}></div><div class="compact-output" data-dom-key="compact-output"><a class="compact-device-link" href="/music?tab=devices"><span aria-hidden="true">◉</span><strong>${esc(p.device?.name??'Välj uppspelningsenhet')}</strong><span aria-hidden="true">⌄</span></a><label class="compact-volume">${icon('volume')}<input type="range" aria-label="Spotify-volym" data-compact-volume min="0" max="100" value="${p.device?.volume_percent??0}" ${!allow||p.device?.volume_percent==null?'disabled':''}></label><a class="compact-full-link" href="/music">Hela Spotify ↗</a></div><p class="compact-feedback" role="status">${esc(this.busy?'Väntar på Spotify…':this.feedback)}</p>`);}
+ suspendView(){this.picker.close(false);this.compactMode=false;this.compact.remove();this.root.hidden=true;this.open=false;this.embedded=false;this.dialog.removeAttribute("open");this.dialog.hidden=true;document.body.append(this.dialog);}
+ mountHome(){this.picker.close(false);this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.embedded=false;this.open=false;this.root.hidden=false;this.dialog.removeAttribute("open");this.dialog.classList.remove("embedded-music","compact-player");document.body.append(this.dialog);if(this.homeHost)this.homeHost.append(this.root);}
+ mountPage(container:HTMLElement){this.picker.close(false);this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.homeHost??=this.root.parentNode;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');this.dialog.dataset.activeTab=new URLSearchParams(location.search).get('tab')==='devices'?'devices':'search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadDevices();void this.loadPlaylists();void this.loadQueue();}
+ mountCompact(container:HTMLElement){this.picker.close(false);this.homeHost??=this.root.parentNode;this.compactMode=true;this.embedded=false;this.open=false;this.root.hidden=true;this.dialog.removeAttribute('open');this.dialog.hidden=true;container.append(this.compact);this.renderCompact();}
+ private renderCompact(){
+  const p=this.state,t=p.track,src=cover(t?.cover??''),allow=this.setup.connected&&this.setup.canControl&&!this.busy;
+  const position=Math.min(t?.durationMs??0,p.progressMs+(p.playing&&this.lastRefresh?Math.min(15000,Math.max(0,Date.now()-this.lastRefresh)):0));
+  updateMarkup(this.compact,`<div class="compact-playing" data-dom-key="compact-playing"><div class="compact-art">${src?'<img src="'+src+'" alt="Albumomslag" referrerpolicy="no-referrer">':'<span aria-hidden="true">♪</span>'}</div><div class="compact-track"><h3 title="${esc(this.summary)}">${esc(this.summary)}</h3><p title="${esc(t?.artist??'')}">${esc(t?.artist??this.setup.message)}</p></div></div><div class="compact-playback" data-dom-key="compact-playback"><div class="compact-transport">${this.controls()}</div><div class="compact-timeline"><input class="compact-seek" data-compact-seek type="range" aria-label="Position i låten" min="0" max="${Math.max(1,t?.durationMs??1)}" step="1000" value="${position}" ${!allow||!t?'disabled':''}><div class="compact-times"><span>${trackTime(position/1000)}</span><span>${trackTime((t?.durationMs??0)/1000)}</span></div></div></div><div class="compact-output" data-dom-key="compact-output"><button type="button" class="compact-device-button" data-compact-devices aria-label="Välj uppspelningsenhet" aria-haspopup="menu" aria-expanded="${this.picker.isOpen}" aria-controls="${this.picker.id}"><span aria-hidden="true">◉</span><strong>${esc(p.device?.name??'Välj enhet')}</strong><span aria-hidden="true">⌄</span></button><label class="compact-volume">${icon('volume')}<input type="range" aria-label="Spotify-volym" data-compact-volume min="0" max="100" value="${p.device?.volume_percent??0}" ${!allow||p.device?.volume_percent==null?'disabled':''}></label></div><p class="compact-feedback" role="status" data-dom-key="compact-feedback">${esc(this.feedback||(!this.setup.connected?this.setup.message:!this.setup.canControl?'Spotify är anslutet utan styrbehörighet.':''))}</p>`);
+  // The picker lives outside this reconciled subtree and keeps its focused row across status updates.
+  this.picker.update(this.devices,p.device?.id??null,allow,this.deviceLoading,this.deviceError||(!this.setup.connected?this.setup.message:''));
+ }
  private async loadQueue(){if(!this.setup.connected)return;try{const data=await api<{queue:SpotifyItem[]}>('/queue');this.queue=Array.isArray(data.queue)?data.queue:[];this.renderDialog();}catch(e){this.report((e as Error).message);}}
  get summary(){return this.state.track?.name??(this.setup.connected?'Ingen låt spelas':'Spotify ej anslutet');}
  private get jamUrl(){return this.config.value?.music?.jamUrl??'';}
@@ -126,9 +137,9 @@ export class MusicPanel{
   catch(e){this.report(e instanceof Error?e.message:String(e));}
  }
  private async loadDevices(){
-  if(this.deviceLoading||!this.setup.connected)return;this.deviceLoading=true;
+  if(this.deviceLoading||!this.setup.connected)return;this.deviceLoading=true;this.deviceError='';if(this.compactMode)this.renderCompact();
   try{this.devices=(await api<{devices:Device[]}>('/devices')).devices;this.update();}
-  catch(e){this.report(e instanceof Error?e.message:String(e));}finally{this.deviceLoading=false;}
+  catch(e){this.deviceError=e instanceof Error?e.message:String(e);this.report(this.deviceError);}finally{this.deviceLoading=false;if(this.compactMode)this.renderCompact();}
  }
  private async chooseDevice(id:string){
   if(this.busy||!this.setup.canControl)return;
@@ -220,5 +231,5 @@ export class MusicPanel{
   this.qr=await QRCode.toDataURL(url,{width:360,margin:4,errorCorrectionLevel:'M',color:{dark:'#071710',light:'#ffffff'}});
   this.qrLabel='Öppna Spotify Jam · aktuell session kan inte verifieras';this.renderDialog();
  }
- dispose(){this.compact.remove();this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
+ dispose(){this.picker.dispose();clearInterval(this.progressTimer);this.compact.remove();this.stopped=true;this.speaker.disable();clearInterval(this.timer);this.onVisibilityChange=()=>{};this.dialog.close();this.dialog.remove();this.root.remove();}
 }
