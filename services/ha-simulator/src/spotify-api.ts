@@ -61,7 +61,16 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   const response=await request('https://api.spotify.com/v1'+path,{method,headers:{Authorization:'Bearer '+token,...(payload?{'Content-Type':'application/json'}:{})},...(payload?{body:JSON.stringify(payload)}:{}),signal:AbortSignal.timeout(12000),redirect:'error'});
   if(response.status===401&&tryRefresh){if(tokens)tokens.expires_at=0;return spotify(path,method,payload,false);}
   if(response.status===429){const seconds=Math.min(300,Math.max(5,Number(response.headers.get('retry-after'))||30));blockedUntil=Date.now()+seconds*1000;throw new SpotifyError(429,'Spotify begränsar anropen. Försök igen om '+seconds+' sekunder.');}
-  if(!response.ok){const status=response.status;throw new SpotifyError(status>=500?502:status===401?401:status===403?403:400,status===403?'Spotify kräver Premium eller tillåter inte åtgärden på vald enhet.':status===401?'Spotify-inloggningen behöver förnyas.':'Spotify kunde inte utföra åtgärden ('+status+').');}
+  if(!response.ok){
+   const status=response.status,body=await response.json().catch(()=>({}))as {error?:{message?:unknown;reason?:unknown}};
+   const redact=(input:unknown)=>{let value=String(input??'').slice(0,500);for(const secret of [tokens?.access_token,tokens?.refresh_token,process.env.SPOTIFY_CLIENT_SECRET])if(secret&&secret.length>=4)value=value.replaceAll(secret,'[redacted]');return value.replace(/Bearer\s+[^\s"']+/gi,'Bearer [redacted]').replace(/eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,'[redacted]');};
+   const spotifyMessage=redact(body.error?.message),reason=typeof body.error?.reason==='string'&&/^[A-Z0-9_]{1,80}$/i.test(body.error.reason)?body.error.reason:undefined;
+   const noPlayer=reason==='NO_ACTIVE_DEVICE'||/no active device/i.test(spotifyMessage),playerPath=path.startsWith('/me/player');
+   if(playerPath&&status===404){playbackCache=null;devicesCache=null;}
+   const message=noPlayer?'Spotify saknar en aktiv uppspelningsenhet. Välj en tillgänglig enhet och starta en låt.':status===404&&playerPath?'Spotify hittar inte uppspelningsenheten. Uppdatera enhetslistan och välj enheten igen.':status===404?'Spotify hittade inte den efterfrågade låten eller spellistan.':status===403?'Spotify kräver Premium eller tillåter inte åtgärden på vald enhet.':status===401?'Spotify-inloggningen behöver förnyas.':status>=500?'Spotify har ett tillfälligt serverfel ('+status+'). Försök igen om en stund.':'Spotify kunde inte utföra åtgärden ('+status+').';
+   const url=new URL('https://api.spotify.com/v1'+path),ids=(payload as {device_ids?:unknown}|undefined)?.device_ids,deviceId=url.searchParams.get('device_id')??(Array.isArray(ids)&&typeof ids[0]==='string'?ids[0]:undefined);
+   throw new SpotifyError(status>=500?502:status===401?401:status===403?403:status===404&&playerPath?409:status===404?404:400,message,{url:url.href,method,upstreamStatus:status,...(deviceId?{deviceId}:{}),...(reason?{reason}:{}),spotifyMessage});
+  }
   if(response.status===204)return null;
   return response.json().catch(()=>null);
  }
@@ -116,7 +125,7 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   try{const data=await spotify('/me/player/queue');res.json({queue:(Array.isArray(data?.queue)?data.queue:[]).slice(0,50).map((t:any)=>({name:String(t.name??''),uri:typeof t.uri==='string'?t.uri:'',artist:Array.isArray(t.artists)?t.artists.map((a:any)=>String(a.name??'')).join(', '):''}))});}catch{res.status(502).json({message:'Spotify-kön kunde inte hämtas'});}
  });
  router.get('/devices',async(req,res)=>{if(!requireRole(req,res))return;await load();if(!tokens){res.json({devices:[]});return;}
-  try{if(devicesCache&&Date.now()<devicesCache.until){res.json(devicesCache.data);return;}
+  try{if(req.query.refresh!=='1'&&devicesCache&&Date.now()<devicesCache.until){res.json(devicesCache.data);return;}
    if(!devicesPromise)devicesPromise=spotify('/me/player/devices').then(data=>{const devices=(Array.isArray(data?.devices)?data.devices:[]).filter((d:any)=>typeof d.id==='string'&&d.id.length>0).map((d:any):SpotifyDevice=>({id:d.id,name:String(d.name??'Spotify-enhet'),type:String(d.type??''),is_active:d.is_active===true,is_restricted:d.is_restricted===true,supports_volume:d.supports_volume===true,volume_percent:typeof d.volume_percent==='number'?d.volume_percent:null}));const output={devices};devicesCache={data:output,until:Date.now()+15000};return output;}).finally(()=>devicesPromise=null);
    res.json(await devicesPromise);
   }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify är tillfälligt otillgängligt.');}
@@ -160,8 +169,9 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
     }
    }
    playbackCache=null;devicesCache=null;res.json({accepted:true});
-  }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify-kommandot misslyckades.');}
+  }catch(e){res.status(e instanceof SpotifyError?e.status:502).json({message:e instanceof Error?e.message:'Spotify-kommandot misslyckades.',...(e instanceof SpotifyError&&e.details?{spotifyError:e.details}:{})});}
  });
  return router;
 }
-class SpotifyError extends Error{constructor(public status:number,message:string){super(message);}}
+type SpotifyFailure={url:string;method:string;upstreamStatus:number;deviceId?:string;reason?:string;spotifyMessage:string};
+class SpotifyError extends Error{constructor(public status:number,message:string,public details?:SpotifyFailure){super(message);}}
