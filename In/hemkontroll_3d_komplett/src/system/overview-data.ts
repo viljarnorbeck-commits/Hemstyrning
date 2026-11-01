@@ -13,7 +13,7 @@ export function rememberMeasurement(states:Map<string,HassState>,slot:string,s:H
  if(cache.size>500)cache.delete(cache.keys().next().value!);
 }
 export interface OverviewBindings{grid:string;gridPositive:'import'|'export'|'unverified';solar:string;house2:string;costToday:string;averageToday:string;luba:string;vacuum:string;rooms:string[];ev6Battery:string;ev6Range:string;ev6Connection:string}
-export const overviewBindings:OverviewBindings={grid:'sensor.ferroamp_grid_power',gridPositive:'unverified',solar:'sensor.ferroamp_solar_power',house2:'sensor.elmatare_hus2_effekt_summa',costToday:'$costToday',averageToday:'$averageToday',luba:'$luba',vacuum:'vacuum.xiaomi_vacuum_cleaner',rooms:['sensor.storabadrummet_temperatur'],ev6Battery:'',ev6Range:'',ev6Connection:''};
+export const overviewBindings:OverviewBindings={grid:'sensor.ferroamp_grid_power',get gridPositive(){return resolveEntity('sensor.ferroamp_grid_power')==='sensor.ferroamp_grid_power'?'import':'unverified';},solar:'sensor.ferroamp_solar_power',house2:'sensor.elmatare_hus2_effekt_summa',costToday:'$costToday',averageToday:'$averageToday',luba:'$luba',vacuum:'vacuum.xiaomi_vacuum_cleaner',rooms:['sensor.storabadrummet_temperatur'],ev6Battery:'',ev6Range:'',ev6Connection:''};
 export function measurement(states:Map<string,HassState>,id:string,connected:boolean,unit:string,now=Date.now(),maxAge=900):Measurement{
  const s=readState(states,id);let status:Availability=!connected?'Frånkopplad':!s?'Saknar data':s.state==='unavailable'?'Otillgänglig':s.state==='unknown'?'Okänd':!Number.isFinite(Date.parse(s.last_reported??s.last_updated))||now-Date.parse(s.last_reported??s.last_updated)>maxAge*1000?'Gammal mätning':'Ansluten';
  if(s)rememberMeasurement(states,id,s);
