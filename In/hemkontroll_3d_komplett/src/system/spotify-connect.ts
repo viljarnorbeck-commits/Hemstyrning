@@ -4,8 +4,9 @@ export function mergeNetworkDevices(reported:readonly ConnectDevice[],network:re
  const result=reported.map(d=>({...d}));const name=(s:string)=>s.normalize('NFKC').replace(/\s/g,'').toLocaleLowerCase();
  const preferred=network.filter(d=>d.protocol==='Spotify Connect'||!network.some(other=>other.protocol==='Spotify Connect'&&name(other.name)===name(d.name)));
  for(const d of preferred){if(result.some(other=>other.id===d.spotifyId||name(other.name)===name(d.name)))continue;
-  const usable=d.announced&&d.protocol==='Spotify Connect'&&!!d.spotifyId;
-  result.push({id:usable?d.spotifyId!:'discovered-'+d.id,name:d.name,type:usable?'Spotify Connect':d.protocol==='Google Cast'?'Google Cast · Spotify-aktivering saknas':'Spotify Connect · inte tillgänglig',is_active:false,is_restricted:!usable,supports_volume:false,volume_percent:null});
+  // A getInfo ID identifies hardware, but does not establish account availability.
+  // Only /me/player/devices or the current SDK's ready event can authorize a target.
+  result.push({id:'discovered-'+d.id,name:d.name,type:d.protocol,is_active:false,is_restricted:true,unavailableReason:d.announced?'Välj först i Spotify-appen med samma konto, uppdatera sedan listan.':'Tidigare upptäckt · tillgänglighet obekräftad',supports_volume:false,volume_percent:null});
  }return result;
 }
 /** Provider devices plus only the current SDK's actual ready device; IDs stay in memory. */

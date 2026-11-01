@@ -1,6 +1,6 @@
 import {updateMarkup} from './card-design';
 import {escapeHtml as esc} from './panels';
-export interface ConnectDevice{is_local?:boolean;id:string;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null}
+export interface ConnectDevice{is_local?:boolean;unavailableReason?:string;id:string;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null}
 let sequence=0;
 /** A local, portalled menu: never mounts the full player or changes routes. */
 export class SpotifyDevicePicker{
@@ -36,7 +36,7 @@ export class SpotifyDevicePicker{
   // Keep existing row order during polling so a focused row never moves underneath a finger.
   const order=[...this.root.querySelectorAll<HTMLElement>('[data-connect-device]')].map(e=>e.dataset.connectDevice);
   const rows=[...this.devices].sort((a,b)=>{const ai=order.indexOf(a.id),bi=order.indexOf(b.id);return (ai<0?order.length:ai)-(bi<0?order.length:bi);});
-  updateMarkup(this.root,'<h3 data-dom-key="title">Välj uppspelningsenhet</h3><p role="status" data-dom-key="status">'+esc(this.error||(this.loading&&!rows.length?'Hämtar enheter…':!rows.length?'Inga tillgängliga enheter rapporteras av Spotify.':!this.allowed?'Spotify kan inte styras med aktuell anslutning.':''))+'</p>'+rows.map(d=>'<button type="button" role="menuitemradio" tabindex="-1" data-dom-key="device-'+esc(d.id)+'" data-connect-device="'+esc(d.id)+'" aria-checked="'+(d.id===this.selected)+'" '+(!this.allowed||d.is_restricted?'disabled':'')+'><span aria-hidden="true">'+(/computer/i.test(d.type)?'▣':/phone|tablet/i.test(d.type)?'▯':/tv/i.test(d.type)?'▱':'◉')+'</span><span><strong>'+esc(d.name)+'</strong><small>'+esc(d.is_restricted?'Kan inte styras':d.id===this.active?'Aktiv':d.id===this.selected?'Vald · starta en låt':d.is_local?'Den här webbläsaren':d.type)+'</small></span><b aria-hidden="true">'+(d.id===this.selected?'✓':'')+'</b></button>').join(''));
+  updateMarkup(this.root,'<h3 data-dom-key="title">Välj uppspelningsenhet</h3><p role="status" data-dom-key="status">'+esc(this.error||(this.loading&&!rows.length?'Hämtar enheter…':!rows.length?'Inga tillgängliga enheter rapporteras av Spotify.':!this.allowed?'Spotify kan inte styras med aktuell anslutning.':''))+'</p>'+rows.map(d=>'<button type="button" role="menuitemradio" tabindex="-1" data-dom-key="device-'+esc(d.id)+'" data-connect-device="'+esc(d.id)+'" aria-checked="'+(d.id===this.selected)+'" '+(!this.allowed||d.is_restricted?'disabled':'')+'><span aria-hidden="true">'+(/computer/i.test(d.type)?'▣':/phone|tablet/i.test(d.type)?'▯':/tv/i.test(d.type)?'▱':'◉')+'</span><span><strong>'+esc(d.name)+'</strong><small>'+esc(d.is_restricted?(d.unavailableReason??'Kan inte styras'):d.id===this.active?'Aktiv':d.id===this.selected?'Vald · starta en låt':d.is_local?'Den här webbläsaren':d.type)+'</small></span><b aria-hidden="true">'+(d.id===this.selected?'✓':'')+'</b></button>').join(''));
   this.root.scrollTop=scroll;if(focused&&(document.activeElement===this.root||!this.root.contains(document.activeElement)))this.focusItem(0);this.schedule();
  }
  private buttons(){return [...this.root.querySelectorAll<HTMLButtonElement>('[data-connect-device]:not(:disabled)')];}
