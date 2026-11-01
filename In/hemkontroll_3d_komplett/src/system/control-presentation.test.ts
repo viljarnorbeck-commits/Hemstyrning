@@ -8,7 +8,7 @@ it('groups indoor and outdoor lamps using areas first and leaves ambiguous names
 });
 it('keeps each location together in Swedish name order without mutating lamp identities or source data',()=>{
  const lamps=[{entityId:'light.a',name:'Utelys 2'},{entityId:'light.b',name:'Festen'},{entityId:'light.c',name:'Köksbord'},{entityId:'light.d',name:'Badrummet'},{entityId:'light.e',name:'Utelys 1'}] as SceneObject[],before=structuredClone(lamps);
- expect(sortLightsByLocation(lamps,new Map()).map(o=>o.entityId)).toEqual(['light.d','light.c','light.e','light.a','light.b']);expect(lamps).toEqual(before);
+ expect(sortLightsByLocation(lamps,new Map()).map(o=>o.entityId)).toEqual(['light.c','light.d','light.e','light.a','light.b']);expect(lamps).toEqual(before);
 });
 const metadata:ControlEntityMetadata[]=[{entityId:'switch.aktora1_b2_port4_kok_koksbord_belysning',name:'AktorA1_B2_Port4_Kök_köksbord_belysning',area:'Kök',platform:'knx',disabled:false},{entityId:'switch.aktord1_a_motorvarmare_1',name:'AktorD1_A_Motorvärmare_1',area:'Ute',platform:'knx',disabled:false},{entityId:'switch.aktora1_b2_port8_vardagsrum_fonster_va',name:'AktorA1_B2_Port8_Kök_Vinkyl',area:'Kök',platform:'knx',disabled:false}];
 const states=()=>new Map(metadata.map(m=>[m.entityId,{entity_id:m.entityId,state:'off',attributes:{friendly_name:m.name},last_updated:new Date().toISOString()}as HassState]));

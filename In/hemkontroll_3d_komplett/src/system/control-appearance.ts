@@ -1,4 +1,4 @@
-import {controlGroup,lightLocation} from './control-presentation';
+import {controlGroup,lightPlacement} from './control-presentation';
 import type {ControlEntityMetadata} from './control-devices';
 import type {SceneObject,HassState} from './types';
 
@@ -19,20 +19,11 @@ const themes={
  other:['#82708e','#6b718c','#5c7885'],
 } as const;
 type Theme=keyof typeof themes;
-const normalized=(s:string)=>s.toLocaleLowerCase('sv-SE').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[_-]/g,' ');
-function floor(text:string):'upstairs'|'downstairs'|'basement'|undefined{
- if(/\b(?:kallare\w*|basement)\b/.test(text))return'basement';
- if(/\b(?:uppe|overvaning\w*|ovanvaning\w*|overplan|upstairs)\b|\b(?:plan|vaning)\s*2\b/.test(text))return'upstairs';
- if(/\b(?:nere|nedervaning\w*|bottenvaning\w*|entreplan|nedre plan|downstairs)\b|\b(?:plan|vaning)\s*1\b/.test(text))return'downstairs';
- return undefined;
-}
 export function controlAppearance(o:SceneObject,states:Map<string,HassState>,catalog:readonly ControlEntityMetadata[]=[]){
  const entry=catalog.find(e=>e.entityId===o.entityId),area=entry?.area?.trim()??'';
- const names=normalized(o.name+' '+String(states.get(o.entityId)?.attributes.friendly_name??'')+' '+o.entityId);
- const outside=lightLocation(o,states,catalog)==='outside',level=floor(normalized(area))??floor(names);
- const location=outside?'Ute':level==='upstairs'?'Uppe':level==='downstairs'?'Nere':level==='basement'?'Källare':lightLocation(o,states,catalog)==='inside'?'Inne':'Placering oklar';
+ const placement=lightPlacement(o,states,catalog),outside=placement.key==='outside';
  const group=controlGroup(o,states,catalog);let theme:Theme='other',label='Övrigt';
- if(group==='lights'){theme=outside?'outside':level??(location==='Inne'?'inside':'other');label='Belysning · '+location;}
+ if(group==='lights'){theme=placement.key==='uncertain'?'other':placement.key;label='Belysning · '+placement.label+(placement.provisional?' (preliminärt)':'');}
  else if(group==='heaters'){theme='heaters';label='Motorvärmare';}
  else if(group==='outlets'){theme='outlets';label='Uttag'+(area?' · '+area:outside?' · Ute':'');}
  else if(o.type==='vacuum'){theme='vacuum';label='Robotdammsugare';}
