@@ -16,8 +16,8 @@ type Track={name:string;artist:string;album:string;cover:string;durationMs:numbe
 type Player={connected:boolean;playing:boolean;track:Track|null;progressMs:number;device:{id:string|null;name:string;volume_percent:number|null}|null};
 type Device=ConnectDevice;
 type Setup={configured:boolean;connected:boolean;canControl:boolean;canConfigure:boolean;webPlaybackAuthorized?:boolean;message:string};
-async function api<T>(path:string,options?:RequestInit):Promise<T>{
- const response=await fetch('/spotify-api'+path,{...options,signal:AbortSignal.timeout(15000)});
+async function api<T>(path:string,options?:RequestInit,timeout=15000):Promise<T>{
+ const response=await fetch('/spotify-api'+path,{...options,signal:AbortSignal.timeout(timeout)});
  const body=await response.json().catch(()=>({})) as T&{message?:string};
  if(!response.ok)throw Object.assign(new Error(body.message||'Spotify svarade inte ('+response.status+').'),{spotifyError:(body as {spotifyError?:unknown}).spotifyError});
  return body;
@@ -169,9 +169,17 @@ export class MusicPanel{
  }
  private async chooseDevice(id:string){
   if(this.busy||!this.setup.canControl)return;
-  if(!this.connectDevices().some(d=>d.id===id&&!d.is_restricted)){this.report('Enheten är inte längre tillgänglig. Uppdatera enhetslistan.');return;}this.chosenDeviceId=id;
-  try{if(id===this.speaker.deviceId)await this.speaker.activate();await this.command('transfer',{deviceId:id,play:this.state.playing});}
-  catch(error){this.report(error instanceof Error?error.message:String(error));}
+  const device=this.connectDevices().find(d=>d.id===id&&!d.is_restricted);
+  if(!device){this.report('Enheten är inte längre tillgänglig. Uppdatera enhetslistan.');return;}
+  try{
+   if(device.requiresActivation){
+    this.busy=true;this.commandError=false;this.report('Ansluter '+device.name+' till Spotify…');this.update();
+    try{const result=await api<{deviceId:string}>('/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'activate',deviceId:id})},35000);id=result.deviceId;await this.loadDevices(true);}
+    finally{this.busy=false;this.update();}
+   }
+   if(id===this.speaker.deviceId)await this.speaker.activate();
+   if(await this.command('transfer',{deviceId:id,play:this.state.playing})){this.chosenDeviceId=id;this.update();}
+  }catch(error){this.commandError=true;this.report(error instanceof Error?error.message:String(error));}
  }
  private connectDevices(){return connectDevices(mergeNetworkDevices(this.devices,this.network.receivers),this.speaker.deviceId,this.speaker.name,this.speaker.retiredDeviceIds);}
  private chosenOutput(){return this.connectDevices().find(d=>d.id===this.chosenDeviceId)??null;}
@@ -224,12 +232,13 @@ export class MusicPanel{
     await this.loadDevices(true);const confirmed=()=>this.state.device?.id===target||this.devices.some(d=>d.id===target&&d.is_active);
     const deadline=Date.now()+10000;
     while(!confirmed()&&Date.now()<deadline){await new Promise(r=>setTimeout(r,1500));await this.refresh(true);await this.loadDevices(true);}
-    if(!confirmed())throw new Error('Spotify bekräftade inte enhetsbytet. Enheten är vald som mål, men är ännu inte aktiv.');
+    if(!confirmed())throw new Error('Spotify bekräftade inte enhetsbytet. Din tidigare enhet behålls som vald.');
    }
+   return true;
   }catch(e){
    const details=(e as {spotifyError?:{upstreamStatus?:number}})?.spotifyError;
    if(details?.upstreamStatus===404){await this.loadDevices(true);await this.refresh(true);if(this.chosenDeviceId&&!this.chosenOutput())this.chosenDeviceId=null;}
-   this.commandError=true;this.report(details?.upstreamStatus===404&&!this.devices.some(d=>d.id===target)?'Mottagaren finns på nätverket men Spotify har inte aktiverat den för kontot. Enhetsbytet är inte bekräftat.':e instanceof Error?e.message:String(e));
+   this.commandError=true;this.report(details?.upstreamStatus===404&&!this.devices.some(d=>d.id===target)?'Spotify hittar inte mottagaren som tillgänglig för kontot. Enhetsbytet är inte bekräftat.':e instanceof Error?e.message:String(e));return false;
   }finally{this.busy=false;this.update();}
  }
 

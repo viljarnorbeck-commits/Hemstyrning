@@ -1,6 +1,6 @@
 import './spotify-network.css';
 
-export interface NetworkReceiver {id:string;name:string;model:string;protocol:string;announced:boolean;lastSeen:number;spotifyId?:string}
+export interface NetworkReceiver {id:string;name:string;model:string;protocol:string;announced:boolean;lastSeen:number;spotifyId?:string;activationSupported?:boolean}
 export function networkReceivers(value:unknown):NetworkReceiver[]{
  const rows=(value as {devices?:unknown})?.devices;
  if(!Array.isArray(rows))throw new Error('Ogiltigt svar från lokal upptäckt');

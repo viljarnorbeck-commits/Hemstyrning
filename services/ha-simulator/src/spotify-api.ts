@@ -1,4 +1,4 @@
-import {localSpotifyDevices} from './spotify-local.js';
+import {localSpotifyDevices,activateLocalSpotify} from './spotify-local.js';
 import {spotifyCatalog,playbackSelection} from './spotify-catalog.js';
 import {allowedOrigin} from './access.js';
 import {randomBytes} from 'node:crypto';
@@ -10,7 +10,7 @@ type Tokens={access_token:string;refresh_token:string;expires_at:number;scope?:s
 type Pending={expires:number};
 type SpotifyDevice={id:string|null;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null};
 const scopes='streaming user-read-email user-read-private user-read-playback-state user-read-currently-playing user-modify-playback-state playlist-read-private';
-const validAction=new Set(['play','pause','next','previous','volume','transfer','seek','queue','play_track','play_playlist','play_context']);
+const validAction=new Set(['activate','play','pause','next','previous','volume','transfer','seek','queue','play_track','play_playlist','play_context']);
 function configured(){
  const id=process.env.SPOTIFY_CLIENT_ID?.trim()??'',secret=process.env.SPOTIFY_CLIENT_SECRET?.trim()??'';
  const redirect=process.env.SPOTIFY_REDIRECT_URI?.trim()??'';
@@ -146,6 +146,16 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
   const query=deviceId?'?device_id='+encodeURIComponent(deviceId):'';
   try{
    switch(a){
+    case 'activate':{
+     if(typeof deviceId!=='string'){textStatus(res,400,'Välj en nätverksmottagare.');return;}
+     const actualId=await activateLocalSpotify(directory,deviceId,async()=>{const profile=await spotify('/me');if(typeof profile?.id!=='string'||!profile.id)throw new Error('Spotify-kontot kunde inte identifieras.');return {accessToken:await accessToken(),username:profile.id};},request);
+     // addUser success is not enough: wait for account-level registration.
+     const until=Date.now()+10000;let registered=false;
+     do{const available=await spotify('/me/player/devices');registered=available?.devices?.some((d:any)=>d.id===actualId&&!d.is_restricted)===true;if(!registered)await new Promise(r=>setTimeout(r,1200));}while(!registered&&Date.now()<until);
+     devicesCache=null;playbackCache=null;
+     if(!registered){textStatus(res,409,'Mottagaren svarade på anslutningen men Spotify har inte bekräftat den för kontot.');return;}
+     res.json({accepted:true,deviceId:actualId});return;
+    }
     case 'play':await spotify('/me/player/play'+query,'PUT');break;
     case 'pause':await spotify('/me/player/pause'+query,'PUT');break;
     case 'next':await spotify('/me/player/next'+query,'POST');break;

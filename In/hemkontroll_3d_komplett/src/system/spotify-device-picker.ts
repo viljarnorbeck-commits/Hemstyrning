@@ -1,6 +1,6 @@
 import {updateMarkup} from './card-design';
 import {escapeHtml as esc} from './panels';
-export interface ConnectDevice{is_local?:boolean;unavailableReason?:string;id:string;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null}
+export interface ConnectDevice{is_local?:boolean;requiresActivation?:boolean;unavailableReason?:string;id:string;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null}
 let sequence=0;
 /** A local, portalled menu: never mounts the full player or changes routes. */
 export class SpotifyDevicePicker{

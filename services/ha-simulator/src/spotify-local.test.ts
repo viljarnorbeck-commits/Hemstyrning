@@ -2,10 +2,24 @@ import {it,expect} from 'vitest';
 import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {localSpotifyDevices} from './spotify-local.js';
+import {localSpotifyDevices,activateLocalSpotify} from './spotify-local.js';
 import express from 'express';
 import {spotifyApi} from './spotify-api.js';
 import type {AddressInfo} from 'node:net';
+it('validates local activation before loading credentials and keeps capabilities private',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'spotify-activation-'));let credentialsRead=false;
+ try{
+  const row={id:'a'.repeat(24),name:'Speaker',model:'',protocol:'Spotify Connect',announced:true,lastSeen:1,spotifyId:'receiver',activationSupported:true};
+  const snapshot={observedAt:Date.now(),devices:[row],activationPort:8767,activationKey:'k'.repeat(40)};
+  await writeFile(join(dir,'spotify-local-devices.json'),JSON.stringify(snapshot));
+  const publicData=await localSpotifyDevices(dir);expect(JSON.stringify(publicData)).not.toContain(snapshot.activationKey);
+  expect(publicData.devices[0]).toMatchObject({activationSupported:true});
+  const credentials=async()=>{credentialsRead=true;return {accessToken:'test-only',username:'test-user'};};
+  await expect(activateLocalSpotify(dir,'discovered-invalid',credentials)).rejects.toThrow();expect(credentialsRead).toBe(false);
+  const request=(async(url:any,init:any)=>{expect(String(url)).toBe('http://127.0.0.1:8767/activate');expect(init.redirect).toBe('error');expect(JSON.parse(init.body).id).toBe(row.id);return new Response(JSON.stringify({deviceId:'receiver'}));}) as typeof fetch;
+  expect(await activateLocalSpotify(dir,'discovered-'+row.id,credentials,request)).toBe('receiver');
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
 it('lists local idle receivers without Spotify credentials, strips extra fields and rejects stale snapshots',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'spotify-local-'));
  try{

@@ -6,7 +6,8 @@ export function mergeNetworkDevices(reported:readonly ConnectDevice[],network:re
  for(const d of preferred){if(result.some(other=>other.id===d.spotifyId||name(other.name)===name(d.name)))continue;
   // A getInfo ID identifies hardware, but does not establish account availability.
   // Only /me/player/devices or the current SDK's ready event can authorize a target.
-  result.push({id:'discovered-'+d.id,name:d.name,type:d.protocol,is_active:false,is_restricted:true,unavailableReason:d.announced?'Välj först i Spotify-appen med samma konto, uppdatera sedan listan.':'Tidigare upptäckt · tillgänglighet obekräftad',supports_volume:false,volume_percent:null});
+  const activate=d.announced&&d.protocol==='Spotify Connect'&&d.activationSupported===true&&!!d.spotifyId;
+  result.push({id:'discovered-'+d.id,name:d.name,type:activate?'Spotify Connect · anslut här':d.protocol,is_active:false,is_restricted:!activate,requiresActivation:activate,unavailableReason:d.announced?'Lokal aktivering stöds ännu inte för denna mottagare.':'Tidigare upptäckt · tillgänglighet obekräftad',supports_volume:false,volume_percent:null});
  }return result;
 }
 /** Provider devices plus only the current SDK's actual ready device; IDs stay in memory. */

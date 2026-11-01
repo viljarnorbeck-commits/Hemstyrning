@@ -11,6 +11,7 @@ export default defineConfig({
     },
   },
   server: {
+    fs: {deny: ['**/.env', '**/.env.*', '**/*.{crt,pem}', '**/.git/**', '**/data/**', '**/.build-tools/**']},
     port: 5173,
     strictPort: true,
     proxy: {
