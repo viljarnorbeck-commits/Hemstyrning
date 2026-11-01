@@ -1,5 +1,15 @@
 /* Full player follows the control-panel player: charcoal glass, white controls,
    restrained amber transport and Spotify green only for connection status. */
+#spotify-player.spotify-direct .music-search-filters{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0 22px}
+#spotify-player.spotify-direct .music-search-filters button{padding:7px 14px;border-radius:22px;min-height:38px}
+#spotify-player.spotify-direct .music-search-filters button[aria-pressed=true]{border-color:#efa93480;background:#efa93418;color:#ffe0a8}
+#spotify-player.spotify-direct .music-result-group{margin:24px 0}
+#spotify-player.spotify-direct .music-result-group>h3{margin:0 0 12px;font-size:17px;text-transform:none}
+#spotify-player.spotify-direct .spotify-hits .music-result-copy .music-browse-title{display:block;text-align:left;padding:0;border:0;background:none;min-height:30px;font-size:14px;font-weight:650;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+#spotify-player.spotify-direct .music-catalog-artist .music-result-art{border-radius:50%}
+#spotify-player.spotify-direct .music-result-art img{width:100%;height:100%;object-fit:cover}
+#spotify-player.spotify-direct .music-collection>[data-browse-more]{margin-top:18px}
+#spotify-player.spotify-direct .music-tabs{overflow:visible}
 /* The embedded player flows with the page, rather than trapping dialog scroll. */
 body[data-app-route="/music"]{height:100dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch}
 body[data-app-route="/music"] #app-outlet,body[data-app-route="/music"] .route-view,body[data-app-route="/music"] #music-content{height:auto;max-height:none;overflow:visible;min-width:0}

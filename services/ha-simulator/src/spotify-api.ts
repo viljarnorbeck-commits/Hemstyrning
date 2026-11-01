@@ -1,3 +1,4 @@
+import {spotifyCatalog,playbackSelection} from './spotify-catalog.js';
 import {allowedOrigin} from './access.js';
 import {randomBytes} from 'node:crypto';
 import {readFile,writeFile,rename,mkdir,chmod} from 'node:fs/promises';
@@ -8,7 +9,7 @@ type Tokens={access_token:string;refresh_token:string;expires_at:number;scope?:s
 type Pending={expires:number};
 type SpotifyDevice={id:string|null;name:string;type:string;is_active:boolean;is_restricted:boolean;supports_volume:boolean;volume_percent:number|null};
 const scopes='streaming user-read-email user-read-private user-read-playback-state user-read-currently-playing user-modify-playback-state playlist-read-private';
-const validAction=new Set(['play','pause','next','previous','volume','transfer','seek','queue','play_track','play_playlist']);
+const validAction=new Set(['play','pause','next','previous','volume','transfer','seek','queue','play_track','play_playlist','play_context']);
 function configured(){
  const id=process.env.SPOTIFY_CLIENT_ID?.trim()??'',secret=process.env.SPOTIFY_CLIENT_SECRET?.trim()??'';
  const redirect=process.env.SPOTIFY_REDIRECT_URI?.trim()??'';
@@ -130,19 +131,12 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
    res.json(await devicesPromise);
   }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify är tillfälligt otillgängligt.');}
  });
- router.get('/playlists',async(req,res)=>{if(!requireRole(req,res))return;
-  try{const data=await spotify('/me/playlists?limit=20');const playlists=(Array.isArray(data?.items)?data.items:[]).filter((p:any)=>typeof p?.uri==='string'&&/^spotify:playlist:[a-zA-Z0-9]+$/.test(p.uri)).map((p:any)=>({uri:p.uri,name:String(p.name??''),owner:String(p.owner?.display_name??''),image:albumImage({album:{images:p.images}})}));
-   res.json({playlists});
+ router.get('/playlists',async(req,res)=>{if(!requireRole(req,res))return;const offset=Number(req.query.offset??0);if(!Number.isInteger(offset)||offset<0||offset>10000){textStatus(res,400,'Ogiltig listposition.');return;}
+  try{const data=await spotify('/me/playlists?limit=20&offset='+offset);const playlists=(Array.isArray(data?.items)?data.items:[]).filter((p:any)=>typeof p?.uri==='string'&&/^spotify:playlist:[a-zA-Z0-9]+$/.test(p.uri)).map((p:any)=>({uri:p.uri,name:String(p.name??''),owner:String(p.owner?.display_name??''),image:albumImage({album:{images:p.images}})}));
+   res.json({playlists,nextOffset:data?.next?offset+20:null});
   }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Kan inte läsa spellistor.');}
  });
- router.get('/search',async(req,res)=>{if(!requireRole(req,res))return;
-  const q=typeof req.query.q==='string'?req.query.q.trim():'';
-  if(q.length<2||q.length>100){textStatus(res,400,'Sökningen måste vara 2–100 tecken.');return;}
-  try{const data=await spotify('/search?type=track&limit=8&q='+encodeURIComponent(q));
-   const tracks=(Array.isArray(data?.tracks?.items)?data.tracks.items:[]).filter((item:any)=>typeof item?.uri==='string'&&/^spotify:track:[a-zA-Z0-9]+$/.test(item.uri)).map((item:any)=>({uri:item.uri,name:String(item.name??''),artist:Array.isArray(item.artists)?item.artists.map((a:any)=>String(a.name??'')).join(', '):'',cover:albumImage(item)}));
-   res.json({tracks});
-  }catch(e){textStatus(res,e instanceof SpotifyError?e.status:502,e instanceof Error?e.message:'Spotify-sökningen misslyckades.');}
- });
+ spotifyCatalog(router,(req,res)=>requireRole(req,res),spotify);
  router.post('/command',async(req,res)=>{
   if(!requireRole(req,res,true))return;const a=req.body?.action;
   if(typeof a!=='string'||!validAction.has(a)){textStatus(res,400,'Otillåtet Spotify-kommando.');return;}
@@ -159,12 +153,11 @@ export function spotifyApi(directory:string,role:(request:Request)=>'viewer'|'co
     case 'transfer':{if(!deviceId){textStatus(res,400,'Välj en uppspelningsenhet.');return;}await spotify('/me/player','PUT',{device_ids:[deviceId],play:req.body?.play===true});break;}
     case 'queue':
     case 'play_track':
-    case 'play_playlist':{
-     const uri=req.body?.uri;
-     const type=a==='play_playlist'?'playlist':'track';
-     if(typeof uri!=='string'||!new RegExp('^spotify:'+type+':[a-zA-Z0-9]{1,100}$').test(uri)){textStatus(res,400,'Ogiltig Spotify-adress.');return;}
-     if(a==='queue')await spotify('/me/player/queue?uri='+encodeURIComponent(uri)+(deviceId?'&device_id='+encodeURIComponent(deviceId):''),'POST');
-     else await spotify('/me/player/play'+(deviceId?'?device_id='+encodeURIComponent(deviceId):''),'PUT',type==='playlist'?{context_uri:uri}:{uris:[uri]});
+    case 'play_playlist':
+    case 'play_context':{
+     let selection;try{selection=await playbackSelection(a,req.body,spotify);}catch(e){if(e instanceof SpotifyError)throw e;textStatus(res,400,e instanceof Error?e.message:'Ogiltigt musikval.');return;}
+     if(a==='queue')await spotify('/me/player/queue?uri='+encodeURIComponent(req.body.uri)+(deviceId?'&device_id='+encodeURIComponent(deviceId):''),'POST');
+     else await spotify('/me/player/play'+query,'PUT',selection);
      break;
     }
    }
