@@ -619,3 +619,8 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 
 ## Mer nedre utrymme i kontrollistan, 2 november
 - Kontrollpanelens lista har fått 40 px extra skrollbart utrymme längst ner, utöver telefonens safe-area. Matchande scroll-padding ger luft även när sista kontrollen fokuseras via tangentbord. Den tidigare övre utfyllnaden och listans fulla höjd behålls. Enbart CSS-/diffgranskning, inga tester eller push enligt pausen. Servrar behålls.
+
+## Ta bort Oklart från enhetslistorna, 2 november
+- Användaren vill ta bort posterna under Oklart och pausar åter tester/push. Kontrollpanelens och belysningsflikens gemensamma displayObjects filtrerar nu bort just belysning med lightPlacement.key=uncertain, även bland fästa kort. Uppe/Nere/Källare/Inne med känt inomhusläge/Ute behålls; andra typer som dammsugare påverkas inte.
+- Detta är ett visningsfilter i dessa två listor. Inga HA-entiteter, sparade bindningar eller 3D-/hemskärmsobjekt raderas. Om en placering senare blir identifierad kan lampan visas i rätt grupp.
+- Enbart kod-/diffgranskning; inga tester, TypeScript, bygge eller webbläsarprov körda. Ingen push; befintliga servrar behålls. Senast pushade commit är 06959be.

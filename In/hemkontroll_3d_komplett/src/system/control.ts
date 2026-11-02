@@ -76,7 +76,8 @@ config.addEventListener('loaded',render);scope.disposeWith(()=>config.removeEven
 const ready=config.load(true).then(()=>{if(!scope.active)return;if(!lightsOnly){const presets=presetPanel=new PresetPanel(config,connection);if(location.pathname==='/control'){const composer=new PresetComposer(config,connection,()=>controlDevices(config.value,connection.states,connection.source,knxMetadata),()=>{presets.render();render();});root.querySelector('.control-page')!.append(composer.button);scope.disposeWith(()=>composer.dispose());}$('control-presets').append(presets.root);scope.onActivate(()=>{const music=getMusicPanel(connection,config,text=>{if(!scope.active)return;error=text;render();});music.mountCompact($('control-music'));});}let timer=0;scope.disposeWith(()=>clearTimeout(timer));connection.addEventListener('state',()=>{if(!timer)timer=window.setTimeout(()=>{timer=0;render();},150);});connection.addEventListener('connection',render);render();void connection.start();void loadKnxCatalog();link.start();scope.disposeWith(()=>{connection.stop();link.stop();presetPanel?.dispose();});});
 
 function displayObjects():SceneObject[]{
- const objects=config.value?controlDevices(config.value,connection.states,connection.source,knxMetadata):[];
+ // Omit the unplaced "Oklart" lamps from both lists; keep HA and the home scene intact.
+ const objects=(config.value?controlDevices(config.value,connection.states,connection.source,knxMetadata):[]).filter(o=>!isLighting(o)||lightPlacement(o,connection.states,knxMetadata).key!=='uncertain');
  if(location.pathname!=='/control')return objects;
  return objects.filter(o=>o.type==='vacuum'||o.type==='light'&&o.entityId.startsWith('light.')||o.type==='device'&&o.entityId.startsWith('switch.')||o.type==='car'&&available(climate(o))&&(Number(climate(o)?.attributes.supported_features??0)&384)!==0);
 }
