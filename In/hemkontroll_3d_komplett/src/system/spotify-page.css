@@ -1,5 +1,9 @@
 /* Full player follows the control-panel player: charcoal glass, white controls,
    restrained amber transport and Spotify green only for connection status. */
+/* Embedded layout must never override a hidden player or leak into other routes. */
+#spotify-player.spotify-direct.embedded-music[hidden]{display:none!important}
+body:not([data-app-route="/control"]):not([data-app-route="/music"]) #spotify-player.spotify-direct,
+body:not([data-app-route="/control"]):not([data-app-route="/music"]) :is(.music-widget,.spotify-compact,.spotify-device-popover){display:none!important}
 #spotify-player.spotify-direct .music-search-filters{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0 22px}
 #spotify-player.spotify-direct .music-search-filters button{padding:7px 14px;border-radius:22px;min-height:38px}
 #spotify-player.spotify-direct .music-search-filters button[aria-pressed=true]{border-color:#efa93480;background:#efa93418;color:#ffe0a8}

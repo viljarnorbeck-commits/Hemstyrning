@@ -44,7 +44,7 @@ export class MusicPanel{
   this.network.addEventListener('change',()=>{if(!this.stopped)this.update();});
   this.root.className='music-widget glass';this.root.setAttribute('aria-label','Spotify – direktanslutning');
   this.dialog.className='music-panel spotify-direct';this.dialog.id='spotify-player';
-  this.root.hidden=true;this.dialog.hidden=true;document.body.append(this.dialog);
+  this.root.hidden=true;this.dialog.hidden=true;
   this.root.addEventListener('click',e=>{
    const b=(e.target as HTMLElement).closest<HTMLButtonElement>('button');
    if(!b)return;
@@ -96,9 +96,9 @@ export class MusicPanel{
  }
 
  setNotify(notify:(text:string)=>void,config?:Configuration){this.notify=notify;if(config)this.config=config;}
- suspendView(){this.picker.close(false);this.compactMode=false;this.compact.remove();this.root.hidden=true;this.open=false;this.embedded=false;this.dialog.removeAttribute("open");this.dialog.hidden=true;document.body.append(this.dialog);}
+ suspendView(){this.picker.close(false);this.compactMode=false;this.compact.remove();this.root.hidden=true;this.open=false;this.embedded=false;this.dialog.removeAttribute("open");this.dialog.hidden=true;this.dialog.classList.remove('embedded-music');this.dialog.remove();}
  mountPage(container:HTMLElement){this.picker.close(false);this.compactMode=false;this.compact.remove();this.dialog.hidden=false;this.dialog.classList.remove('compact-player');this.embedded=true;this.open=true;this.root.hidden=true;this.dialog.classList.add('embedded-music');const requestedTab=new URLSearchParams(location.search).get('tab')??'search';this.dialog.dataset.activeTab=['search','playlists','queue','jam'].includes(requestedTab)?requestedTab:'search';container.append(this.dialog);this.dialog.setAttribute('open','');this.renderDialog();void this.loadDevices();void this.loadPlaylists();void this.loadQueue();}
- mountCompact(container:HTMLElement){this.picker.close(false);this.compactMode=true;this.embedded=false;this.open=false;this.root.hidden=true;this.dialog.removeAttribute('open');this.dialog.hidden=true;container.append(this.compact);this.renderCompact();}
+ mountCompact(container:HTMLElement){this.picker.close(false);this.compactMode=true;this.embedded=false;this.open=false;this.root.hidden=true;this.dialog.removeAttribute('open');this.dialog.hidden=true;this.dialog.classList.remove('embedded-music');this.dialog.remove();container.append(this.compact);this.renderCompact();}
  private renderCompact(){
   const p=this.state,output=this.chosenOutput()??this.activeOutput(),t=p.track,src=cover(t?.cover??''),allow=this.setup.connected&&this.setup.canControl&&!this.busy;
   const position=Math.min(t?.durationMs??0,p.progressMs+(p.playing&&this.lastRefresh?Math.min(15000,Math.max(0,Date.now()-this.lastRefresh)):0));
@@ -190,6 +190,7 @@ export class MusicPanel{
  }
  show(){
   if(!['/control','/music'].includes(location.pathname))return;
+  if(!this.embedded){document.body.append(this.dialog);this.dialog.hidden=false;}
   this.open=true;this.onVisibilityChange(true);this.renderDialog();if(!this.dialog.open&&!this.embedded)this.dialog.showModal();
   void this.loadDevices();void this.loadPlaylists();void this.refresh();
  }
