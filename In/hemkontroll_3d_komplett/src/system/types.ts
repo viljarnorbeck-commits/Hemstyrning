@@ -17,7 +17,7 @@ export interface ModelConfig { appearance?:import('./appearance').Grade; url: st
 export interface MusicConfig {entities:string[];activeEntity:string;jamUrl:string;jamSavedAt:string}
 export interface PresetAction{entityId:string;action:'turn_on'|'turn_off'|'locate'}
 export interface PresetMusic{action:'play'|'pause';uri?:string;deviceId?:string}
-export interface Preset{effect?:'halloween'|'combination';actions?:PresetAction[];spotify?:PresetMusic;effectTargets?:string[];effectVacuum?:string;id:string;name:string;icon:string;color:string;description:string;entityId:string;canStop:boolean;hidden:boolean}
+export interface Preset{effect?:'halloween'|'combination';actions?:PresetAction[];skipUnavailable?:boolean;spotify?:PresetMusic;effectTargets?:string[];effectVacuum?:string;id:string;name:string;icon:string;color:string;description:string;entityId:string;canStop:boolean;hidden:boolean}
 export interface CameraView{position:Vec3;target:Vec3;zoom:number;fov:number}
 export interface EnergyRoute {id:string;name:string;points:Vec3[];sensor:string;unit:'W'|'kW';color:string;kind:'grid'|'solar'|'charging'|'other';confirmed:boolean}
 export interface StartPhoto {url:string;signature:string;createdAt:string;width:number;height:number;view:CameraView}

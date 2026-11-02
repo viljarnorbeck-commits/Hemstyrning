@@ -83,15 +83,20 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     const config=await load(),preset=config.presets.find(p=>p.id===req.params.id&&!p.hidden),stop=req.body?.action==='stop';
     if(preset?.effect==='combination'){
       if(res.locals.hemRole==='viewer'||req.body?.action!=='activate'){res.sendStatus(403);return;}
-      const states=await read('states')as HassState[],actions=preset.actions??[];
+      const states=await read('states')as HassState[],savedActions=preset.actions??[];
+      const skipped=preset.skipUnavailable?savedActions.filter(a=>!available(states.find(s=>s.entity_id===a.entityId))):[];
+      const actions=savedActions.filter(a=>!skipped.includes(a));
       // Validate every saved target before the first service call. Never accept client-supplied actions.
-      const invalid=actions.find(a=>{
+      const invalid=savedActions.find(a=>{
         const state=states.find(s=>s.entity_id===a.entityId),pref=config.entityPreferences[a.entityId];
         const object=config.objects.find(o=>o.entityId===a.entityId&&['light','device','vacuum'].includes(o.type));
-        if(pref?.hidden||pref?.allowCommands===false||!available(state)||(!object&&!pref?.allowCommands))return true;
+        if(pref?.hidden||pref?.allowCommands===false||(!object&&!pref?.allowCommands))return true;
+        if(preset.skipUnavailable&&!available(state))return false;
+        if(!available(state))return true;
         return a.action==='locate'?!object||object.type!=='vacuum'||!robotSupports(state,'vacuum_locate'):!['on','off'].includes(state!.state);
       });
       if(invalid){res.status(409).json({message:'En vald enhet är otillgänglig, saknar koppling eller tillåter inte funktionen: '+invalid.entityId});return;}
+      if(savedActions.length&&!actions.length){res.status(409).json({message:'Inga av de valda lamporna är nåbara just nu. Ingenting skickades.'});return;}
       if(combinationsRunning.has(preset.id)){res.status(409).json({message:'Kombinationen körs redan. Vänta tills den är klar.'});return;}
       combinationsRunning.add(preset.id);const failures:string[]=[];
       // Small batches bound network concurrency and keep larger scenes responsive.
@@ -100,7 +105,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
         if(live){const r=await fetch(live.url+'/api/services/'+domain+'/'+a.action,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(6000)});if(!r.ok)throw Error();}
         else await callService(store,{domain,service:a.action,serviceData:data},delay);
       }catch{failures.push(a.entityId);}}));}finally{combinationsRunning.delete(preset.id);}
-      res.status(failures.length?502:200).json({accepted:!failures.length,confirmed:false,message:failures.length?'Kombinationen kördes delvis. Misslyckades: '+failures.join(', '):'Kommandon mottagna. Enheternas verkliga status visas i listan.'});return;
+      res.status(failures.length?502:200).json({accepted:!failures.length,confirmed:false,message:(failures.length?'Kombinationen kördes delvis. Misslyckades: '+failures.join(', '):'Kommandon mottagna. Enheternas verkliga status visas i listan.')+(skipped.length?' '+skipped.length+' otillgängliga enheter hoppades över.':'')});return;
     }
     if(preset?.effect==='halloween'){if(res.locals.hemRole==='viewer'||!['activate','stop'].includes(req.body?.action)){res.sendStatus(403);return;}try{const states=await read('states')as HassState[];const ids=(preset.effectTargets??[]).filter(id=>!config.entityPreferences[id]?.hidden&&config.entityPreferences[id]?.allowCommands!==false);const status=stop?await halloween.stop(preset.id):await halloween.start(preset.id,ids,states,preset.effectVacuum);res.json({accepted:true,...status});}catch(e){res.status(409).json({message:e instanceof Error?e.message:'Halloween kunde inte startas'});}return;}
     if(!preset||!['activate','stop'].includes(req.body?.action)||stop&&(!preset.canStop||!preset.entityId.startsWith('script.'))){res.sendStatus(403);return;}

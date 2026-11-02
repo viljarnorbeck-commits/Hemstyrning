@@ -1,4 +1,11 @@
 /* Reference composition, strictly scoped to the control workspace's right side. */
+.reference-right .preset-card.aurora-preset{position:relative;isolation:isolate;overflow:hidden;--preset-ink:#effffb;background:radial-gradient(ellipse at 18% 5%,#67ffc85c,transparent 63%),radial-gradient(ellipse at 95% 90%,#a065ff6b,transparent 70%),linear-gradient(145deg,#0b403d,#16243c 55%,#36275a);border-color:#9bffdb65;box-shadow:inset 0 1px #c3ffe54d,0 0 20px #69f9c31a}
+body[data-app-route="/control"] .reference-right .preset-card.aurora-preset::before{content:'';position:absolute;inset:-45%;z-index:-1;pointer-events:none;opacity:.75;background:repeating-linear-gradient(115deg,transparent 0 18%,#4fffb855 23%,#62d5ff3d 29%,transparent 36%,#b681ff4d 44%,transparent 52%);filter:blur(12px);transform:rotate(-18deg);animation:aurora-curtain 9s ease-in-out infinite alternate}
+.reference-right .preset-card.aurora-preset .preset-icon{color:#b5ffe1;text-shadow:0 0 12px #74ffcd}
+.reference-right .preset-card.aurora-preset strong{color:#effffb;text-shadow:0 2px 8px #091c2b}
+.reference-right .preset-card.aurora-preset .preset-go{color:#effffb;border-color:#b6ffe480;background:#7affcf17;box-shadow:inset 0 1px #d6fff726;white-space:nowrap}
+@keyframes aurora-curtain{from{transform:translate(-3%,1%) rotate(-18deg);opacity:.55}to{transform:translate(7%,-6%) rotate(-8deg);opacity:.85}}
+@media(prefers-reduced-motion:reduce){body[data-app-route="/control"] .reference-right .preset-card.aurora-preset::before{animation:none}}
 .reference-right .heater-visual>.motor-heater-car{width:min(94%,310px);height:auto;max-height:290px}
 .reference-right .heater-car-body{fill:#48515c;stroke:#9eabb8;stroke-width:2;transition:fill .35s,stroke .35s,filter .35s}
 .reference-right .heater-car-glass{fill:#28333e;stroke:#8794a1;stroke-width:1.5;transition:fill .35s}
