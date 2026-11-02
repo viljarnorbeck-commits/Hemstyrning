@@ -8,13 +8,16 @@
     "In/hemkontroll_3d_komplett"
   ],
   "scripts": {
-    "dev": "concurrently --kill-others --names HA,APP --prefix-colors yellow,cyan \"npm:dev:simulator\" \"npm:dev:dashboard\"",
+    "dev": "concurrently --kill-others --names HA,APP,MODELS --prefix-colors yellow,cyan,magenta \"npm:dev:simulator\" \"npm:dev:dashboard\" \"npm:dev:model-exchange\"",
+    "test:model-exchange": "node --test scripts/model-exchange.test.mjs",
+    "models:sync": "node scripts/sync-model-exchange.mjs",
+    "dev:model-exchange": "node scripts/sync-model-exchange.mjs --watch",
     "dev:dashboard": "npm run dev --workspace @hemkontroll/dashboard",
     "dev:spotify-discovery": "python scripts/spotify-discovery.py --output data/spotify-local-devices.json",
     "dev:spotify-activation": "python scripts/spotify-discovery.py --port 8767 --output data/spotify-local-activation.json",
     "dev:simulator": "npm run dev --workspace @hemkontroll/ha-simulator",
     "start:simulator": "npm run start --workspace @hemkontroll/ha-simulator",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && npm run test:model-exchange",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test:e2e": "playwright test",
     "prepare:model": "node scripts/prepare-model.mjs",

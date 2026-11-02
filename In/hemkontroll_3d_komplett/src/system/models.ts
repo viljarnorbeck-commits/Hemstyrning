@@ -102,6 +102,9 @@ export class ModelManager {
       const label=config.url.startsWith('/models/daniels')?config.label.replace('geometri, texturfil saknas','originaltextur 8192 × 8192'):config.label;
       this.status = config.verified ? label : `${label} · referensmodell, årstid ej verifierad`;
     } catch (error) {
+      if(serial===this.serial&&!this.root.children.length&&config.fallback){
+        this.requested='';await this.select(season,config.fallback);this.status='Reservmodell visas · den nya leveransen kunde inte laddas.';this.onStatus();return;
+      }
       this.status = 'Modellen kunde inte laddas. Föregående modell visas. Välj annan årstid eller ladda om sidan.';
       console.error(error);
     } finally { if (serial === this.serial) { this.loading = false; this.onStatus(); } }

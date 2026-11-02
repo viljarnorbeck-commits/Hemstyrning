@@ -1,4 +1,5 @@
 import {allowedOrigin} from './access.js';
+import {modelExchangeApi} from './model-exchange-api.js';
 import {yardApi} from './yard-api.js';
 import {resolveJamLink} from './music.js';
 import { createHash } from 'node:crypto';
@@ -32,6 +33,12 @@ export function workspaceApi(directory: string,onSaved:()=>void=()=>{}) {
     if (origin && !allowedOrigin(origin)) { res.sendStatus(403); return; }
     next();
   });
+  async function commit(change:(scene:SceneConfig)=>SceneConfig){
+    let saved!:SceneConfig;
+    pending=pending.catch(()=>{}).then(async()=>{saved=sceneSchema.parse(change(await load()));await mkdir(directory,{recursive:true});const temporary=configPath+'.'+crypto.randomUUID()+'.tmp';await writeFile(temporary,JSON.stringify(saved,null,2));await rename(temporary,configPath);});
+    await pending;onSaved();return saved;
+  }
+  router.use('/model-exchange',modelExchangeApi(directory,load,commit));
   const yard=yardApi(directory,load);router.use('/yard-analysis',yard.router);
   router.post('/music/jam/resolve',express.json({limit:'4kb'}),async(req,res)=>{try{res.json({url:await resolveJamLink(req.body?.url),verifiedSession:false});}catch(error){res.status(400).json({message:error instanceof Error?error.message:'Länken kunde inte verifieras'});}});
   router.get('/scene', async (_req, res) => { res.json(await load()); });
@@ -40,6 +47,12 @@ export function workspaceApi(directory: string,onSaved:()=>void=()=>{}) {
     if (!result.success) { res.status(400).json({ message: 'Ogiltig scenkonfiguration', errors: result.error.issues }); return; }
     if (!req.is('application/json')) { res.sendStatus(415); return; }
     const save = async () => {
+      const current=await load();
+      if(current.modelExchange){
+        const stale=result.data.modelExchange?.active?.manifestSha256!==current.modelExchange.active?.manifestSha256;
+        result.data.modelExchange=current.modelExchange;
+        if(stale)result.data.models=current.models;
+      }
       await mkdir(directory, { recursive: true });
       const temp = `${configPath}.${crypto.randomUUID()}.tmp`;
       await writeFile(temp, JSON.stringify(result.data, null, 2));

@@ -3,6 +3,11 @@ import * as THREE from 'three';
 import { ModelManager, applyCalibration } from './models';
 import type { ModelConfig, Season } from './types';
 const calibration: ModelConfig = {url:'/models/test.glb',label:'Test',verified:true,position:[1,2,3],rotation:[-90,30,0],scale:1.5};
+it('uses the previous calibrated model on a failed first load of an imported version',async()=>{
+ const loader={loadAsync:vi.fn(async(url:string)=>{if(url==='/models/broken.glb')throw Error('decode failed');return{scene:new THREE.Group()};})};
+ const manager=new ModelManager(loader as never);await manager.select('summer',{...calibration,url:'/models/broken.glb',fallback:calibration});
+ expect(loader.loadAsync).toHaveBeenCalledTimes(2);expect(manager.root.children).toHaveLength(1);expect(manager.root.children[0]!.position.toArray()).toEqual(calibration.position);expect(manager.status).toContain('Reservmodell');manager.dispose();
+});
 describe('independent season model roots', () => {
   it('switches four calibrated models without moving shared device coordinates', async () => {
     const scene = new THREE.Scene(), devices = new THREE.Group(), lamp = new THREE.Object3D();

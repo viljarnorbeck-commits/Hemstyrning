@@ -13,7 +13,7 @@ export interface SceneObject {
   bindings?: Record<string,string>; id: string; type: ObjectKind; name: string; entityId: string; position: Vec3; rotation: Vec3; scale: Vec3;
   color: string; intensity: number; angle: number; range: number; roughness: number; metalness: number; points: Vec3[];
 }
-export interface ModelConfig { appearance?:import('./appearance').Grade; url: string; label: string; verified: boolean; position: Vec3; rotation: Vec3; scale: number }
+export interface ModelConfig { fallback?:Omit<ModelConfig,'fallback'>; appearance?:import('./appearance').Grade; url: string; label: string; verified: boolean; position: Vec3; rotation: Vec3; scale: number }
 export interface MusicConfig {entities:string[];activeEntity:string;jamUrl:string;jamSavedAt:string}
 export interface PresetAction{entityId:string;action:'turn_on'|'turn_off'|'locate'}
 export interface PresetMusic{action:'play'|'pause';uri?:string;deviceId?:string}

@@ -1,5 +1,6 @@
 import {canonicalJamUrl} from '../../../shared/ha-contract.js';
 import { z } from 'zod';
+import {modelExchangeSchema,exchangeModelSchema} from './model-exchange-contract.js';
 
 const finite = z.number().finite();
 const vector = z.tuple([finite, finite, finite]);
@@ -10,6 +11,7 @@ const presetAction=z.object({entityId:z.string().regex(/^(?:light|switch|vacuum)
 const presetMusic=z.object({action:z.enum(['play','pause']),uri:z.string().regex(/^spotify:(?:track|playlist):[a-zA-Z0-9]{1,100}$/).optional(),deviceId:z.string().regex(/^[-\w]{1,100}$/).optional()});
 export const sceneSchema = z.object({
   version: z.literal(1),
+  modelExchange:modelExchangeSchema.optional(),
   switchOffPreserve:z.record(z.string().regex(/^switch\.[a-z0-9_]+$/),z.array(z.string().regex(/^switch\.[a-z0-9_]+$/)).min(1).max(8)).refine(value=>Object.keys(value).length<=20&&Object.entries(value).every(([id,others])=>!others.includes(id)&&new Set(others).size===others.length),'Ogiltiga återställningskopplingar').default({}),
   controlPins:z.array(z.string().regex(/^[a-z_]+\.[a-z0-9_]+$/)).max(200).refine(ids=>new Set(ids).size===ids.length,'Fästa entiteter måste vara unika').default([]),
   weather:z.object({provider:z.enum(['home-assistant','smhi']),placeName:z.string().max(100),latitude:finite.min(-90).max(90),longitude:finite.min(-180).max(180)}).refine(p=>p.provider!=='smhi'||p.placeName.trim().length>0,'Ange plats för SMHI').optional(),
@@ -24,7 +26,7 @@ export const sceneSchema = z.object({
   layoutVersion: z.number().default(2),
   location: z.object({ timeZone:z.string().refine(value=>{try{new Intl.DateTimeFormat('sv-SE',{timeZone:value});return true;}catch{return false;}},'Ogiltig tidszon').default('Europe/Stockholm'),latitude: finite.min(-90).max(90), longitude: finite.min(-180).max(180), northOffset: finite }),
   models: z.object(Object.fromEntries(['summer', 'autumn', 'firstSnow', 'winter'].map(key => [key, z.object({
-    appearance:grade.optional(),url: modelUrl, label: z.string().max(120), verified: z.boolean(),
+    appearance:grade.optional(),url: modelUrl, label: z.string().max(120), verified: z.boolean(),fallback:exchangeModelSchema.optional(),
     position: vector, rotation: vector, scale: finite.positive().max(1000),
   })]))),
   activeModel: z.enum(['summer', 'autumn', 'firstSnow', 'winter']),
