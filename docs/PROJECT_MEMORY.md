@@ -608,3 +608,6 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 ## Mer övre skrollutrymme under sökknappen, 2 november
 - Användaren bad om lite mer luft överst i kontrollpanelens lista så att grupprubriken Uppe hamnar under förstoringsglaset. Listan har nu 56 px övre padding som ingår i skrollytan, i stället för 0. Matchande scroll-padding håller även tangentbordsfokuserade kort nedanför sökknappen när webbläsaren skrollar fram dem. Sökningsknappen behåller sin överlagrade placering och listans nedre utfyllnad ändras inte. Endast /control berörs.
 - Enbart kod-/diffgranskning. Inga tester, TypeScript, bygge eller webbläsarprov körda. Push fortsatt pausad; befintliga servrar behålls.
+
+## Sökrutans kryss innanför konturen, 2 november
+- Kontrollpanelens stängkryss i sökpopupen har fått 6 px extra marginal mot högerkanten så att det ligger tydligare innanför konturlinjen. Enbart CSS; inga tester, bygge eller webbläsarprov körda. Push fortsatt pausad och befintliga servrar behålls.
