@@ -667,3 +667,8 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Användaren vill döpa om alla Sovrum 1 till Viljars rum. Gemensam roomDisplayName hanterar Sovrum1, Sovrum 1 och avgränsare utan att träffa Sovrum 10/11. Den används i de korta KNX-namnen, kontroll-/lamplistornas visningsnamn, områdesundertitlar samt entitetsöversiktens namn/områden. Befintliga egna namn Viljars hyllor och Viljars tak bevaras.
 - Läsande kontroll hittade de två redan kända sovrum1-entiteterna för fönster och tak; båda har redan sina egna sparade namn. Ingen HA-konfiguration eller entity_id ändrades, och inga sparade sensorkopplingar bryts. Originalets entity_id syns fortsatt för spårbarhet.
 - Enbart kod-/diffgranskning och läsande inventering. Inga tester, TypeScript, bygge eller webbläsarprov enligt pausen. Ingen push, befintliga servrar behålls.
+
+## Sov1 uttag heter Viljars uttag, 2 november
+- Användaren pekade ut att uttaget fortfarande visades som Sov1. Den missade entiteten verifierades läsande: switch.aktorb1_b3_port1_sov1_uttag med HA-namnet AktorB1_B3_Port1_Sov1_uttag. Det är ett upptäckt KNX-objekt, inte ett redan sparat objekt med eget namn.
+- roomDisplayName hanterar nu även förkortningarna Sov1/Sov 1/Sov_1, med avgränsare så Sov10/11 inte träffas. shortKnxName ger uttryckligen Viljars uttag för Sov1 uttag. Kopplingen, typen Uttag och styrbehörigheterna behålls. Inga HA-entiteter ändrades eller registrerades om.
+- Enbart kod-/diffgranskning och läsande identifiering; inga tester, TypeScript, bygge eller webbläsarprov enligt pausen. Ingen push; befintliga servrar behålls.

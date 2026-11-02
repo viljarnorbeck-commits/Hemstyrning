@@ -3,7 +3,7 @@ import type{SceneObject,HassState}from'./types';import type{ControlEntityMetadat
 export const lightLocations=[['inside','Inne'],['outside','Ute'],['uncertain','Oklart']] as const;
 export type LightLocation=typeof lightLocations[number][0];
 /** A display alias only: entity IDs and the original HA registry are unchanged. */
-export function roomDisplayName(value:string){return value.replace(/sovrum[ _-]*1(?=$|[ _-])/gi,'Viljars rum');}
+export function roomDisplayName(value:string){return value.replace(/(^|[\s_-])sov(?:rum)?[ _-]*1(?=$|[ _-])/gi,'$1Viljars rum');}
 export const lightPlacementGroups=[['upstairs','Uppe'],['downstairs','Nere'],['basement','Källare'],['inside','Inne · placering oklar'],['outside','Ute'],['uncertain','Oklart']] as const;
 type LightPlacement=typeof lightPlacementGroups[number][0];
 /** Placements explicitly confirmed by the homeowner, before metadata/name guesses. */
@@ -84,6 +84,7 @@ export function shortKnxName(name:string){
  if(/^(?:kök\s+)?köksbord(?:\s+belysning)?$/i.test(text))return'Köksbord';
  text=text.replace(/\s+belysning$/i,'').trim();
  text=roomDisplayName(text);
+ if(/^Viljars rum\s+uttag$/i.test(text))return'Viljars uttag';
  if(/^utebelysning\s*1$/i.test(text))return'Belysning altan';
  if(/^nil$/i.test(text)){const port=name.match(/port(\d+)/i);return port?'Ej namngiven port '+port[1]:'Ej namngiven kanal';}
  if(text)return text[0]!.toLocaleUpperCase('sv-SE')+text.slice(1);
