@@ -81,6 +81,7 @@ export function shortKnxName(name:string){
  text=text.replace(/_/g,' ').replace(/([a-zåäö])([A-ZÅÄÖ])/g,'$1 $2').replace(/(sovrum|sov|motorvärmare|motorvarmare)\s*(\d+)/gi,'$1 $2').replace(/\s+/g,' ').trim();
  if(/^(?:kök\s+)?köksbord(?:\s+belysning)?$/i.test(text))return'Köksbord';
  text=text.replace(/\s+belysning$/i,'').trim();
+ if(/^utebelysning\s*1$/i.test(text))return'Belysning altan';
  if(/^nil$/i.test(text)){const port=name.match(/port(\d+)/i);return port?'Ej namngiven port '+port[1]:'Ej namngiven kanal';}
  if(text)return text[0]!.toLocaleUpperCase('sv-SE')+text.slice(1);
  const channel=name.match(/aktor([a-z]\d+)([a-z])?/i);

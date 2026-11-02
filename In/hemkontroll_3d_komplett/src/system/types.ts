@@ -26,6 +26,7 @@ export interface SceneConfig {
  weather?:{provider:'home-assistant'|'smhi';placeName:string;latitude:number;longitude:number};
  entityPreferences?:Record<string,{control:boolean;details:boolean;allowCommands:boolean;hidden?:boolean;hiddenOnDetails?:boolean;temperatureOffsetC?:number}>;
  sensorBindings?:Record<string,string>;
+ switchOffPreserve?:Record<string,string[]>;
  startMode?:'live'|'photo';startPhoto?:StartPhoto;energyRoutes?:EnergyRoute[];
  startView?:CameraView;labels?:boolean;presets?:Preset[];
   music?:MusicConfig;

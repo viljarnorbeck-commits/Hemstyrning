@@ -1,4 +1,5 @@
 import {HalloweenEffect} from './halloween-effect.js';
+import {SwitchOffPreserver} from './switch-off-preserver.js';
 import type {HassState} from './types.js';
 import {smhiWeatherApi} from './smhi-weather.js';
 import {readRegistry} from './ha-registry.js';
@@ -46,6 +47,22 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
   router.get('/presets/:id/status',async(req,res)=>{const config=await load(),p=config.presets.find(p=>p.id===req.params.id&&!p.hidden&&p.effect==='halloween');if(!p){res.sendStatus(404);return;}res.json(halloween.status(p.id));});
   let registryCache:Awaited<ReturnType<typeof readRegistry>>=[],registryAt=0;
   router.get('/catalog',async(_req,res)=>{try{if(live&&Date.now()-registryAt>60000){registryCache=await readRegistry(live);registryAt=Date.now();}res.json({entities:registryCache,registryAvailable:!!live,source:live?'home-assistant':'simulator'});}catch{res.json({entities:[],registryAvailable:false,source:live?'home-assistant':'simulator',message:'Registermetadata saknas. State-katalogen fungerar fortfarande.'});}});
+  const switchPreserver=new SwitchOffPreserver(async signal=>{
+    if(!live)return store.all();
+    const response=await fetch(live.url+'/api/states',{headers:{Authorization:'Bearer '+live.token},signal});
+    if(!response.ok)throw Error('Kunde inte läsa lampornas lägen från Home Assistant.');return response.json()as Promise<HassState[]>;
+  },async(id,service,signal)=>{
+    if(live){if(live.commandsEnabled!==true)throw Error('Home Assistant är skrivskyddad.');const response=await fetch(live.url+'/api/services/switch/'+service,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify({entity_id:id}),signal});if(!response.ok)throw Error('Home Assistant avvisade återställningskommandot.');}
+    else await callService(store,{domain:'switch',service,serviceData:{entity_id:id}},delay);
+  });
+  async function preserveSwitchOff(id:string,config:SceneConfig){
+    const preserve=config.switchOffPreserve[id];if(!preserve?.length)return false;
+    const ids=[id,...preserve];
+    if(config.presets.some(p=>combinationsRunning.has(p.id)&&(p.actions??[]).some(a=>ids.includes(a.entityId))))throw Error('Vänta tills den pågående belysningskombinationen är klar.');
+    for(const entity of ids){const pref=config.entityPreferences[entity],saved=config.objects.some(o=>o.type==='device'&&o.entityId===entity);if(pref?.hidden||pref?.allowCommands===false||(!saved&&!pref?.allowCommands))throw Error('En återställningskoppling saknar tillåten styrning: '+entity);}
+    if(config.presets.some(p=>p.effect==='halloween'&&(p.effectTargets??[]).some(entity=>ids.includes(entity))&&(halloween.status(p.id).running||halloween.status(p.id).restoring)))throw Error('Stoppa den pågående ljuseffekten innan altanen släcks separat.');
+    await switchPreserver.run(id,preserve);return true;
+  }
   router.post('/entity-action',async(req,res)=>{
    if(res.locals.hemRole==='viewer'||req.headers['x-hemkontroll-mode']!=='live'){res.sendStatus(403);return;}
    const id=req.body?.entity_id,action=req.body?.action,value=req.body?.value,config=await load();
@@ -57,7 +74,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
    if(['number','input_number'].includes(domain)&&action==='set_value'){const a=state!.attributes;if(typeof value==='number'&&Number.isFinite(value)&&typeof a.min==='number'&&typeof a.max==='number'&&value>=a.min&&value<=a.max&&(typeof a.step!=='number'||a.step<=0||Math.abs((value-a.min)/a.step-Math.round((value-a.min)/a.step))<1e-7)){service='set_value';data.value=value;}}
    if(['select','input_select'].includes(domain)&&action==='select_option'&&Array.isArray(state!.attributes.options)&&state!.attributes.options.includes(value)){service='select_option';data.option=value;}
    if(!service){res.status(400).json({message:'Ingen tillåten och annonserad funktion för detta värde'});return;}
-   try{if(live){const r=await fetch(live.url+'/api/services/'+domain+'/'+service,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error();}else store.set(id,action==='turn_on'?'on':action==='turn_off'?'off':String(value));res.json({accepted:true,confirmed:false});}catch{res.status(502).json({message:'Home Assistant avvisade kommandot'});}
+   try{if(domain==='switch'){if(service==='turn_off'&&await preserveSwitchOff(id,config)){res.json({accepted:true,confirmed:true});return;}if(switchPreserver.busy([id]))throw Error('Belysningen återställs. Vänta tills kommandot är klart.');}if(live){const r=await fetch(live.url+'/api/services/'+domain+'/'+service,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('Home Assistant avvisade kommandot');}else store.set(id,action==='turn_on'?'on':action==='turn_off'?'off':String(value));res.json({accepted:true,confirmed:false});}catch(error){res.status(502).json({message:error instanceof Error?error.message:'Home Assistant avvisade kommandot'});}
   });
   router.get('/services',async(_req,res)=>{
     if(!live){res.json([]);return;}
@@ -86,6 +103,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
       const states=await read('states')as HassState[],savedActions=preset.actions??[];
       const skipped=preset.skipUnavailable?savedActions.filter(a=>!available(states.find(s=>s.entity_id===a.entityId))):[];
       const actions=savedActions.filter(a=>!skipped.includes(a));
+      if(switchPreserver.busy(savedActions.map(a=>a.entityId))){res.status(409).json({message:'Belysningen återställs. Vänta innan kombinationen körs.'});return;}
       // Validate every saved target before the first service call. Never accept client-supplied actions.
       const invalid=savedActions.find(a=>{
         const state=states.find(s=>s.entity_id===a.entityId),pref=config.entityPreferences[a.entityId];
@@ -107,7 +125,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
       }catch{failures.push(a.entityId);}}));}finally{combinationsRunning.delete(preset.id);}
       res.status(failures.length?502:200).json({accepted:!failures.length,confirmed:false,message:(failures.length?'Kombinationen kördes delvis. Misslyckades: '+failures.join(', '):'Kommandon mottagna. Enheternas verkliga status visas i listan.')+(skipped.length?' '+skipped.length+' otillgängliga enheter hoppades över.':'')});return;
     }
-    if(preset?.effect==='halloween'){if(res.locals.hemRole==='viewer'||!['activate','stop'].includes(req.body?.action)){res.sendStatus(403);return;}try{const states=await read('states')as HassState[];const ids=(preset.effectTargets??[]).filter(id=>!config.entityPreferences[id]?.hidden&&config.entityPreferences[id]?.allowCommands!==false);const status=stop?await halloween.stop(preset.id):await halloween.start(preset.id,ids,states,preset.effectVacuum);res.json({accepted:true,...status});}catch(e){res.status(409).json({message:e instanceof Error?e.message:'Halloween kunde inte startas'});}return;}
+    if(preset?.effect==='halloween'){if(res.locals.hemRole==='viewer'||!['activate','stop'].includes(req.body?.action)){res.sendStatus(403);return;}try{const states=await read('states')as HassState[];const ids=(preset.effectTargets??[]).filter(id=>!config.entityPreferences[id]?.hidden&&config.entityPreferences[id]?.allowCommands!==false);if(!stop&&switchPreserver.busy(ids)){res.status(409).json({message:'Belysningen återställs. Vänta innan ljuseffekten startas.'});return;}const status=stop?await halloween.stop(preset.id):await halloween.start(preset.id,ids,states,preset.effectVacuum);res.json({accepted:true,...status});}catch(e){res.status(409).json({message:e instanceof Error?e.message:'Halloween kunde inte startas'});}return;}
     if(!preset||!['activate','stop'].includes(req.body?.action)||stop&&(!preset.canStop||!preset.entityId.startsWith('script.'))){res.sendStatus(403);return;}
     const domain=preset.entityId.split('.')[0]!,service=stop?'turn_off':'turn_on',target=(await read('states') as {entity_id:string;state:string}[]).find(s=>s.entity_id===preset.entityId);
     if(!target||target.state==='unavailable'||target.state==='unknown'&&domain==='script'){res.status(400).json({message:'Scenen eller skriptet är otillgängligt'});return;}
@@ -215,6 +233,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
     const payload:{entity_id:string;fan_speed?:string}={entity_id:entity};
     if(service==='set_fan_speed'){const value=req.body.value,speeds=target?.attributes.fan_speed_list;if(typeof value!=='string'||!Array.isArray(speeds)||!speeds.includes(value)){res.status(400).json({message:'Välj ett sugläge som dammsugaren stöder'});return;}payload.fan_speed=value;}
     if(kind==='car'&&domain==='climate'&&(Number(target?.attributes.supported_features??0)&(service==='turn_on'?256:128))===0){res.status(400).json({message:'Klimatentiteten saknar stöd'});return;}
+    if(domain==='switch')try{if(service==='turn_off'&&await preserveSwitchOff(entity,scene)){res.json({accepted:true,confirmed:true});return;}if(switchPreserver.busy([entity]))throw Error('Belysningen återställs. Vänta tills kommandot är klart.');}catch(error){res.status(409).json({message:error instanceof Error?error.message:'Återställningen kunde inte slutföras.'});return;}
     if(live){const response=await fetch(`${live.url}/api/services/${domain}/${service}`,{method:'POST',headers:{Authorization:`Bearer ${live.token}`,'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});if(!response.ok){res.sendStatus(502);return;}}
     else await callService(store,{domain,service,serviceData:payload},delay);
     res.json({accepted:true});
