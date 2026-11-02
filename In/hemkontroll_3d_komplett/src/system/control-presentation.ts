@@ -4,8 +4,22 @@ export const lightLocations=[['inside','Inne'],['outside','Ute'],['uncertain','O
 export type LightLocation=typeof lightLocations[number][0];
 export const lightPlacementGroups=[['upstairs','Uppe'],['downstairs','Nere'],['basement','Källare'],['inside','Inne · placering oklar'],['outside','Ute'],['uncertain','Oklart']] as const;
 type LightPlacement=typeof lightPlacementGroups[number][0];
+/** Placements explicitly confirmed by the homeowner, before metadata/name guesses. */
+const confirmedLightPlacements:Readonly<Record<string,LightPlacement>>={
+ 'light.takljus_utanfor_honshus':'outside',
+ 'switch.aktore1e_belysning_utanfor_honshus':'outside',
+ 'light.ledljus_honshus':'outside',
+ 'switch.aktore1d_belysning_ute_ledljus':'outside',
+ 'switch.aktorb1_b3_port5_bastu_tak':'upstairs',
+ 'light.trappbelysning':'upstairs',
+ 'switch.aktorb1_b3_port12_trappbelysning_tak':'upstairs',
+ 'light.lampa_5':'outside',
+ 'light.lampa_9':'outside',
+};
 /** Display guesses only; room-based floor assignments remain explicitly provisional. */
 export function lightPlacement(o:SceneObject,states:Map<string,HassState>,catalog:readonly ControlEntityMetadata[]=[]):{key:LightPlacement;label:string;provisional:boolean}{
+ const confirmed=confirmedLightPlacements[o.entityId];
+ if(confirmed)return{key:confirmed,label:lightPlacementGroups.find(([id])=>id===confirmed)![1],provisional:false};
  const location=lightLocation(o,states,catalog);
  const normalize=(s:string)=>s.toLocaleLowerCase('sv-SE').normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[_-]/g,' ');
  const area=normalize(catalog.find(e=>e.entityId===o.entityId)?.area??'');
@@ -33,6 +47,7 @@ export function lightPlacement(o:SceneObject,states:Map<string,HassState>,catalo
 }
 /** A provisional display grouping; it never changes HA areas, bindings or command permissions. */
 export function lightLocation(o:SceneObject,states:Map<string,HassState>,catalog:readonly ControlEntityMetadata[]=[]):LightLocation{
+ const confirmed=confirmedLightPlacements[o.entityId];if(confirmed)return confirmed==='outside'?'outside':'inside';
  const classify=(value:string):LightLocation=>{
   const text=value.toLocaleLowerCase('sv-SE').replace(/[_-]/g,' ');
   if(/\b(?:ute\w*|utomhus|utanför|outdoor|outside|garden|trädgård|altan|terrass|fasad|uppfart|driveway|patio|bron|brobelysning|stolp\w*|easee)\b/u.test(text))return'outside';
