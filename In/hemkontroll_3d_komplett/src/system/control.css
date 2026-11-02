@@ -1,7 +1,7 @@
 /* Shared category colours are supplied by control-appearance, identical within each group. */
 /* One vertical lamp list and two independent right-hand surfaces. */
 body[data-app-route="/control"] .lights-section{position:relative;gap:0}
-body[data-app-route="/control"] #control-lights{padding-top:56px;scroll-padding-top:56px;box-sizing:border-box}
+body[data-app-route="/control"] #control-lights{padding-top:56px;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px));scroll-padding-top:56px;scroll-padding-bottom:40px;box-sizing:border-box}
 body[data-app-route="/control"] #control-lights>.device-category:first-child{display:none}
 body[data-app-route="/control"] #control-search-toggle{position:absolute;top:6px;left:10px;z-index:6;display:grid;place-items:center;width:38px;height:38px;min-width:38px;min-height:38px;padding:9px;border:1px solid #ffffff28;border-radius:50%;background:rgba(25,28,33,.24);color:#fff;box-shadow:0 3px 14px #0005;backdrop-filter:blur(8px);opacity:.8;touch-action:manipulation}
 body[data-app-route="/control"] #control-search-toggle svg{width:19px;height:19px;pointer-events:none}
