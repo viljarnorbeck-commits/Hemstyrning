@@ -1,4 +1,5 @@
 import{discoveredLight}from'./device-registry';
+import{roomDisplayName}from'./control-presentation';
 import{mediaSupports}from'../../../../shared/ha-contract.js';
 import type {Configuration} from './configuration';import type {Connection} from './connection';import type {HassState} from './types';import{escapeHtml as esc}from'./panels';import{updateMarkup}from'./card-design';
 interface Metadata{entityId:string;name:string;area:string;disabled:boolean;platform:string}
@@ -8,7 +9,7 @@ export function entityCatalog(config:Configuration,connection:Connection){
  cleanup.get(connection)?.();const root=document.createElement('section');root.className='entity-catalog technical-card';root.id='entity-catalog';let meta:Metadata[]=[],selected=new URLSearchParams(location.search).get('entity')??'',query='',domain='',area='',message='',busy=false,alive=true;
  root.innerHTML='<h2>Home Assistant · enhetsöversikt</h2><p>Alla domäner. Registermetadata och aktuella tillstånd hålls isär. Ingen enhet behöver placeras i 3D.</p><div class="catalog-filters"><input type="search" data-search aria-label="Sök HA-entiteter" placeholder="Namn eller entity_id"><select data-domain aria-label="Domän"><option value="">Alla domäner</option></select><select data-area aria-label="Område"><option value="">Alla områden</option></select></div><p data-count></p><div class="catalog-results" tabindex="0" aria-label="Entitetsresultat"></div><section data-detail></section><p role="status" data-message></p>';
  const $=(q:string)=>root.querySelector<HTMLElement>(q)!;
- function rows(){const map=new Map(meta.map(m=>[m.entityId,m]));for(const s of connection.states.values())if(!map.has(s.entity_id))map.set(s.entity_id,{entityId:s.entity_id,name:String(s.attributes.friendly_name??s.entity_id),area:String(s.attributes.area_name??'Område saknas i register'),disabled:false,platform:''});return [...map.values()];}
+ function rows(){const map=new Map(meta.map(m=>[m.entityId,m]));for(const s of connection.states.values())if(!map.has(s.entity_id))map.set(s.entity_id,{entityId:s.entity_id,name:String(s.attributes.friendly_name??s.entity_id),area:String(s.attributes.area_name??'Område saknas i register'),disabled:false,platform:''});return [...map.values()].map(m=>({...m,name:roomDisplayName(m.name),area:roomDisplayName(m.area)}));}
  function availability(m:Metadata,s?:HassState){return m.disabled?'Avaktiverad':!connection.connected?'Frånkopplad':!s?'Saknar state':s.state==='unavailable'?'Otillgänglig':s.state==='unknown'?'Okänd':'Tillgänglig';}
  function render(){if(!alive)return;const all=rows(),matches=all.filter(m=>(!domain||m.entityId.startsWith(domain+'.'))&&(!area||m.area===area)&&(!query||(m.name+' '+m.entityId).toLocaleLowerCase().includes(query)));
  updateMarkup($('[data-domain]'),'<option value="">Alla domäner</option>'+[...new Set(all.map(m=>m.entityId.split('.')[0]))].sort().map(v=>'<option '+(v===domain?'selected':'')+'>'+esc(v)+'</option>').join(''));

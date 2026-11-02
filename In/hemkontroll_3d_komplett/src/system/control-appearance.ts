@@ -1,4 +1,4 @@
-import {controlGroup,lightPlacement} from './control-presentation';
+import {controlGroup,lightPlacement,roomDisplayName} from './control-presentation';
 import type {ControlEntityMetadata} from './control-devices';
 import type {SceneObject,HassState} from './types';
 
@@ -20,7 +20,7 @@ const themes={
 } as const;
 type Theme=keyof typeof themes;
 export function controlAppearance(o:SceneObject,states:Map<string,HassState>,catalog:readonly ControlEntityMetadata[]=[]){
- const entry=catalog.find(e=>e.entityId===o.entityId),area=entry?.area?.trim()??'';
+ const entry=catalog.find(e=>e.entityId===o.entityId),area=roomDisplayName(entry?.area?.trim()??'');
  const placement=lightPlacement(o,states,catalog),outside=placement.key==='outside';
  const group=controlGroup(o,states,catalog);let theme:Theme='other',label='Övrigt';
  if(group==='lights'){theme=placement.key==='uncertain'?'other':placement.key;label='Belysning · '+placement.label+(placement.provisional?' (preliminärt)':'');}
