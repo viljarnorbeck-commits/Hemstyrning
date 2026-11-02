@@ -611,3 +611,8 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 
 ## Sökrutans kryss innanför konturen, 2 november
 - Kontrollpanelens stängkryss i sökpopupen har fått 6 px extra marginal mot högerkanten så att det ligger tydligare innanför konturlinjen. Enbart CSS; inga tester, bygge eller webbläsarprov körda. Push fortsatt pausad och befintliga servrar behålls.
+
+## Ljusare temafärgat hoverlyft på kontrollpanelen, 2 november
+- Användaren vill ha samma upphöjda känsla som energikorten men med tydlig ljusare kontrast mot varje brytares färg. Kontrollpanelens listkort lyfter nu 3 px och förstoras 1,5 procent när en aktiv kontroll hovras. Ljus kontur, mjuk skugga, tunn ljus överlagring och sken blandas från gruppens befintliga c1-färg och vitt; förinställningar använder sin accent och detaljvyn sin device-glow. Färgteman och bekräftade på/av-tillstånd ändras inte.
+- Övriga knappar/väljare i kontrollpanelen får matchande ljus skugga/överlagring. Switchens effekt ligger på själva spåret, inte en ny rektangulär knappbakgrund. Tryck ger nedsänkning och inre skugga. Pekskärmar slipper klistrad hover och befintlig reducerad rörelse stänger av lyft och skalning. Enbart visning, inga kommandoflöden ändrade.
+- Enbart kod-/diffgranskning. Inga tester, typkontroll, bygge eller webbläsarprov körda enligt pausen. Ingen push. Befintliga servrar behålls.
