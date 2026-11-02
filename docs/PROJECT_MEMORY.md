@@ -604,3 +604,7 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - CSS säkerställer också att embedded-layout aldrig visar en hidden-dialog och att spelarvyer/enhetspopup bara visas på de två tillåtna rutterna. Menylänken till Spotify behålls.
 - Enbart kod- och diffgranskning; inga tester, TypeScript, bygge eller webbläsarprov körda enligt användarens paus. Inga riktiga enhetskommandon. Befintliga utvecklingsservrar behålls. Ingen push.
 - Föregående testcommit 093a53a finns nu på origin/codex/spotify-network-devices; pushen verifierades efter att användaren loggat in. Ny pushpaus gäller denna korrigering.
+
+## Mer övre skrollutrymme under sökknappen, 2 november
+- Användaren bad om lite mer luft överst i kontrollpanelens lista så att grupprubriken Uppe hamnar under förstoringsglaset. Listan har nu 56 px övre padding som ingår i skrollytan, i stället för 0. Matchande scroll-padding håller även tangentbordsfokuserade kort nedanför sökknappen när webbläsaren skrollar fram dem. Sökningsknappen behåller sin överlagrade placering och listans nedre utfyllnad ändras inte. Endast /control berörs.
+- Enbart kod-/diffgranskning. Inga tester, TypeScript, bygge eller webbläsarprov körda. Push fortsatt pausad; befintliga servrar behålls.
