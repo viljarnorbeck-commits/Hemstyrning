@@ -15,11 +15,15 @@ html body :is(button:not(.device-select,.device-switch),input[type="button"],inp
 /* Lift control cards with a lighter version of their own group colour. */
 body[data-app-route="/control"] .control-page{--control-hover-color:#d5e5f5}
 body[data-app-route="/control"] :is(.device-control,.preset-card){--control-hover-color:color-mix(in srgb,var(--c1,var(--accent,#83a7cb)) 40%,white)}
+body[data-app-route="/lights"] .device-control{--control-hover-color:color-mix(in srgb,var(--c1,#83a7cb) 40%,white)}
 body[data-app-route="/control"] #control-details{--control-hover-color:color-mix(in srgb,var(--device-glow,#83a7cb) 40%,white)}
-html body[data-app-route="/control"] .device-control{transition:translate 180ms ease,scale 180ms ease,filter 180ms ease,box-shadow 180ms ease}
+html body:is([data-app-route="/control"],[data-app-route="/lights"]) .device-control{transition:translate 180ms ease,scale 180ms ease,filter 180ms ease,box-shadow 180ms ease}
+/* The card is the raised surface; its transparent selection button is not a second tile. */
+html body:is([data-app-route="/control"],[data-app-route="/lights"]) .device-control>.device-select:is(:hover,:active){background:transparent;box-shadow:none;border-color:transparent;filter:none;translate:none;scale:none;transform:none}
+html body:is([data-app-route="/control"],[data-app-route="/lights"]) .device-control>.device-switch:is(:hover,:active){background:transparent;box-shadow:none;filter:none;translate:none;scale:none}
 body[data-app-route="/control"] .device-switch::before{transition:background-color 180ms ease,box-shadow 180ms ease}
 @media(hover:hover) and (pointer:fine){
- html body[data-app-route="/control"] .device-control:has(:is(button,input,select):hover:not(:disabled)){
+ html body:is([data-app-route="/control"],[data-app-route="/lights"]) .device-control:hover:has(:is(button,input,select):not(:disabled)){
   translate:0 -3px;scale:1.015;filter:none;z-index:2;
   box-shadow:0 12px 28px #0005,0 0 21px color-mix(in srgb,var(--control-hover-color) 32%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--control-hover-color) 65%,transparent),inset 0 1px 0 #ffffff70,inset 0 0 0 999px #ffffff12;
  }
@@ -29,7 +33,7 @@ body[data-app-route="/control"] .device-switch::before{transition:background-col
  }
  html body[data-app-route="/control"] .device-switch:hover:not(:disabled)::before{box-shadow:0 5px 12px #0004,0 0 13px color-mix(in srgb,var(--control-hover-color) 45%,transparent),inset 0 1px 0 #ffffff80,inset 0 0 0 999px #ffffff25}
 }
-html body[data-app-route="/control"] .device-control:has(:is(button,input,select):active:not(:disabled)){
+html body:is([data-app-route="/control"],[data-app-route="/lights"]) .device-control:has(:is(button,input,select):active:not(:disabled)){
  translate:0 2px;scale:.985;filter:none;box-shadow:inset 0 3px 12px #0006,0 0 10px color-mix(in srgb,var(--control-hover-color) 22%,transparent);transition-duration:80ms;
 }
 html body[data-app-route="/control"] .control-page :is(button:not(.device-select,.device-switch),select):active:not(:disabled):not([aria-disabled="true"]){box-shadow:inset 0 3px 9px #0006,inset 0 -1px #ffffff25}
