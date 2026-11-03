@@ -1,0 +1,11 @@
+import {Matrix4,Quaternion,Euler,Vector3} from 'three';
+import type {CameraView,ModelConfig,Vec3,Season} from './types';
+/** Approximate landmark fit; see docs/HOME_PHOTO_CAMERA.json for residuals. */
+export const yardPhoto={id:'kyrkas-2-0',width:8192,height:4608,sourceFrame:'yard380-gltf-v1',sourceSha256:'72ea379572171e9f6df0d5d05b4d64fc75ebc1d3b1fa5a9bb42997c63a462c70',widths:[1280,1920,2560,3840,6144,8192],image:(width:number)=>'/images/yard/kyrkas-'+width+'.webp',fitRmsAt1600:11.083518416275856,holdoutRmsAt1600:25.875494514047464,sourceView:{position:[-39.980577257120665,15.709546304829878,-5.353473373810179] as Vec3,target:[-11.885783898055791,5.3135984815778485,-3.738897588142165] as Vec3,fov:35.59504671851385,zoom:1}};
+/** Future variants share the world camera; never store per-image device pixels. */
+export const yardPhotoVariants:Array<{id:string;season:Season|'all';light:'day'|'night'|'all';image:(width:number)=>string}>=[{id:yardPhoto.id,season:'all',light:'all',image:yardPhoto.image}];
+export function selectYardPhoto(season:Season,night:boolean){const light=night?'night':'day';return yardPhotoVariants.find(v=>v.season===season&&v.light===light)??yardPhotoVariants.find(v=>v.season===season&&v.light==='all')??yardPhotoVariants.find(v=>v.season==='all'&&v.light===light)??yardPhotoVariants[0]!;}
+export function yardPhotoView(model:ModelConfig):CameraView{const m=new Matrix4().compose(new Vector3(...model.position),new Quaternion().setFromEuler(new Euler(...model.rotation.map(v=>v*Math.PI/180) as [number,number,number],'YXZ')),new Vector3().setScalar(model.scale));return{...yardPhoto.sourceView,position:new Vector3(...yardPhoto.sourceView.position).applyMatrix4(m).toArray() as Vec3,target:new Vector3(...yardPhoto.sourceView.target).applyMatrix4(m).toArray() as Vec3};}
+
+/** Approximate median near-house mesh ground, not surveyed altitude or robot navigation. */
+export function yardPhotoGround(model:ModelConfig){const m=new Matrix4().compose(new Vector3(...model.position),new Quaternion().setFromEuler(new Euler(...model.rotation.map(v=>v*Math.PI/180) as Vec3,'YXZ')),new Vector3().setScalar(model.scale));return new Vector3(-1.845964,-.125787,4.387592).applyMatrix4(m).y;}

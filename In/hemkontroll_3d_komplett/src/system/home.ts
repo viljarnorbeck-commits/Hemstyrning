@@ -77,7 +77,7 @@ function update(){
   const manual=connection.source==='simulator'?weatherAttrs.season_model:null;
   const season=typeof manual==='string'&&manual in config.value.models?manual as Season:automaticSeason(config.value,connection.states,date,connection.connected);
   target.season=season;
-  if(!document.body.classList.contains('home-list'))void garden.models.select(season,config.value.models[season]);
+  if(!document.body.classList.contains('home-list')&&!document.body.classList.contains('yard-photo-home'))void garden.models.select(season,config.value.models[season]);
   $('model-status').hidden=!garden.models.loading&&!garden.models.status.includes('kunde inte');$('model-status').textContent=garden.models.status;
   $('data-status').textContent=!connection.connected?'Enheternas senaste kända status visas.':live.warnings?'Vissa miljövärden saknas.':'';
 }

@@ -1,7 +1,7 @@
 import {EnergyNetwork} from './energy-network';
 import {visualSignature} from './presentation-state';
 import{graphicsProfile,profiles}from'./client-platform';
-import {cameraFloor,constrainGroundCamera} from './ground-model';
+import {cameraFloor,constrainGroundCamera,gridGround} from './ground-model';
 import type {LearnedGraph,YardGrid} from '../../../../shared/yard-types';
 import {SurfaceInput,type Tap} from './surface-input';
 import{telemetryTime}from'./telemetry-time';
@@ -27,6 +27,17 @@ import type { EnvironmentFrame, HassState, SceneConfig, SceneObject, Vec3 } from
 
 const radians = (v: number) => THREE.MathUtils.degToRad(v);
 export class GardenScene {
+  private homeCamera?:import('./types').CameraView;
+  private photographGround?:number;
+  setHomeCamera(view:import('./types').CameraView){this.homeCamera=view;}
+  /** Match the photograph's contain/cover crop to the actual canvas, including sidebar offset. */
+  photographCamera(view:import('./types').CameraView,crop:{x:number;y:number;width:number;height:number},groundY:number){
+    this.photographGround=groundY;
+    this.cancelFollow();this.skyView=false;this.camera.position.fromArray(view.position);this.controls.target.fromArray(view.target);this.camera.fov=view.fov;this.camera.zoom=view.zoom;
+    this.camera.setViewOffset(8192,4608,crop.x,crop.y,crop.width,crop.height);this.camera.updateProjectionMatrix();this.controls.update();
+  }
+  /** Future photo markers use the same camera and are always hidden behind the actual mesh. */
+  photographObject(id:string){const item=this.config?.objects.find(o=>o.id===id),object=this.renderObjects.get(id);if(!item||item.placementConfirmed!==true||!object)return null;const physical=object.getWorldPosition(new THREE.Vector3());if(isOccluded(this.camera,physical,[this.models.root,this.occlusionVolumes],this.markerRay))return null;const p=physical.project(this.camera);if(p.z< -1||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1)return null;const r=this.renderer.domElement.getBoundingClientRect();return{x:r.left+(p.x*.5+.5)*r.width,y:r.top+(-p.y*.5+.5)*r.height};}
   private assets=new ObjectAssets();
   private headlights=new Map<string,THREE.SpotLight>();
   private diagnostic=false;
@@ -154,7 +165,7 @@ export class GardenScene {
     const normal=hit.face?.normal.clone().transformDirection(hit.object.matrixWorld);if(!normal||normal.y<.3)return;
     this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.focusGoal=hit.point.clone();this.focusGoal.y=cameraFloor(hit.point.x,hit.point.z,this.config?.objects??[],this.yard,this.fallbackGround);this.surroundings.constrainFocus(this.focusGoal);
   }
-  private constrainCamera(){if(this.skyView)return;const model=this.models.root.children[0];if(model!==this.yardModel){this.yardModel=model;this.zoneIndex=undefined;this.yard=undefined;if(model){const box=new THREE.Box3().setFromObject(model);this.fallbackGround=box.isEmpty()?0:box.max.y+.6;void this.loadYardAnalysis();}}const before=this.controls.target.clone();this.surroundings.constrainFocus(this.controls.target);this.camera.position.add(this.controls.target.clone().sub(before));constrainGroundCamera(this.camera.position,this.controls.target,(x,z)=>cameraFloor(x,z,this.activeZones(x,z),this.yard,this.fallbackGround));this.camera.lookAt(this.controls.target);}
+  private constrainCamera(){if(this.skyView)return;const model=this.models.root.children[0];if(model!==this.yardModel){this.yardModel=model;this.zoneIndex=undefined;this.yard=undefined;if(model){const box=new THREE.Box3().setFromObject(model);this.fallbackGround=box.isEmpty()?0:box.max.y+.6;void this.loadYardAnalysis();}}const before=this.controls.target.clone();this.surroundings.constrainFocus(this.controls.target);this.camera.position.add(this.controls.target.clone().sub(before));constrainGroundCamera(this.camera.position,this.controls.target,(x,z)=>this.photographGround===undefined?cameraFloor(x,z,this.activeZones(x,z),this.yard,this.fallbackGround):(groundSurface(x,z,this.activeZones(x,z))?.height??gridGround(this.yard,x,z)??this.photographGround));this.camera.lookAt(this.controls.target);}
   private cameraStats(){const canvas=this.renderer.domElement;canvas.dataset.cameraPosition=JSON.stringify(this.camera.position.toArray());canvas.dataset.cameraTarget=JSON.stringify(this.controls.target.toArray());canvas.dataset.cameraDistance=String(this.camera.position.distanceTo(this.controls.target));canvas.dataset.navigationMode=this.navigationMode;canvas.dataset.following=this.followId??'';}
   private resize() { const { width, height } = this.renderer.domElement.getBoundingClientRect(); if(width<=0||height<=0)return; if(this.config?.quality==='auto'){this.models.detail=width>=900;this.renderer.setPixelRatio(Math.min(devicePixelRatio,profiles[graphicsProfile()].dpr));} this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); }
   setConfig(config: SceneConfig) {
@@ -320,7 +331,7 @@ export class GardenScene {
   transition(view:import('./types').CameraView,done=()=>{}){this.skyView=false;this.followId=undefined;this.focusGoal=undefined;this.controls.maxPolarAngle=Math.PI*.49;this.cameraMotion={fromFov:this.camera.fov,toFov:view.fov,fromZoom:this.camera.zoom,toZoom:view.zoom,at:performance.now(),fromP:this.camera.position.clone(),fromT:this.controls.target.clone(),toP:new THREE.Vector3(...view.position),toT:new THREE.Vector3(...view.target),done};}
   /** A single restrained arrival, never an endless orbit or a replacement for the saved view. */
   revealOverview(){
-    const view=this.config?.startView??{position:[55,32,55] as Vec3,target:[0,1,0] as Vec3,zoom:1,fov:42};
+    const view=this.homeCamera??this.config?.startView??{position:[55,32,55] as Vec3,target:[0,1,0] as Vec3,zoom:1,fov:42};
     if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
       const target=new THREE.Vector3(...view.target),position=new THREE.Vector3(...view.position);
       this.camera.position.copy(position.sub(target).multiplyScalar(1.12).add(target));
@@ -328,7 +339,7 @@ export class GardenScene {
     }
     this.transition(view);
   }
-  overview(done=()=>{}){this.transition(this.config?.startView??{position:[55,32,55],target:[0,1,0],zoom:1,fov:48},done);}
+  overview(done=()=>{}){this.transition(this.homeCamera??this.config?.startView??{position:[55,32,55],target:[0,1,0],zoom:1,fov:48},done);}
   cancelFollow(){this.followId=undefined;this.cameraMotion=undefined;}
   focusObject(id:string,follow=false,done=()=>{}){const o=this.config?.objects.find(o=>o.id===id),model=this.renderObjects.get(id);if(!model||!o)throw new Error('Objektet saknas');if(o.type==='mower'&&!this.tracking.get(id)?.safePosition)throw new Error('Ingen verifierad robotposition att följa');const target=o.type==='building'?new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()):model.position.clone(),offset=o.type==='mower'?new THREE.Vector3(3,2.4,4):o.type==='car'?new THREE.Vector3(6,3.7,7):new THREE.Vector3(10,8,12),position=target.clone().add(offset);if(o.type==='building'){const size=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).length();offset.normalize().multiplyScalar(Math.max(18,size*1.1));position.copy(target).add(offset);}const ray=new THREE.Raycaster(target,offset.clone().normalize(),.5,offset.length());const hit=ray.intersectObject(this.models.root,true)[0];if(hit&&o.type!=='building')position.copy(target).addScaledVector(offset.normalize(),Math.max(2,hit.distance-1));this.select(id);this.transition({position:position.toArray() as Vec3,target:target.toArray() as Vec3,zoom:1,fov:48},()=>{if(follow)this.followId=id;done();});}
   follow(id:string){try{this.focusObject(id,true);return true;}catch{return false;}}

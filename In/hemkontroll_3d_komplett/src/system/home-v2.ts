@@ -15,7 +15,7 @@ export function homeV2(config:Configuration,connection:Connection,garden:GardenS
  function setMode(value:boolean){
   const url=new URL(location.href);url.searchParams.delete('native');url.searchParams.delete('focus');url.searchParams.delete('follow');if(value)url.searchParams.set('view','3d');else url.searchParams.delete('view');if(location.pathname==='/')history.replaceState({sharedView:true},'',url.pathname+url.search);
   if(document.body.classList.contains('home-list'))document.getElementById('list-button')?.click();
-  document.body.classList.toggle('hem-start',!value);root.hidden=value;presentation.home(false);garden.controls.enabled=true;home.setAttribute('aria-pressed',String(!value));free.textContent=value?'Hem':'Öppna 3D';free.setAttribute('aria-label',value?'Hem – lämna 3D':'Öppna 3D');
+  document.body.classList.toggle('hem-start',!value);root.hidden=value;presentation.home(!value);garden.controls.enabled=value;home.setAttribute('aria-pressed',String(!value));free.textContent=value?'Hem':'Öppna 3D';free.setAttribute('aria-label',value?'Hem – lämna 3D':'Öppna 3D');
  }
  function reset(){garden.pauseRendering(false);++revision;applied='';presentation.cancel(true);garden.cancelFollow();viewer.hidden=true;document.body.classList.remove('camera-viewer');setMode(false);document.dispatchEvent(new Event('hem-clear-selection'));garden.energyNetwork.enabled=false;document.body.classList.remove('energy-view');garden.overview();document.body.dataset.viewMode='HOME';}
  function clearViewerRoute(){const url=new URL(location.href);url.searchParams.delete('viewer');url.searchParams.delete('viewerKind');history.replaceState(history.state,'',url.pathname+url.search);initialViewer=null;}
@@ -25,7 +25,7 @@ export function homeV2(config:Configuration,connection:Connection,garden:GardenS
   if(firstSnapshot){firstSnapshot=false;if((initialList||initialFree)&&state.mode==='HOME'){document.body.dataset.viewMode=initialFree?'FREE_3D':'HOME';return;}}
   if(state.reason==='activity'&&applied)return;
   if(state.mode==='HOME'){reset();if(state.reason==='invalid')message('Objektet saknas eller saknar verifierad position');return;}
-  if(state.mode==='FREE_3D'){++revision;presentation.cancel();garden.cancelFollow();if(!pendingInitialFree)setMode(true);pendingInitialFree=false;document.body.dataset.viewMode='FREE_3D';void garden.ready().catch(e=>message(String(e)));applied=state.epoch+':'+state.version;return;}
+  if(state.mode==='FREE_3D'){const n=++revision;garden.cancelFollow();if(!pendingInitialFree)await presentation.enter(()=>{if(n===revision)setMode(true);});if(n!==revision)return;pendingInitialFree=false;document.body.dataset.viewMode='FREE_3D';applied=state.epoch+':'+state.version;return;}
   const key=state.epoch+':'+state.version;if(key===applied)return;applied=key;const n=++revision;
   await presentation.enter(()=>{if(disposed||n!==revision||link.viewer)return;try{setMode(true);garden.cancelFollow();if('objectId'in state)garden.focusObject(state.objectId,state.mode==='FOLLOW_OBJECT');document.body.dataset.viewMode=state.mode;}catch(e){
    // A cold 3D view can be ready before HA's snapshot has supplied a safe robot fix.

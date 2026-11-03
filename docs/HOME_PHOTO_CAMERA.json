@@ -1,0 +1,177 @@
+{
+  "status": "approximate-manual-landmark-fit",
+  "sourceImage": "DJI_20261102141024_0406_D.JPG",
+  "imageWidth": 8192,
+  "imageHeight": 4608,
+  "view": {
+    "position": [
+      -38.160577257120664,
+      16.20954630482988,
+      -9.71347337381018
+    ],
+    "target": [
+      -10.065783898055791,
+      5.8135984815778485,
+      -8.098897588142165
+    ],
+    "zoom": 1,
+    "fov": 35.59504671851385
+  },
+  "fitRmsAt1600": 11.083518416275856,
+  "holdoutRmsAt1600": 25.875494514047464,
+  "landmarks": [
+    {
+      "name": "garage eave left",
+      "world": [
+        4.333196095002457,
+        3.274640130677952,
+        -18.981396963838918
+      ],
+      "imageNormalized": [
+        0.256875,
+        0.4177777777777778
+      ],
+      "residualPixelsAt1600": 14.845787867917588,
+      "holdout": false
+    },
+    {
+      "name": "garage eave join",
+      "world": [
+        -1.8011115054905462,
+        4.070129625783675,
+        -7.8936318340257134
+      ],
+      "imageNormalized": [
+        0.4925,
+        0.44333333333333336
+      ],
+      "residualPixelsAt1600": 6.49276660343221,
+      "holdout": false
+    },
+    {
+      "name": "main eave right",
+      "world": [
+        -8.026001245993324,
+        4.932799500542464,
+        3.628131759046659
+      ],
+      "imageNormalized": [
+        0.809375,
+        0.49444444444444446
+      ],
+      "residualPixelsAt1600": 0.39544430944622583,
+      "holdout": false
+    },
+    {
+      "name": "porch apex",
+      "world": [
+        -6.829665817049957,
+        8.487548163464565,
+        -3.1595822806999054
+      ],
+      "imageNormalized": [
+        0.62625,
+        0.32555555555555554
+      ],
+      "residualPixelsAt1600": 5.594153106719751,
+      "holdout": false
+    },
+    {
+      "name": "garage door base",
+      "world": [
+        2.6427855522190775,
+        1.0102949549555778,
+        -16.99286516772227
+      ],
+      "imageNormalized": [
+        0.3125,
+        0.51
+      ],
+      "residualPixelsAt1600": 12.603281304162572,
+      "holdout": false
+    },
+    {
+      "name": "garage wall base",
+      "world": [
+        3.6078761347173973,
+        0.7997695562769689,
+        -19.177429209852004
+      ],
+      "imageNormalized": [
+        0.2725,
+        0.4955555555555556
+      ],
+      "residualPixelsAt1600": 17.150079448366302,
+      "holdout": true
+    },
+    {
+      "name": "main wall base",
+      "world": [
+        -7.34929878507419,
+        0.9080919805048708,
+        3.7987733843339937
+      ],
+      "imageNormalized": [
+        0.804375,
+        0.6411111111111111
+      ],
+      "residualPixelsAt1600": 19.174481468963894,
+      "holdout": false
+    },
+    {
+      "name": "porch left base",
+      "world": [
+        -5.820831347135101,
+        1.309891918253582,
+        -4.791965235872891
+      ],
+      "imageNormalized": [
+        0.569375,
+        0.6255555555555555
+      ],
+      "residualPixelsAt1600": 11.673725264558986,
+      "holdout": false
+    },
+    {
+      "name": "porch right base",
+      "world": [
+        -7.626015580934528,
+        1.1595769164096694,
+        -0.6607084873152873
+      ],
+      "imageNormalized": [
+        0.66625,
+        0.6466666666666666
+      ],
+      "residualPixelsAt1600": 32.32579786498277,
+      "holdout": true
+    },
+    {
+      "name": "timber ridge",
+      "world": [
+        -0.31196811212757347,
+        3.6231980680195566,
+        -19.414916693826274
+      ],
+      "imageNormalized": [
+        0.23875,
+        0.45666666666666667
+      ],
+      "residualPixelsAt1600": 5.096212546034822,
+      "holdout": false
+    }
+  ],
+  "notes": [
+    "Manual correspondences to source photograph 0406 and new 2.0 image; approximate reconstructed geometry and lens distortion limit accuracy.",
+    "Projection is not surveyed calibration. Sky/trees and modified details cannot be matched exactly.",
+    "Roll constrained to zero for OrbitControls compatibility."
+  ],
+  "sourceSha256": "72ea379572171e9f6df0d5d05b4d64fc75ebc1d3b1fa5a9bb42997c63a462c70",
+  "modelVersion": "v000011",
+  "sourceFrame": "yard380-gltf-v1",
+  "displayPlacement": [
+    1.82,
+    0.5,
+    -4.36
+  ]
+}
