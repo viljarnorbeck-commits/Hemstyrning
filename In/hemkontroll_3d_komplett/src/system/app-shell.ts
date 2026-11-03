@@ -37,7 +37,7 @@ export async function startShell(){
  const q=url.searchParams,id=q.get('focus');
  if(reset)document.dispatchEvent(new Event('hem-request-home'));
  else if(id)document.dispatchEvent(new CustomEvent('hem-focus-object',{detail:{id,follow:q.get('follow')==='1',inspect:false}}));
- else if(q.get('view')==='3d')document.getElementById('open-3d')?.click();
+ else if(q.get('view')==='3d'&&document.body.classList.contains('hem-start'))document.getElementById('open-3d')?.click();
  else if(q.get('view')==='list'&&!document.body.classList.contains('home-list'))document.getElementById('list-button')?.click();
  if(q.has('calendar'))document.querySelector<HTMLButtonElement>('.mobile-home-nav [data-view=calendar]')?.click();
  }

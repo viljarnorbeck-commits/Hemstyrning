@@ -15,7 +15,7 @@ export function homeV2(config:Configuration,connection:Connection,garden:GardenS
  function setMode(value:boolean){
   const url=new URL(location.href);url.searchParams.delete('native');url.searchParams.delete('focus');url.searchParams.delete('follow');if(value)url.searchParams.set('view','3d');else url.searchParams.delete('view');if(location.pathname==='/')history.replaceState({sharedView:true},'',url.pathname+url.search);
   if(document.body.classList.contains('home-list'))document.getElementById('list-button')?.click();
-  document.body.classList.toggle('hem-start',!value);root.hidden=value;presentation.home(false);garden.controls.enabled=true;home.setAttribute('aria-pressed',String(!value));
+  document.body.classList.toggle('hem-start',!value);root.hidden=value;presentation.home(false);garden.controls.enabled=true;home.setAttribute('aria-pressed',String(!value));free.textContent=value?'Hem':'Öppna 3D';free.setAttribute('aria-label',value?'Hem – lämna 3D':'Öppna 3D');
  }
  function reset(){garden.pauseRendering(false);++revision;applied='';presentation.cancel(true);garden.cancelFollow();viewer.hidden=true;document.body.classList.remove('camera-viewer');setMode(false);document.dispatchEvent(new Event('hem-clear-selection'));garden.energyNetwork.enabled=false;document.body.classList.remove('energy-view');garden.overview();document.body.dataset.viewMode='HOME';}
  function clearViewerRoute(){const url=new URL(location.href);url.searchParams.delete('viewer');url.searchParams.delete('viewerKind');history.replaceState(history.state,'',url.pathname+url.search);initialViewer=null;}
@@ -56,7 +56,7 @@ export function homeV2(config:Configuration,connection:Connection,garden:GardenS
  const open=()=>{try{link.send('EnterFree3D');}catch(e){message((e as Error).message);}};
  const openViewer=(e:Event)=>{try{link.openViewer((e as CustomEvent).detail);}catch(e){message((e as Error).message);}};
  document.addEventListener('hem-focus-object',focus);document.addEventListener('hem-show-overview',requestHome);document.addEventListener('hem-request-home',requestHome);document.addEventListener('hem-open-viewer',openViewer);
- home.onclick=requestHome;free.onclick=open;
+ home.onclick=requestHome;free.onclick=()=>{if(root.hidden)requestHome();else open();};
  // OrbitControls change also fires during animation. Only actual input starts activity.
  const inputStart=()=>{navigating=true;if(!link.viewer){++revision;presentation.cancel();garden.cancelFollow();}};const inputEnd=()=>{navigating=false;};
  const inputChange=()=>{if(!navigating||link.viewer||!link.canControl)return;if(Date.now()-lastMove<1000)return;lastMove=Date.now();if(link.state?.mode!=='FREE_3D'){try{link.send('EnterFree3D');}catch{}}else link.activity();};
