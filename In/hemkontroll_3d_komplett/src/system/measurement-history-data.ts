@@ -3,8 +3,10 @@ import {escapeHtml as esc} from './panels';
 import type {HistoryPoint} from './function-data';
 
 export function historyAttributes(slot:string,unit:string,label:string){
+ if(slot==='sensor.uteknx_temperatur'&&unit==='°C')return weekForecastAttributes();
  return `data-measurement-history="${esc(resolveEntity(slot))}" data-history-unit="${esc(unit)}" data-history-label="${esc(label)}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${esc(label)} · visa senaste dygnet"`;
 }
+export function weekForecastAttributes(){return 'data-week-forecast role="button" tabindex="0" aria-haspopup="dialog" aria-label="Utetemperatur · visa veckoprognos"';}
 export function measurementHistoryPoints(rows:HistoryPoint[],unit:string,start:number,end:number,offset=0){
  return rows.flatMap(row=>{
   const t=Date.parse(row.last_updated),raw=row.state.trim(),n=raw?Number(raw):NaN,source=row.attributes?.unit_of_measurement;

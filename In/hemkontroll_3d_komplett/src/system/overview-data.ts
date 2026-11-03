@@ -1,4 +1,4 @@
-import {readState,resolveEntity,temperatureOffsetC} from './entity-bindings';
+import {hasSensorBinding,readState,resolveEntity,temperatureOffsetC} from './entity-bindings';
 import type{HassState}from'./types';
 export type Availability='Ansluten'|'Frånkopplad'|'Saknar data'|'Okänd'|'Otillgänglig'|'Gammal mätning';
 export interface Measurement{value:number|null;status:Availability;unit:string;reportedAt?:string;cached?:boolean}
@@ -6,7 +6,7 @@ export function measurementNote(m:Measurement){return m.value!==null&&(m.status!
 const lastMeasurements=new WeakMap<Map<string,HassState>,Map<string,HassState>>();
 /** Numeric display cache only. Command guards always use the actual connection states. */
 export function rememberMeasurement(states:Map<string,HassState>,slot:string,s:HassState){
- const id=resolveEntity(slot),stamp=Date.parse(s.last_reported??s.last_updated);
+ const id=resolveEntity(slot)||slot,stamp=Date.parse(s.last_reported??s.last_updated);
  if(s.entity_id!==id||!s.state.trim()||!Number.isFinite(Number(s.state))||!Number.isFinite(stamp))return;
  let cache=lastMeasurements.get(states);if(!cache){cache=new Map();lastMeasurements.set(states,cache);}
  const old=cache.get(id);if(!old||stamp>=Date.parse(old.last_reported??old.last_updated))cache.set(id,{...s,attributes:{...s.attributes}});
@@ -15,10 +15,10 @@ export function rememberMeasurement(states:Map<string,HassState>,slot:string,s:H
 export interface OverviewBindings{grid:string;gridPositive:'import'|'export'|'unverified';solar:string;house2:string;costToday:string;averageToday:string;luba:string;vacuum:string;rooms:string[];ev6Battery:string;ev6Range:string;ev6Connection:string}
 export const overviewBindings:OverviewBindings={grid:'sensor.ferroamp_grid_power',get gridPositive(){return resolveEntity('sensor.ferroamp_grid_power')==='sensor.ferroamp_grid_power'?'import':'unverified';},solar:'sensor.ferroamp_solar_power',house2:'sensor.elmatare_hus2_effekt_summa',costToday:'$costToday',averageToday:'$averageToday',luba:'$luba',vacuum:'vacuum.xiaomi_vacuum_cleaner',rooms:['sensor.storabadrummet_temperatur'],ev6Battery:'',ev6Range:'',ev6Connection:''};
 export function measurement(states:Map<string,HassState>,id:string,connected:boolean,unit:string,now=Date.now(),maxAge=900):Measurement{
- const s=readState(states,id);let status:Availability=!connected?'Frånkopplad':!s?'Saknar data':s.state==='unavailable'?'Otillgänglig':s.state==='unknown'?'Okänd':!Number.isFinite(Date.parse(s.last_reported??s.last_updated))||now-Date.parse(s.last_reported??s.last_updated)>maxAge*1000?'Gammal mätning':'Ansluten';
+ const key=resolveEntity(id)||id,s=readState(states,id)??(id.startsWith('$')&&!hasSensorBinding(id)?lastMeasurements.get(states)?.get(key):undefined);let status:Availability=!connected?'Frånkopplad':!s?'Saknar data':s.state==='unavailable'?'Otillgänglig':s.state==='unknown'?'Okänd':!Number.isFinite(Date.parse(s.last_reported??s.last_updated))||now-Date.parse(s.last_reported??s.last_updated)>maxAge*1000?'Gammal mätning':'Ansluten';
  if(s)rememberMeasurement(states,id,s);
  const raw=s?.state.trim(),numeric=!!raw&&Number.isFinite(Number(raw));
- const sample=numeric?s:lastMeasurements.get(states)?.get(resolveEntity(id)),cached=!!sample&&sample!==s;
+ const sample=numeric?s:id.startsWith('$')&&hasSensorBinding(id)&&!resolveEntity(id)?undefined:lastMeasurements.get(states)?.get(key),cached=!!sample&&sample!==s;
  const reportedAt=sample?.last_reported??sample?.last_updated,stamp=Date.parse(reportedAt??'');
  const todaySlot=id==='$costToday'||id==='$averageToday';
  const sameDay=!todaySlot||Number.isFinite(stamp)&&new Date(stamp).toDateString()===new Date(now).toDateString();

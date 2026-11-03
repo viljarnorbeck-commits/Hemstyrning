@@ -1,0 +1,28 @@
+.hem-start.yard-photo-shell .home-overview button.home-clock-trigger{display:inline-block;min-height:0;min-width:0;background:transparent;border:0;border-radius:7px;padding:0;box-shadow:none;text-align:left;color:inherit;cursor:pointer;transition:filter .18s ease,transform .18s ease}
+.home-overview .home-clock-trigger:hover{filter:drop-shadow(0 0 8px #e9d5b681)}
+.home-overview .home-clock-trigger:active{transform:translateY(1px) scale(.98)}
+.home-overview .home-clock-trigger:focus-visible{outline:2px solid #ddc29c;outline-offset:4px}
+.home-overview .home-timer-badge{display:block;font-size:9px!important;font-variant-numeric:tabular-nums;color:#e4c69d;margin-top:5px!important;white-space:nowrap}
+.home-overview .home-timer-badge[hidden]{display:none}
+.home-timer-badge.is-finished{color:#ffe0ac;text-shadow:0 0 10px #ffd28c66}
+.home-clock-popover{position:fixed;inset:auto;margin:0;box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;padding:22px;border:1px solid #d6c3a64d;border-radius:23px;background:radial-gradient(ellipse at 0 0,#d0af7e13,transparent 65%),linear-gradient(140deg,#30363df7,#1b2027fa);color:#edf1f5;box-shadow:0 16px 48px #0007,0 0 24px #d3c2a61c,inset 0 1px #ffffff1c;backdrop-filter:blur(20px);pointer-events:auto;outline:none}
+.home-clock-popover::backdrop{background:transparent;backdrop-filter:none;pointer-events:none}
+.home-clock-popover:popover-open{animation:clock-popover-open .22s cubic-bezier(.16,1,.3,1)}
+.clock-popover-heading,.clock-timer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:9px;font-weight:600;letter-spacing:.13em;color:#d2b68e}
+.clock-popover-date{font-weight:400;letter-spacing:0;color:#b0bbc6;font-size:11px}
+.clock-popover-time{display:flex;align-items:baseline;gap:2px;margin:10px 0 23px;font-size:54px;font-weight:500;line-height:1.15;letter-spacing:-.055em;font-variant-numeric:tabular-nums}
+.clock-live-seconds{font-size:29px;color:#afbfcc;font-weight:400;letter-spacing:-.04em}
+.clock-timer-heading{padding-top:17px;border-top:1px solid #cad7e31f}.clock-timer-heading [data-clock-phase]{color:#9acdb3;letter-spacing:.03em;font-weight:400}
+.clock-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0 18px}
+.home-clock-popover button{font:inherit;color:#e8edf2;cursor:pointer;border:1px solid #c8d5de33;border-radius:11px;background:#ffffff08;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease}
+.clock-presets button{padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:3px}.clock-presets b{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}.clock-presets span{font-size:10px;color:#aebcc8}
+.clock-custom-time{display:flex;gap:9px;align-items:flex-end}.clock-custom-time label{flex:1;min-width:0;font-size:11px;color:#b4c1cd}.clock-custom-time label>span{display:flex;align-items:center;gap:5px;margin-top:7px}
+.home-clock-popover .clock-custom-time input{min-width:0;width:46px;box-sizing:border-box;padding:9px 5px;background:#121820b3;border:1px solid #bccdda3d;border-radius:8px;color:#f3f3ed;text-align:center;font:inherit;font-size:15px;font-variant-numeric:tabular-nums;appearance:textfield}.clock-custom-time input::-webkit-inner-spin-button,.clock-custom-time input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.clock-custom-time small{font-size:10px;color:#9eafbe}.clock-custom-time button{padding:10px 13px;min-height:38px;background:#ddbc8f1c;border-color:#ddbc8f66;color:#f3d2a5;font-size:12px}
+.clock-countdown{margin-top:20px;padding-top:17px;border-top:1px solid #cad7e31f}.clock-countdown[hidden]{display:none}.clock-countdown [data-clock-remaining]{display:block;text-align:center;font-size:34px;line-height:1.2;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:#f2d2a2}
+.clock-timer-progress{height:3px;background:#a9bcc423;margin:13px 0 14px;overflow:hidden;border-radius:5px}.clock-timer-progress i{display:block;height:100%;background:linear-gradient(90deg,#8ebeb2,#e8c897);border-radius:5px;transition:width .25s linear}
+.clock-timer-actions{display:flex;gap:8px}.clock-timer-actions button{flex:1;padding:9px;font-size:11px}.clock-timer-actions [hidden]{display:none}
+.clock-timer-message{margin:10px 0 0;color:#edc995;font-size:12px;text-align:center}.clock-timer-message:empty{display:none}.home-clock-popover.timer-finished{border-color:#f1c785;box-shadow:0 16px 48px #0007,0 0 25px #e6bc733d}
+@media(hover:hover){.home-clock-popover button:hover{transform:translateY(-2px);border-color:#d9c19b99;background:#d9c19b1a;box-shadow:0 5px 14px #0003,0 0 12px #e0c49c29}}
+.home-clock-popover button:active{transform:translateY(1px) scale(.97);box-shadow:inset 0 2px 8px #0005}.home-clock-popover :is(button,input):focus-visible{outline:2px solid #e6cdab;outline-offset:3px}
+@keyframes clock-popover-open{from{opacity:0;transform:translateY(-5px) scale(.96)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.home-clock-popover:popover-open{animation:none}.home-clock-popover button,.home-clock-trigger,.clock-timer-progress i{transition:none!important;transform:none!important}}

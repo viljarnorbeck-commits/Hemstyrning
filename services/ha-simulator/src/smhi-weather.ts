@@ -1,6 +1,6 @@
 import express from 'express';
 import type {SceneConfig} from './scene-config.js';
-import type {SmhiForecast} from '../../../shared/weather-contract.js';
+import type {SmhiForecast,SmhiDayForecast} from '../../../shared/weather-contract.js';
 
 type Place={placeName:string;latitude:number;longitude:number};
 type Point={time:string;intervalParametersStartTime?:string;data:Record<string,unknown>};
@@ -9,6 +9,17 @@ function condition(code:number){
  if(code===1)return 'sunny';if(code<=4)return 'partlycloudy';if(code<=6)return 'cloudy';if(code===7)return 'fog';
  if([11,21].includes(code))return 'lightning-rainy';if([12,13,14,22,23,24].includes(code))return 'snowy-rainy';
  if([15,16,17,25,26,27].includes(code))return 'snowy';return 'rainy';
+}
+function weekForecast(points:Point[],now:number):SmhiDayForecast[]{
+ const dateFormat=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Stockholm',year:'numeric',month:'2-digit',day:'2-digit'}),hourFormat=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Stockholm',hour:'2-digit',hourCycle:'h23'}),today=dateFormat.format(now),noon=Date.parse(today+'T12:00:00Z');
+ const number=(p:Point,key:string,min:number,max:number)=>{const value=p.data?.[key];return typeof value==='number'&&Number.isFinite(value)&&value!==9999&&value>=min&&value<=max?value:null;};
+ return Array.from({length:7},(_,index)=>{
+  const date=dateFormat.format(noon+index*86400000),rows=points.filter(p=>Number.isFinite(Date.parse(p.time))&&Date.parse(p.time)>=now-3600000&&dateFormat.format(Date.parse(p.time))===date);
+  const temperatures=rows.map(p=>number(p,'air_temperature',-100,70)).filter((v):v is number=>v!==null),winds=rows.map(p=>number(p,'wind_speed',0,150)).filter((v):v is number=>v!==null);
+  const representative=[...rows].filter(p=>{const s=number(p,'symbol_code',1,27);return s!==null&&Number.isInteger(s);}).sort((a,b)=>Math.abs(Number(hourFormat.format(Date.parse(a.time)))-12)-Math.abs(Number(hourFormat.format(Date.parse(b.time)))-12))[0];
+  const symbol=representative?number(representative,'symbol_code',1,27):null;
+  return{date,min:temperatures.length?Math.min(...temperatures):null,max:temperatures.length?Math.max(...temperatures):null,windMax:winds.length?Math.max(...winds):null,...(symbol!==null?{condition:condition(symbol),description:descriptions[symbol]}:{}),sampleCount:temperatures.length,partial:index===0};
+ });
 }
 async function readForecast(place:Place):Promise<SmhiForecast>{
  try{
@@ -26,7 +37,7 @@ async function readForecast(place:Place):Promise<SmhiForecast>{
   const cloud=number('cloud_area_fraction',0,8),amount=number('precipitation_amount_mean',0,500),frozen=number('precipitation_frozen_part',0,100);
   const hours=(Date.parse(point.time)-Date.parse(point.intervalParametersStartTime??''))/3600000;
   const rate=amount!==null&&Number.isFinite(hours)&&hours>0?amount/hours:null;
-  return{source:'smhi',available:true,placeName:place.placeName,referenceTime:doc.referenceTime!,validTime:point.time,fetchedAt:new Date().toISOString(),condition:condition(symbol),description:descriptions[symbol]!,attributes:{
+  return{source:'smhi',available:true,placeName:place.placeName,referenceTime:doc.referenceTime!,validTime:point.time,fetchedAt:new Date().toISOString(),condition:condition(symbol),description:descriptions[symbol]!,days:weekForecast(doc.timeSeries??[],now),attributes:{
    temperature:number('air_temperature',-100,70),temperature_unit:'°C',wind_speed:number('wind_speed',0,150),wind_speed_unit:'m/s',wind_bearing:number('wind_from_direction',0,360),wind_gust_speed:number('wind_speed_of_gust',0,200),visibility:number('visibility_in_air',0,1000),visibility_unit:'km',
    cloud_coverage:cloud===null?null:cloud/8*100,humidity:number('relative_humidity',0,100),rain_intensity:rate===null||frozen===null?null:rate*(1-frozen/100),snow_intensity:rate===null||frozen===null?null:rate*frozen/100,
    forecast:true,forecast_valid_time:point.time,forecast_reference_time:doc.referenceTime,attribution:'SMHI · SNOW1gv1 · prognos',

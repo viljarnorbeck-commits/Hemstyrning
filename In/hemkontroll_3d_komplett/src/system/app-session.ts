@@ -1,7 +1,8 @@
 import {Connection} from './connection';
+import {startMeasurementData} from './measurement-data';
 export const appConnection=new Connection();
 let started=false;
-export function startConnection(){if(!started){started=true;void appConnection.start();}}
+export function startConnection(){if(!started){started=true;startMeasurementData(appConnection);void appConnection.start();}}
 /** A route owns its listeners and timers, while the application owns the socket. */
 export class PageScope {
  private cleanups:Array<()=>void>=[];private activators:Array<()=>void>=[];private activated=false;active=true;

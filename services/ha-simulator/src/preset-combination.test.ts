@@ -7,7 +7,7 @@ import {defaultScene} from './scene-config.js';
 import type {HassState} from './types.js';
 
 it('optionally skips unreachable lights without bypassing permissions or changing unselected lights',async()=>{
- const state=(id:string,value:string)=>({entity_id:id,state:value,attributes:{friendly_name:id},last_updated:new Date().toISOString(),last_changed:new Date().toISOString()})as HassState;
+ const state=(id:string,value:string):HassState=>({entity_id:id,state:value,attributes:{friendly_name:id},last_updated:new Date().toISOString(),last_changed:new Date().toISOString(),last_reported:new Date().toISOString(),context:{id:'preset-test',parent_id:null,user_id:null}});
  const store=new StateStore([state('light.outdoor','on'),state('light.offline','unavailable'),state('light.indoor','on')]);
  const config=defaultScene();
  for(const id of ['light.outdoor','light.offline'])config.objects.push({...config.objects[0]!,id,entityId:id,type:'light',name:id});

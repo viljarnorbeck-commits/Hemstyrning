@@ -97,6 +97,14 @@ export class Connection extends EventTarget {
     await Promise.all([request, confirmed]);
   }
   async calendar(entityId:string,start:string,end:string){return fetch(`${this.base}/calendars/${encodeURIComponent(entityId)}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,{signal:AbortSignal.timeout(10000)}).then(check).then(r=>r.json());}
+  async lock(entityId:string,action:'lock'|'unlock',confirmed=false){
+    if(!['lock.entredorr_2','lock.verkstadsentre_2'].includes(entityId))throw Error('Låset saknar verifierad styrkoppling');
+    if(action==='unlock'&&!confirmed)throw Error('Upplåsningen måste bekräftas');
+    const state=this.states.get(entityId)?.state,expected=action==='lock'?'locked':'unlocked';
+    if(!this.connected||!this.commandsEnabled||!['locked','unlocked'].includes(state??''))throw Error('Låset är frånkopplat, skrivskyddat eller saknar bekräftad status');
+    if(state===expected)return;
+    await this.confirmRequest('/equipment',{entity_id:entityId,action,confirmed:action==='unlock'&&confirmed},()=>this.states.get(entityId)?.state===expected);
+  }
   private async confirmRequest(path:string,body:unknown,matches:()=>boolean,timeout=15000){
     if(!this.connected||!this.commandsEnabled)throw new Error('Styrning är frånkopplad eller skrivskyddad');
     let cleanup=()=>{};

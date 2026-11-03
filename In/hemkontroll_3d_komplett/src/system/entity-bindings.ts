@@ -10,6 +10,7 @@ export const sensorSlots = [
   ['sensor.electricity_price_bringasen_380','Elpris · aktuellt','SEK/kWh'],
   ['$costToday','Elkostnad · idag','SEK · endast verifierad dagskostnad'],
   ['$averageToday','Snittpris · idag','kr/kWh · endast verifierat dagsmedel'],
+  ['$garagePower','Garage · effektflöde på startsidan','W eller kW · välj endast verifierad garagemätare'],
   ...['vanster','hoger'].flatMap(side => [
     [`light.easee_${side}_led_strip`, `Easee ${side} · laddboxlampa`, 'light · separat från laddningen'],
     [`sensor.easee_${side}_status`, `Easee ${side} · status`, 'Laddbox'],

@@ -1,0 +1,19 @@
+.yard-house-hotspot{position:absolute;pointer-events:none;overflow:visible;transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1)}
+.yard-house-hotspot polygon{pointer-events:all;cursor:pointer;fill:#fff6cb;fill-opacity:0;stroke:#fff7dc;stroke-width:1.7;stroke-opacity:0;stroke-linejoin:round;transition:fill-opacity .22s ease,stroke-opacity .22s ease,filter .22s ease;outline:none}
+.yard-house-hotspot polygon:focus-visible,.yard-house-hotspot.is-open polygon{fill-opacity:.08;stroke-opacity:.95;filter:drop-shadow(0 0 4px #fff4cfb0) drop-shadow(0 0 11px #ffe7b666)}
+@media(hover:hover){.yard-house-hotspot polygon:hover{fill-opacity:.085;stroke-opacity:1;filter:drop-shadow(0 0 4px #fff4cfb0) drop-shadow(0 0 12px #ffe7b666)}}
+.yard-house-hotspot polygon:active{fill-opacity:.14}
+.yard-house-hotspot.is-inactive polygon{pointer-events:none}
+.yard-house-dialog{width:min(720px,calc(100vw - 32px));pointer-events:auto;background:radial-gradient(ellipse at 10% 0,#edcb8f18,transparent 60%),linear-gradient(145deg,#2b3239fa,#171d24fc)}
+.house-dialog-heading{display:flex;align-items:center;gap:15px;padding-bottom:22px;border-bottom:1px solid #dce7ef26}
+.house-dialog-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:#eed3a414;border:1px solid #eed3a442;color:#f5dcae;box-shadow:0 0 22px #eed3a412;flex-shrink:0}
+.house-dialog-heading small{font-size:9px;font-weight:650;letter-spacing:.15em;color:#d8bf98}.house-dialog-heading h2{font-size:clamp(22px,3vw,29px);letter-spacing:-.035em;margin:5px 0 0;font-weight:550}
+.house-source{margin-left:auto;font-size:10px;color:#c0c8d0;text-align:right}.house-source.is-connected{color:#a4dcb8}
+.house-dialog-sections{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:23px}.house-dialog-sections section{min-width:0}
+.house-dialog-sections h3{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:550;color:#ade0dc;margin:0 0 14px}.house-dialog-sections h3 svg{width:18px;height:18px}.house-dialog-sections .house-energy h3{color:#edc18f}
+.house-dialog-sections h4{margin:25px 0 9px;font-size:9px;letter-spacing:.14em;font-weight:600;color:#9bb7c5}
+.house-reading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #b9c9d314}.house-reading>span{font-size:12px;color:#bdcbd6;overflow-wrap:anywhere}
+.house-reading strong{font-size:clamp(23px,3vw,30px);font-weight:550;font-variant-numeric:tabular-nums;letter-spacing:-.04em;white-space:nowrap}.house-reading em{font-style:normal;font-size:11px;font-weight:400;color:#9fb2c1;letter-spacing:0;margin-left:5px}
+.house-reading-old:after{content:'';display:inline-block;vertical-align:middle;width:4px;height:4px;background:#e0b779;border-radius:50%;margin-left:6px;box-shadow:0 0 5px #e0b77944}
+@media(max-width:540px){.house-dialog-heading{gap:10px}.house-dialog-icon{width:38px;height:38px;border-radius:12px}.house-source{max-width:72px;font-size:9px}.house-dialog-sections{grid-template-columns:1fr;gap:25px}.house-dialog-heading h2{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.yard-house-hotspot,.yard-house-hotspot polygon{transition:none!important}}
