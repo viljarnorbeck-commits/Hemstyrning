@@ -84,3 +84,7 @@ originalets hash kontrollerades. Skärmbilder finns lokalt i ignorerade `.build-
 användarpaus. Två regressioner för kamerans fasta källram och markreserv är skrivna
 men inte körda. Modellbevakning och samarbete mellan chattar är fortsatt pausade.
 Push är däremot åter godkänd av det nya uppdraget.
+
+## Placering enligt användarskiss
+Kortens normaliserade bildankare finns i photoCardLayout i overview-layout.ts. De följer själva fotots visade rektangel, inte webbläsarens koordinater, och behåller sin plats vid sidomeny/bildskalning. På mindre skärmar visas samma tio grupper i den läsbara listan under gården. Väder/klocka/kalender ligger till vänster över gräset, varmvatten vid trädet, elkostnad och lås ovanför taket, bilar vid timmerbyggnaden, sol/Hus 2 nere till vänster och elnät nere till höger. Den omarkerade robotgruppen behålls till höger.
+Tunnt transparent blå SVG med raka linjer och korta långsamma pulser följer samma bildrektangel. Fasta, användarangivna schematiska riktningar: solpaneler till huset, huset till Hus 2, elnät till huset, samt till garaget. yard-energy-cables.ts lagrar rutterna separat från kort och mätvärden. Pulserna representerar INTE verifierat liveflöde, effektstorlek eller uppmätt kabelsträckning; detta anges i bildtext och tillgänglig SVG-beskrivning. Reducerad rörelse ger statiska linjer med små riktningsmarkeringar. Fotots mjuka kanttoning är oförändrad, liksom HA-kopplingar, kameran och objektpositioner. Kablarna är ett presentationslager, inte ny fysisk 3D-kalibrering.
