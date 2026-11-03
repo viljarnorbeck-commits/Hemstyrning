@@ -30,7 +30,7 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
   const read = async (path: string) => {
     if(!live){if(path==='states')return store.all();const scene=await load();return{latitude:scene.location.latitude,longitude:scene.location.longitude,time_zone:scene.location.timeZone};}
     const response = await fetch(`${live.url}/api/${path}`, { headers: { Authorization: `Bearer ${live.token}` }, signal: AbortSignal.timeout(10000) });
-    if (!response.ok) throw new Error(`Home Assistant svarade ${response.status}`);
+    if (!response.ok) throw Object.assign(new Error(`Home Assistant svarade ${response.status}`),{haStatus:response.status});
     return response.json();
   };
   router.get('/status', async (_req,res) => {
@@ -39,8 +39,15 @@ export function bridgeApi(store: StateStore, load: () => Promise<SceneConfig>, d
       await read('config');
       const states=await read('states');
       res.json({mode:'real',authenticated:true,commandsEnabled:live.commandsEnabled===true,entityCount:Array.isArray(states)?states.length:0});
-    } catch {
-      res.status(503).json({mode:'real',authenticated:false,commandsEnabled:false,message:'Home Assistant kunde inte verifieras. Kontrollera URL, token och nätverk lokalt.'});
+    } catch (error) {
+      // Return only classified codes; never serialize request headers, tokens or arbitrary upstream errors.
+      const failure=error as {haStatus?:number;cause?:{code?:string;errors?:Array<{code?:string}>}};
+      const rawCode=failure?.cause?.code??failure?.cause?.errors?.[0]?.code;
+      const errorCode=['EACCES','EPERM','ECONNREFUSED','ETIMEDOUT','ENETUNREACH','EHOSTUNREACH','ENOTFOUND'].includes(rawCode??'')?rawCode:undefined;
+      const blocked=errorCode==='EACCES'||errorCode==='EPERM',unauthorized=failure?.haStatus===401||failure?.haStatus===403;
+      const reason=blocked?'network-blocked':unauthorized?'unauthorized':errorCode?'unreachable':'unverified';
+      const message=blocked?'Datorns nätverksbehörigheter blockerar anslutningen till Home Assistant.':unauthorized?'Home Assistant avvisade autentiseringen. Kontrollera den lokalt sparade åtkomsttoken.':errorCode?'Home Assistant kan inte nås på den konfigurerade nätverksadressen.':'Home Assistant kunde inte verifieras. Kontrollera URL, token och nätverk lokalt.';
+      res.status(503).json({mode:'real',authenticated:false,commandsEnabled:false,reason,errorCode,message});
     }
   });
   const halloween=new HalloweenEffect(async(domain,service,data)=>{if(live){if(!live.commandsEnabled)throw new Error('Skrivskyddad anslutning');const response=await fetch(live.url+'/api/services/'+domain+'/'+service,{method:'POST',headers:{Authorization:'Bearer '+live.token,'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(4000)});if(!response.ok)throw new Error('Home Assistant avvisade belysningskommandot');}else await callService(store,{domain,service,serviceData:data},delay);});
