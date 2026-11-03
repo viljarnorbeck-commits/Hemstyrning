@@ -49,9 +49,11 @@ export function workspaceApi(directory: string,onSaved:()=>void=()=>{}) {
     const save = async () => {
       const current=await load();
       if(current.modelExchange){
+        const placementResetStale=result.data.modelExchange?.displayPlacement?.approvedAt!==current.modelExchange.displayPlacement?.approvedAt;
         const stale=result.data.modelExchange?.active?.manifestSha256!==current.modelExchange.active?.manifestSha256;
         result.data.modelExchange=current.modelExchange;
         if(stale)result.data.models=current.models;
+        if(placementResetStale){result.data.models=current.models;result.data.objects=current.objects;result.data.energyRoutes=current.energyRoutes;}
       }
       await mkdir(directory, { recursive: true });
       const temp = `${configPath}.${crypto.randomUUID()}.tmp`;

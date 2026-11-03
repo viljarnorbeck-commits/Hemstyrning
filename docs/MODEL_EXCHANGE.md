@@ -1,5 +1,29 @@
 # Automatiskt 3D-utbyte
 
+## Godkänd provisorisk visning från 3 november
+
+Den tidigare Daniels-referensen föreställer en annan fastighet i Varberg. Den kan
+inte användas som fysisk registreringsreferens för gården i Kyrkås. Efter uttryckligt
+användargodkännande sparas därför en separat visningspolicy i den befintliga
+`scene.modelExchange.displayPlacement`, via `/workspace-api/model-exchange/display-placement`.
+Den anger `kind:user-approved-provisional`, producentens fasta `sourceFrameId`,
+godkännandetid och visningstransform. Den frysta ramen och originalfilerna ändras inte.
+
+Samma importör kontrollerar fortfarande hash, GLB, texturer, utsträckning och att
+källramen matchar det lokala godkännandet. Den använder visningstransformen i stället
+för att påstå fysisk passning mellan två olika gårdar. Importhistorik och kvitto
+anger `placementKind:user-approved-provisional` och `physicalAlignmentVerified:false`.
+Producentens `alignmentVerified:false` förblir oförändrad. Saknas lokal policy gäller
+alltjämt kraven på verifierad fysisk kalibrering nedan.
+
+Användaren bad också att rensa gamla 3D-placeringar. De 55 enhetsdefinitionernas
+positioner/rotationer/punkter nollställdes och `placementConfirmed=false` sparades;
+renderaren visar dem då inte. Namn, HA-kopplingar, lampinställningar, robotfunktioner
+och hemskärmskonfiguration bevarades. Ingen ny lampplacering görs automatiskt.
+Varbergsmodellen finns kvar som oförändrat historiskt underlag, men används inte
+i några aktiva modellplatser eller som synlig reserv för den första gårdsimporten.
+En äldre klient får inte återställa gamla placeringar över detta godkännande.
+
 Utbyte: `C:\Hemstyrning-3D-utbyte`. Ingen fil i RealityScan-/Blender-projektet ändras.
 
 `npm run models:sync` behandlar nya leveranser en gång. `npm run dev:model-exchange`

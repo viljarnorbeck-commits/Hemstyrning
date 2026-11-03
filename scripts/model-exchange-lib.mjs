@@ -59,7 +59,7 @@ export async function baselineFrame(bytes,model){
  const baseline={sha256:sha256(bytes),model,bounds:transformedBounds(shape,matrix)},anchors=[a,b,c].map((p,i)=>({id:'reference-'+['a','b','c'][i],world:p.world,baselineSource:p.source}));
  return {schemaVersion:1,id:'hemstyrning-yard-'+sha256(JSON.stringify([baseline,anchors])).slice(0,16),units:'existing-yard-unit',gpsVerified:false,createdAt:new Date().toISOString(),baseline,anchors,maxAnchorError:.05};
 }
-export async function validateRelease(directory,manifestBytes,frame,{onFilesRead}={}){
+export async function validateRelease(directory,manifestBytes,frame,{onFilesRead,displayPlacement}={}){
  const manifest=JSON.parse(manifestBytes.toString('utf8'));
  requireValue(manifest.schemaVersion===1,'Manifestets schemaVersion stöds inte. Använd version 1.');
  requireValue(manifest.status==='published'||manifest.ready===true&&manifest.status==='complete','Leveransen är inte färdigpublicerad.');
@@ -76,10 +76,12 @@ export async function validateRelease(directory,manifestBytes,frame,{onFilesRead
  const calibration=JSON.parse(calibrationBytes.toString('utf8'));
  requireValue(calibration.schemaVersion===1,'Kalibreringens schemaVersion måste vara 1.');
  requireValue(calibration.coordinateSystemId===frame.id&&calibration.referenceModelSha256===frame.baseline.sha256,'Kalibreringen använder inte gårdens frysta lokala koordinatsystem/referensmodell.');
- requireValue(calibration.alignmentVerified===true,'Lokal inpassning är inte verifierad. Uppskattad GPS räcker inte för att byta fungerande modell.');
- const settings=calibration.sourceToYard;requireValue(settings?.rotationOrder==='YXZ'&&settings.rotationUnit==='degrees','Kalibreringen måste ange YXZ och grader.');const matrix=placement(settings);
- const matches=calibration.anchorMatches;requireValue(Array.isArray(matches)&&matches.length>=3,'Minst tre referensankare krävs.');
- const used=new Set();for(const anchor of frame.anchors){const match=matches.find(p=>p.id===anchor.id);requireValue(match&&vector(match.source)&&!used.has(match.id),'Ett fryst referensankare saknas.');used.add(match.id);requireValue(new Vector3(...transform(match.source,matrix)).distanceTo(new Vector3(...anchor.world))<=frame.maxAnchorError,'Referensankaret ligger fel: '+anchor.id);}
+ const provisional=displayPlacement?.kind==='user-approved-provisional';
+ if(provisional)requireValue(calibration.sourceFrame?.id===displayPlacement.sourceFrameId,'Modellen använder inte den godkända provisoriska källramen.');
+ else requireValue(calibration.alignmentVerified===true,'Lokal inpassning är inte verifierad. Uppskattad GPS räcker inte för att byta fungerande modell.');
+ const settings=provisional?{...displayPlacement,rotationOrder:'YXZ',rotationUnit:'degrees'}:calibration.sourceToYard;requireValue(settings?.rotationOrder==='YXZ'&&settings.rotationUnit==='degrees','Kalibreringen måste ange YXZ och grader.');const matrix=placement(settings);
+ if(!provisional){const matches=calibration.anchorMatches;requireValue(Array.isArray(matches)&&matches.length>=3,'Minst tre referensankare krävs.');
+ const used=new Set();for(const anchor of frame.anchors){const match=matches.find(p=>p.id===anchor.id);requireValue(match&&vector(match.source)&&!used.has(match.id),'Ett fryst referensankare saknas.');used.add(match.id);requireValue(new Vector3(...transform(match.source,matrix)).distanceTo(new Vector3(...anchor.world))<=frame.maxAnchorError,'Referensankaret ligger fel: '+anchor.id);}}
  const json=glbJSON(bytes),resources={};
  for(const item of [...(json.buffers??[]),...(json.images??[])])if(item.uri&&!item.uri.startsWith('data:')){requireValue(files.has(item.uri),'En GLB-resurs saknas i manifestet: '+item.uri);resources[item.uri]=new Uint8Array(files.get(item.uri));}
  const {doc,reader}=await documentFrom(bytes,resources),shape=geometry(doc);
@@ -91,5 +93,5 @@ export async function validateRelease(directory,manifestBytes,frame,{onFilesRead
  requireValue(bounds.max.every((n,i)=>n-bounds.min[i]<=span*4)&&inside(bounds.min,frame.baseline.bounds,span*2)&&inside(bounds.max,frame.baseline.bounds,span*2),'Modellens storlek/placering avviker orimligt från gården.');
  const embedded=Buffer.from(await reader.writeBinary(doc));requireValue(embedded.length<=256*1024*1024,'Den inbäddade modellen överstiger 256 MB.');
  requireValue(sha256(await safeFile(directory,'manifest.json',1024*1024))===sha256(manifestBytes),'Manifestet ändrades under läsningen.');
- return {version,publishedAt,manifestSha256:sha256(manifestBytes),calibrationSha256:sha256(calibrationBytes),sourceSha256:sha256(bytes),embedded,complete:manifest.complete===true,seasons:manifest.targetSeasons,model:{position:settings.position,rotation:settings.rotation,scale:settings.scale},fileHashes:entries.map(e=>({path:e.path,sha256:e.sha256.toLowerCase()}))};
+ return {placementKind:provisional?'user-approved-provisional':'verified-local',sourceFrameId:calibration.sourceFrame?.id,physicalAlignmentVerified:!provisional,version,publishedAt,manifestSha256:sha256(manifestBytes),calibrationSha256:sha256(calibrationBytes),sourceSha256:sha256(bytes),embedded,complete:manifest.complete===true,seasons:manifest.targetSeasons,model:{position:settings.position,rotation:settings.rotation,scale:settings.scale},fileHashes:entries.map(e=>({path:e.path,sha256:e.sha256.toLowerCase()}))};
 }

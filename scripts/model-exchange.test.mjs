@@ -19,3 +19,16 @@ async function fixture(){
 test('accepts an incomplete textured asset only when its frozen local anchors match',async()=>{const f=await fixture();try{const result=await validateRelease(f.directory,await f.publish(),f.frame);assert.equal(result.complete,false);assert.equal(result.version,'v1');assert.ok(result.embedded.length>0);assert.equal(result.sourceSha256,f.frame.baseline.sha256);}finally{await rm(f.root,{recursive:true,force:true});}});
 test('rejects estimated alignment and wrong anchors without accepting GPS as a replacement',async()=>{const f=await fixture();try{await assert.rejects(validateRelease(f.directory,await f.publish({alignmentVerified:false}),f.frame),/inte verifierad/);await assert.rejects(validateRelease(f.directory,await f.publish({alignmentVerified:true,anchorMatches:f.frame.anchors.map(p=>({id:p.id,source:[999,0,0]}))}),f.frame),/ligger fel/);}finally{await rm(f.root,{recursive:true,force:true});}});
 test('rejects changed file bytes and filesystem traversal',async()=>{const f=await fixture();try{const manifest=await f.publish();await writeFile(path.join(f.directory,'model.glb'),Buffer.from('broken'));await assert.rejects(validateRelease(f.directory,manifest,f.frame),/SHA256/);await assert.rejects(safeFile(f.directory,'../outside.glb'),/sökväg/);await assert.rejects(safeFile(f.directory,'https://example.com/model.glb'),/sökväg/);}finally{await rm(f.root,{recursive:true,force:true});}});
+
+test('provisional display requires matching local approval and never claims physical alignment',async()=>{
+ const f=await fixture();try{
+  const manifest=await f.publish({alignmentVerified:false,anchorMatches:[],sourceFrame:{id:'yard380-gltf-v1'}});
+  const displayPlacement={kind:'user-approved-provisional',sourceFrameId:'yard380-gltf-v1',position:[0,0,0],rotation:[0,0,0],scale:1};
+  await assert.rejects(validateRelease(f.directory,manifest,f.frame),/inte verifierad/);
+  await assert.rejects(validateRelease(f.directory,manifest,f.frame,{displayPlacement:{...displayPlacement,sourceFrameId:'different-frame'}}),/källramen/);
+  const result=await validateRelease(f.directory,manifest,f.frame,{displayPlacement});
+  assert.equal(result.placementKind,'user-approved-provisional');assert.equal(result.physicalAlignmentVerified,false);
+  await writeFile(path.join(f.directory,'model.glb'),Buffer.from('broken'));
+  await assert.rejects(validateRelease(f.directory,manifest,f.frame,{displayPlacement}),/SHA256/);
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
