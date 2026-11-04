@@ -17,7 +17,7 @@ export const photoCardLayout:Record<string,{x:number;y:number;width:number;minWi
  kia:{x:.025,y:.62,width:.095,minWidth:126},
  golf:{x:.145,y:.62,width:.095,minWidth:126},
  solar:{x:.30,y:.66,width:.105,minWidth:145},
- house2:{x:.24,y:.88,width:.13,minWidth:150},
+ house2:{x:.28,y:.83,width:.13,minWidth:150},
  grid:{x:.725,y:.79,width:.105,minWidth:150},
  mower:{x:.515,y:.105,width:.105,minWidth:150},
  vacuum:{x:.675,y:.04,width:.13,minWidth:190},

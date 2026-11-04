@@ -1109,3 +1109,6 @@ Uppdaterat 2026-10-31. Detta är aktuell arkitektur och verifieringsprinciper; �
 - Desktop-, surfplatte- och mobilbilder granskade. Lampornas fotobaserade positioner förblir ungefärliga och behöver praktisk finjustering; inga ursprungsfoton eller modellfiler ändras eller inkluderas i Git.
 - Den isolerade testsimulatorn behöver HEM_VIEW_TEST_CLOCK=true för view-clock/view-disconnect i skärmsynkroniseringstestet. Webbläsarkörningen använder HEM_E2E_BASE_URL=http://127.0.0.1:15173 och HEM_E2E_BACKEND_URL=http://127.0.0.1:18123. Testfixturen dränerar route.fetch-förfrågningar med unrouteAll({behavior:wait}) innan Playwright stänger API-kontexten.
 - Slutresultat: TypeScript godkänd; npm test 128 backend + 151 frontend + 4 modellutbytestester = 283 godkända; build:web godkänd med befintlig varning om stora JS-chunkar. Sista fullständiga Playwright-körningen: 85/85 godkända, inga överhoppade, 12.5 minuter. De två stängningsfelen i föregående helkörning är rättade och passerar i denna rena helkörning. Ordinarie localhost:5173, /control, /dev/screens och backendens /health verifierade HTTP 200.
+
+## Hus 2-rutan flyttad, 4 november
+- Startfotots normaliserade ankare för Hus 2 flyttat från (0.24, 0.88) till (0.28, 0.83): lite upp och höger. Storlek och innehåll behålls. Endast layoutjustering; ingen ny full testkörning.
