@@ -1,3 +1,4 @@
+import {janneHouseSurfaces} from './janne-house';
 import {PerspectiveCamera,Vector3} from 'three';
 import {starDirection} from './astronomy';
 import {environmentTarget,liveInputs} from './environment';
@@ -20,6 +21,11 @@ export function photoSky(){
   const width=Math.min(1672,Math.max(960,Math.round(root.getBoundingClientRect().width))),height=Math.round(width*941/1672);
   if(root.width!==width||root.height!==height){root.width=width;root.height=height;}
   const ctx=root.getContext('2d');if(!ctx)return;
+  ctx.clearRect(0,0,width,height);ctx.save();
+  // Keep all sky rendering outside the same registered building, even at matte edges.
+  ctx.beginPath();ctx.rect(0,0,width,height);
+  janneHouseSurfaces.outline.forEach(([x,y],i)=>{const px=x/janneHouseSurfaces.width*width,py=y/janneHouseSurfaces.height*height;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});ctx.closePath();ctx.clip('evenodd');
+
   const date=new Date(),input=liveInputs(config,states,connected,+date,source),targetCloud=weatherFresh?input.cloud:1;gradedCloud=gradedCloud===undefined?targetCloud:gradedCloud+(targetCloud-gradedCloud)*.12;const cloudCover=gradedCloud;
   const frame=environmentTarget({...input,date,latitude:config.weather?.latitude??config.location.latitude,longitude:config.weather?.longitude??config.location.longitude,northOffset:config.location.northOffset,cloud:cloudCover,sensorWeight:0,brightness:1});
   camera.fov=view.fov;camera.aspect=1672/941;camera.position.fromArray(view.position);camera.lookAt(new Vector3(...view.target));camera.updateProjectionMatrix();camera.updateMatrixWorld();
@@ -43,6 +49,7 @@ export function photoSky(){
   }
   // Cloud coverage obscures stars and moon as well as changing the daylight grade.
   ctx.globalAlpha=cloudCover*(.3+.55*day);ctx.globalCompositeOperation=day>.25?'source-over':'multiply';const drift=matchMedia('(prefers-reduced-motion:reduce)').matches?0:(+date/180000)%1;ctx.drawImage(cloud,-drift*width,0,width*2,height*.65);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+  ctx.restore();
   root.dataset.weatherFresh=String(weatherFresh);root.dataset.starCount=String(catalogue.length);root.dataset.moonFraction=String(frame.moonFraction??0);root.dataset.sunElevation=String(frame.elevation);
  }
  return{root,update,dispose(){disposed=true;root.remove();}};

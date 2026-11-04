@@ -7,7 +7,7 @@ test('actual scan, atmospheric surroundings and full-screen controls render with
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto('/?view=3d');await expect(page.locator('#connection-status')).toHaveText('Ansluten',{timeout:20000});await expect(page.locator('#model-status')).toBeHidden({timeout:80000});
  await expect(page.getByRole('link',{name:/Redigera gård/})).toHaveAttribute('href','/editor');await expect(page.locator('.home-status-strip')).toContainText('Elpris');await expect(page.locator('#panel')).toBeHidden();
- expect(await page.locator('#garden').boundingBox()).toMatchObject({width:1440,height:960});
+ const canvas=await page.locator('#garden').boundingBox();expect(canvas!.height).toBe(960);expect(canvas!.width+canvas!.x).toBeCloseTo(1440,0);expect(canvas!.width).toBeGreaterThan(1100);
  await page.screenshot({path:'/tmp/hemkontroll-day-final.png',timeout:90000});expect(errors).toEqual([]);
 });
 

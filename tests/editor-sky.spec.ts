@@ -20,8 +20,8 @@ test('editor discovers, places and persists dock, vacuum and occluder without ch
 });
 
 test('configured occluder hides a marker, camera movement reveals it, and the list stays usable',async({page})=>{
- await fixture(page);
- await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),config=await response.json(),base=config.objects[0];config.quality='low';config.objects.push({...base,id:'visibility-target',type:'device',name:'Skymd enhet',entityId:'',position:[0,3,-5],scale:[1,1,1]},{...base,id:'visibility-wall',type:'occluder',name:'Skymmande vägg',entityId:'',position:[0,0,0],scale:[100,12,1]});await route.fulfill({json:config});});
+ await fixture(page);await page.route('**/models/*.glb',route=>route.fulfill({contentType:'model/gltf-binary',body:planeGlb(true)}));
+ await page.route('**/workspace-api/scene',async route=>{const response=await route.fetch(),config=await response.json(),base=config.objects[0];for(const model of Object.values(config.models)as any[])Object.assign(model,{position:[0,0,0],rotation:[0,0,0],scale:1});config.quality='low';config.objects.push({...base,id:'visibility-target',type:'device',name:'Skymd enhet',entityId:'',position:[-11.885,5.314,-3.739],scale:[1,1,1]},{...base,id:'visibility-wall',type:'occluder',name:'Skymmande vägg',entityId:'',position:[-26,0,-4.5],scale:[1,20,12]});await route.fulfill({json:config});});
  await page.goto('/?view=3d');await expect(page.locator('#connection-status')).toHaveText('Ansluten',{timeout:20000});await expect(page.locator('#model-status')).toBeHidden({timeout:30000});const marker=page.locator('#device-markers [data-object="visibility-target"]');await expect(marker).toBeHidden();
  await page.getByRole('button',{name:/Lista/}).click();await page.locator('#home-dashboard [data-object="visibility-target"]').click();await expect(page.locator('#panel-body h2')).toHaveText('Skymd enhet');await page.locator('#close-panel').click();await page.locator('#list-button').click();
  await page.mouse.move(950,620);await page.mouse.down();await page.mouse.move(470,620,{steps:35});await page.mouse.up();await expect(marker).toBeVisible({timeout:15000});

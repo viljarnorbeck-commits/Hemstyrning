@@ -72,8 +72,8 @@ test('neutral theme, compact lamps and mobile page reachability at all requested
 });
 
 test('technical overview is almost opaque neutral glass without removing the live scene',async({page})=>{
- await fixture(page);await page.goto('/');await expect(page.locator('.home-overview article')).toHaveCount(10);
- expect(await page.locator('.home-overview article').first().evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgba(45, 47, 54, 0.93)');
+ await fixture(page);await page.goto('/');await expect(page.locator('.home-overview article')).toHaveCount(11);
+ expect(await page.locator('.home-overview article').first().evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgba(30, 34, 37, 0.87)');
  await expect(page.locator('#garden')).toBeVisible();await page.screenshot({path:'test-results/corrected-home-desktop.png'});
 });
 

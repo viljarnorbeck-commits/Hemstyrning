@@ -27,6 +27,12 @@ export function yardPhotoLighting(){
  function fixtureBody(fixture:YardLightFixture,p:Vector3){
   if(!fixture.mountStyle)return;const q=project(p);if(!q.visible)return;
   const r=Math.max(1.5,Math.abs(project(p.clone().addScaledVector(screenRight,yardFixtureSize.globeRadius)).x-q.x)),body=document.createElementNS(ns,'g');body.dataset.fixtureBody=fixture.id;
+  if(fixture.id==='garage-wall'){
+   // Same hanging silhouette as the reference and the separate 3D fitting.
+   const lantern=document.createElementNS(ns,'g');lantern.setAttribute('transform',`translate(${q.x} ${q.y}) scale(${r})`);
+   lantern.innerHTML='<path d="M.85-2.8h.48v2.2H.85Z" fill="#303435"/><path d="M1.1-1.1V-2.35Q1.1-3.25.38-3.05Q-.15-2.95 0-2.1" fill="none" stroke="#292d2e" stroke-width=".19" stroke-linecap="round"/><path d="M-1.25-1.2H1.25L.73 1.2H-.73Z" fill="#adb9b6" stroke="#282d2e" stroke-width=".12"/><path d="M-.8-1.2H.25L-.08 1.12H-.55Z" fill="#d7dcce" opacity=".45"/><path d="M-1.65-1.25Q-1-1.52-.16-2.24Q.1-2.4.3-2.1L1.65-1.25Z" fill="#282c2d" stroke="#626969" stroke-width=".07"/><path d="M-1.65-1.25H1.65M-1.2-1.18L-.7 1.2M1.2-1.18L.7 1.2M.1-1.18V1.2M-.73 1.2H.73L.35 1.65H-.35Z" fill="#303535" stroke="#282d2e" stroke-width=".12"/><path d="M-.17 1.62H.17L0 2.1Z" fill="#282d2e"/><circle cy="-2.35" r=".16" fill="#303535"/>';
+   body.append(lantern);fixturesRoot.append(body);return;
+  }
   if(fixture.mountStyle==='post-lantern'){
    const foot=new Vector3(p.x,fixture.target[1],p.z),top=p.clone().add(new Vector3(0,-.14,0)),side=screenRight.clone().multiplyScalar(yardFixtureSize.poleRadius),column=document.createElementNS(ns,'path');
    column.setAttribute('d',path([foot.clone().sub(side),foot.clone().add(side),top.clone().add(side),top.clone().sub(side)]));column.setAttribute('fill','url(#yard-fixture-metal)');column.setAttribute('stroke','#707d84');column.setAttribute('stroke-width','.35');body.append(column);
@@ -40,7 +46,7 @@ export function yardPhotoLighting(){
  }
  const defs=document.createElementNS(ns,'defs');defs.innerHTML='<filter id="yard-lamp-spill" x="-40%" y="-70%" width="180%" height="240%"><feGaussianBlur stdDeviation="6"/></filter><filter id="yard-lamp-soft" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.5"/></filter>';
  root.append(defs);const entries:Array<{fixture:YardLightFixture;group:SVGGElement;output:number;surface?:SVGImageElement;correction?:SVGGElement;fallback:SVGGElement}>=[];
- for(const fixture of yardLightProfile.fixtures.filter(f=>f.enabled)){
+ for(const fixture of yardLightProfile.fixtures.filter(f=>f.enabled&&!f.threeDOnly)){
   const p=new Vector3(...fixture.position),aim=new Vector3(...fixture.target).sub(p).normalize(),ground=-.125787,height=Math.max(.4,p.y-ground),center=p.clone();
   fixtureBody(fixture,p);
   // Keep wall-lamp spill at the foot of the facade rather than at the distant cone target.

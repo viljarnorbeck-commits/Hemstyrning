@@ -1,39 +1,259 @@
 {
   "schemaVersion": 1,
   "sourcePhotoSha256": "72ea379572171e9f6df0d5d05b4d64fc75ebc1d3b1fa5a9bb42997c63a462c70",
-  "coordinateSize": [1920, 1080],
+  "coordinateSize": [
+    1920,
+    1080
+  ],
   "status": "photo-window-response-estimate-not-interior-fixture-positions",
   "windows": [
     {
       "id": "hall-stairs",
       "sourceImage": "DJI_20261103181301_0609_D.JPG",
       "color": "#fff0d2",
-      "bindings": [{"entityId": "switch.aktora1_b1_port2_taklampa_trapp_hall", "weight": 1}],
-      "panes": [
-        [[1025,535],[1048,537],[1047,557],[1024,555]],
-        [[1053,538],[1077,540],[1075,559],[1052,557]],
-        [[1024,560],[1047,562],[1046,583],[1023,580]],
-        [[1052,562],[1075,564],[1073,585],[1051,583]]
+      "bindings": [
+        {
+          "entityId": "switch.aktora1_b1_port2_taklampa_trapp_hall",
+          "weight": 1
+        }
       ],
-      "spill": [[1018,590],[1080,596],[1099,691],[954,669]],
-      "center": [1050,560]
+      "panes": [
+        [
+          [
+            1025,
+            535
+          ],
+          [
+            1048,
+            537
+          ],
+          [
+            1047,
+            557
+          ],
+          [
+            1024,
+            555
+          ]
+        ],
+        [
+          [
+            1053,
+            538
+          ],
+          [
+            1077,
+            540
+          ],
+          [
+            1075,
+            559
+          ],
+          [
+            1052,
+            557
+          ]
+        ],
+        [
+          [
+            1024,
+            560
+          ],
+          [
+            1047,
+            562
+          ],
+          [
+            1046,
+            583
+          ],
+          [
+            1023,
+            580
+          ]
+        ],
+        [
+          [
+            1052,
+            562
+          ],
+          [
+            1075,
+            564
+          ],
+          [
+            1073,
+            585
+          ],
+          [
+            1051,
+            583
+          ]
+        ]
+      ],
+      "spill": [
+        [
+          1018,
+          590
+        ],
+        [
+          1080,
+          596
+        ],
+        [
+          1099,
+          691
+        ],
+        [
+          954,
+          669
+        ]
+      ],
+      "center": [
+        1050,
+        560
+      ],
+      "detailReferenceImages": [
+        {
+          "file": "codex-clipboard-0d46514d-21b2-484d-b904-37dd839a322a.jpg",
+          "sha256": "9be27128fa6a837403aae5a631b4f53a51e0285de27fc38417b23c0507c2c783"
+        },
+        {
+          "file": "codex-clipboard-98328012-1d23-4691-96e8-a2d98490d4fe.jpg",
+          "sha256": "da3aec812189e2a226a4ec5e99c4a33ca7b9a915214237fc7070a62548a63227"
+        },
+        {
+          "file": "codex-clipboard-2127f789-066b-4ae4-9c1c-080029b53e63.jpg",
+          "sha256": "9e8981fe9644f53fae379fdcfc475ba852abae28c2dc07b5a995241e8038cb32"
+        }
+      ],
+      "description": "Hall and staircase confirmed by three new user night views, window between small entry and main porch. Existing hall/stair light binding retained. Interior light location is not surveyed."
     },
     {
       "id": "kitchen-both",
       "sourceImage": "DJI_20261103181153_0608_D.JPG",
-      "color": "#ffe0a0",
+      "color": "#ffebc8",
       "bindings": [
-        {"entityId": "switch.aktora1_b2_port4_kok_koksbord_belysning", "weight": 0.6},
-        {"entityId": "light.bankbelysning_kok", "weight": 0.4}
+        {
+          "entityId": "switch.aktora1_b2_port4_kok_koksbord_belysning",
+          "weight": 0.6
+        },
+        {
+          "entityId": "light.bankbelysning_kok",
+          "weight": 0.4
+        }
       ],
       "panes": [
-        [[1354,575],[1382,578],[1379,600],[1351,597]],
-        [[1388,578],[1414,581],[1411,603],[1385,600]],
-        [[1351,602],[1379,605],[1376,629],[1349,626]],
-        [[1385,605],[1411,608],[1408,632],[1382,629]]
+        [
+          [
+            1354,
+            575
+          ],
+          [
+            1382,
+            578
+          ],
+          [
+            1379,
+            600
+          ],
+          [
+            1351,
+            597
+          ]
+        ],
+        [
+          [
+            1388,
+            578
+          ],
+          [
+            1414,
+            581
+          ],
+          [
+            1411,
+            603
+          ],
+          [
+            1385,
+            600
+          ]
+        ],
+        [
+          [
+            1351,
+            602
+          ],
+          [
+            1379,
+            605
+          ],
+          [
+            1376,
+            629
+          ],
+          [
+            1349,
+            626
+          ]
+        ],
+        [
+          [
+            1385,
+            605
+          ],
+          [
+            1411,
+            608
+          ],
+          [
+            1408,
+            632
+          ],
+          [
+            1382,
+            629
+          ]
+        ]
       ],
-      "spill": [[1341,640],[1417,650],[1456,753],[1292,726]],
-      "center": [1382,604]
+      "spill": [
+        [
+          1341,
+          640
+        ],
+        [
+          1417,
+          650
+        ],
+        [
+          1456,
+          753
+        ],
+        [
+          1292,
+          726
+        ]
+      ],
+      "center": [
+        1382,
+        604
+      ],
+      "detailReferenceImages": [
+        {
+          "file": "codex-clipboard-a95cea31-d01f-4a7a-bef4-38a1a09a1ef1.jpg",
+          "sha256": "b412117259c3ebe868bc18a3c1dcb90a6f46721ae4e62bff5677d08a1f7e1452"
+        },
+        {
+          "file": "codex-clipboard-b3fbdd2d-0f82-44f6-a7e5-e55f202a5116.jpg",
+          "sha256": "996c7c84fe2e260e43f33458164d89d2d0daed6568f4cdcba8d90e5045806c99"
+        },
+        {
+          "file": "codex-clipboard-96dbc839-1746-42ab-a2fd-072f1ed8c496.jpg",
+          "sha256": "60eaaae121804da6af622210d46bb5138f203bdf5152323cf4f73b5d3c9fd70b"
+        }
+      ],
+      "description": "All kitchen lights on in new user references. Kitchen table and worktop lighting bindings previously confirmed. Relative weights are visual estimates."
     }
   ]
 }

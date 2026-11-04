@@ -72,8 +72,9 @@ function update(){
   const clock=weatherAttrs.simulated_datetime;
   const date=connection.source==='simulator'&&typeof clock==='string'?new Date(clock):new Date();
   hud?.update(config.value,date);
-  target=environmentTarget({date,...config.value.location,cloud:live.cloud,lux:live.lux,weather:live.weather,sensorWeight:config.value.luxCalibration.weight,brightness:1,
+  target=environmentTarget({date,...config.value.location,latitude:config.value.weather?.latitude??config.value.location.latitude,longitude:config.value.weather?.longitude??config.value.location.longitude,cloud:live.cloud,lux:live.lux,weather:live.weather,sensorWeight:config.value.luxCalibration.weight,brightness:1,
     rainIntensity:Number(weatherAttrs.rain_intensity??(live.weather==='rain'?0.6:0)),snowIntensity:Number(weatherAttrs.snow_intensity??(live.weather==='snow'?0.6:0)),windSpeed:Number(weatherAttrs.wind_speed??0),windDirection:Number(weatherAttrs.wind_bearing??0),gust:Number(weatherAttrs.wind_gust_speed??0),visibility:Number(weatherAttrs.visibility??20)});
+  target.weatherCondition=view.connected?weather?.state:undefined;
   const manual=connection.source==='simulator'?weatherAttrs.season_model:null;
   const season=typeof manual==='string'&&manual in config.value.models?manual as Season:automaticSeason(config.value,connection.states,date,connection.connected);
   target.season=season;

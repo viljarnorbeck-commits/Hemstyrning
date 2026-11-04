@@ -54,7 +54,7 @@
   "fixtures": [
     {
       "id": "garage-wall",
-      "label": "Skymning · garagevägg",
+      "label": "Bron · garagevägg",
       "kind": "spot",
       "position": [
         -1.65246,
@@ -80,8 +80,8 @@
       "positionUncertaintyYardUnits": 0.8,
       "photometryStatus": "visual-starting-estimate",
       "binding": {
-        "entityId": "switch.skymning",
-        "status": "user-described-group",
+        "entityId": "switch.aktora1_b1_port4_bron_belysning_2",
+        "status": "user-confirmed-bron-group-and-inventory-entity",
         "readOnly": true
       },
       "enabled": true,
@@ -95,11 +95,26 @@
           0.45925925925925926
         ]
       },
-      "correctionNote": "Moved from the narrow red door to the white wall immediately right, following user screenshot and close-up of fixture behind tree. Approximate hidden mounting point."
+      "correctionNote": "Moved from the narrow red door to the white wall immediately right, following user screenshot and close-up of fixture behind tree. Approximate hidden mounting point.",
+      "detailReferenceImages": [
+        {
+          "file": "codex-clipboard-0fa7631d-46a5-43fa-ba42-ae83b3c3f4c6.jpg",
+          "sha256": "dd091c01c16b07c3a447778d851ed9b375902858459e4083833c2e1ff1254027"
+        },
+        {
+          "file": "codex-clipboard-c6b1a5c6-b720-44e5-8877-d440abad316d.jpg",
+          "sha256": "40d2cd95dfb1c56f3a5a9bc4f0f9d2c891fce61b5429ff380cdcff2809bd1376"
+        },
+        {
+          "file": "codex-clipboard-699d7480-d3f2-4440-aa0e-719bbddc5c8b.jpg",
+          "sha256": "bbfe226fba36d60fe0021ca76e384b5f6fc9dc4efa75db313e72d554301c56ae"
+        }
+      ],
+      "bindingCorrectionNote": "User identifies this garage-wall lantern as Bron lighting, replacing earlier inferred Skymning assignment. Exact entity_id verified in HOME_ASSISTANT_INVENTERING.md; suffix _2 is part of the real KNX entity. Light geometry, placement and output retained."
     },
     {
       "id": "workshop-wall",
-      "label": "Skymning · dörr vid garagedel",
+      "label": "Bron · lilla entrén",
       "kind": "spot",
       "position": [
         -4.12452,
@@ -125,12 +140,36 @@
       "positionUncertaintyYardUnits": 0.8,
       "photometryStatus": "visual-starting-estimate",
       "binding": {
-        "entityId": "switch.skymning",
-        "status": "user-described-group",
+        "entityId": "switch.aktora1_b1_port4_bron_belysning_2",
+        "status": "user-confirmed-bron-group-and-inventory-entity",
         "readOnly": true
       },
       "enabled": true,
-      "fillFraction": 0.25
+      "fillFraction": 0.25,
+      "mountStyle": "wall-lantern",
+      "detailReferenceImages": [
+        {
+          "file": "codex-clipboard-afa721e0-236a-45f9-979b-2cd8a51a7675.jpg",
+          "sha256": "3b16c094a11d54b8e0bada6d44a19612b9ac5e08441f53e6b7911df08efeb5c6"
+        },
+        {
+          "file": "codex-clipboard-1cccf4be-712b-419b-8dd7-5f7af79c82f1.jpg",
+          "sha256": "ed75990cf873ccd04b34faeb9c55b151514e04406f49197353cfaaf795d80008"
+        },
+        {
+          "file": "codex-clipboard-988eae7e-9569-4614-a3ac-3633bd3f9d69.jpg",
+          "sha256": "2e0abfdc3d2c281d3ac8da32571aa9c41e0f49798a052ba9d0c2b91d20b5c731"
+        },
+        {
+          "file": "codex-clipboard-6a2fc0b7-b79d-4a63-b586-0731175b0cd9.jpg",
+          "sha256": "c3ce399a0118ca46f19687800740c3e88a748b005e7f1141b3a690e6622971d6"
+        },
+        {
+          "file": "codex-clipboard-70ba7e05-7496-4879-a5ef-2c319fcef3e1.jpg",
+          "sha256": "86428b549b497fa219e1f7dd1b55e5408186299fe8ffa1c89b8771bf853b047f"
+        }
+      ],
+      "bindingCorrectionNote": "User confirms the lantern beside the small white entrance is also controlled by Bron. Replaces earlier Skymning inference. Existing calibrated light position and light-surface alignment retained; close-ups establish a four-sided hanging wall lantern."
     },
     {
       "id": "porch",
@@ -203,7 +242,335 @@
       },
       "enabled": true,
       "fillFraction": 0,
-      "mountStyle": "post-lantern"
+      "mountStyle": "post-lantern",
+      "detailReferenceImages": [
+        {
+          "file": "codex-clipboard-647e37cc-7d71-4e87-bfb6-d629bdf96352.jpg",
+          "sha256": "d5d571d881746fe5e03c4c24ef0a2b0f815eb7ddf4388efc6cfed52150612a7f"
+        },
+        {
+          "file": "codex-clipboard-ae2e5881-a659-40f1-9671-6821dfa6d382.jpg",
+          "sha256": "89c9f179f8a044fc544df75e0bca59aebb4e152b42cb92c222f9ab2d627968c7"
+        },
+        {
+          "file": "codex-clipboard-a1ba7a1f-20e7-486d-9f40-4a3f7517805d.jpg",
+          "sha256": "f86c9fd3659c03f2e3473dcf9c79751d52a2032ad4e73e9e34006c3954b0082f"
+        },
+        {
+          "file": "codex-clipboard-24823414-d192-4a53-9a77-24b1852aaa78.jpg",
+          "sha256": "6bdc05d563ee0ef4bf9c057ad0402c781f07083ce7d9692c430a0da2246626a1"
+        },
+        {
+          "file": "codex-clipboard-08559a5c-1c4a-4866-a7a4-f0f242ea1848.jpg",
+          "sha256": "ea016e9059e918cc4642de454ad2d833272568302fe81c1b527d059cec0cad76"
+        }
+      ],
+      "geometryStatus": "photo-supported-slim-shaft-flared-base-provisional-lantern-head",
+      "detailReferenceNote": "Five user views locate this existing pole on the lawn beside the sunroom. Preserve earlier calibrated location/height and point-light output. Slender dark shaft, flared foot and softly distributed light; blown-out lamp core cannot establish exact cage shape or absolute output. Other visible poles are not imported as copies."
+    },
+    {
+      "id": "coop-front",
+      "label": "Takljus utanför hönshus",
+      "kind": "spot",
+      "position": [
+        -41.11972,
+        2.7,
+        8.62591
+      ],
+      "target": [
+        -39.93901,
+        0.05,
+        7.97143
+      ],
+      "color": "#fff0da",
+      "referenceLumens": 650,
+      "range": 8,
+      "beamAngle": 110,
+      "penumbra": 0.9,
+      "fillFraction": 0.08,
+      "enabled": true,
+      "mountStyle": "wall-downlight",
+      "threeDOnly": true,
+      "binding": {
+        "entityId": "light.takljus_utanfor_honshus",
+        "status": "verified-inventory-light-wrapper",
+        "readOnly": true
+      },
+      "positionStatus": "user-confirmed-building-and-house-facing-side-estimate",
+      "positionUncertaintyYardUnits": 2.0,
+      "photometryStatus": "visual-starting-estimate",
+      "modelReference": {
+        "version": "v000011",
+        "node": "Vastra uthuset och skarmtak",
+        "facadeNode": "Uppskattat - Vastra uthuset - uppskattad vagg 2",
+        "surfaceHit": [
+          -41.277146,
+          2.7,
+          8.713177
+        ],
+        "outwardNormal": [
+          0.8746,
+          0,
+          -0.4848
+        ],
+        "mountClearance": 0.18
+      },
+      "referenceImages": [
+        {
+          "file": "codex-clipboard-01c0abfa-19b1-4661-9204-3ed265449614.jpg",
+          "sha256": "7b2620370ff69443f15cd13412cc7ecc656c1e5fc8e33b02bd498fc6eef654f2"
+        },
+        {
+          "file": "codex-clipboard-95d34700-350f-464a-9fb3-f516909d82b0.jpg",
+          "sha256": "b3b08911910e2ba55c385b7e0be15f71917984bc9491bbc0e5eb152bea1e21a8"
+        },
+        {
+          "file": "codex-clipboard-96a6670b-a2e8-4db3-8284-678773c85399.jpg",
+          "sha256": "f64e0d353ba3187f4c8e9d5a52ad81a224e225201a0810cd359474672a12db4e"
+        },
+        {
+          "file": "codex-clipboard-b7831fe7-0049-4caf-852f-da0f75f683dc.jpg",
+          "sha256": "e36632ac029a44015dec22ac7201b6dd20bde675befe7b148e51160b604f2ce9"
+        }
+      ],
+      "description": "Four user night photos of a small hooded downward-facing lamp above the centre of brown double doors. User confirms larger outbuilding across the yard, side facing dwelling. Scan does not resolve the exact door centre; placement and light output remain provisional. No invented second LED fitting."
+    },
+    {
+      "id": "pole-rear-road",
+      "label": "Stolpe 2 · vid vägen och altanen",
+      "kind": "point",
+      "position": [
+        -1.45171,
+        1.09289,
+        23.79316
+      ],
+      "target": [
+        -1.45171,
+        -0.68749,
+        23.79316
+      ],
+      "color": "#f3f4ff",
+      "referenceLumens": 850,
+      "range": 14,
+      "beamAngle": 150,
+      "penumbra": 0.85,
+      "fillFraction": 0,
+      "enabled": true,
+      "mountStyle": "post-lantern",
+      "threeDOnly": true,
+      "binding": {
+        "entityId": "switch.aktora1_b1_port10_ute_stolpar_belysning",
+        "status": "verified-entity-and-user-group",
+        "readOnly": true,
+        "sceneObjectId": "ha-switch.aktora1_b1_port10_ute_stolpar_belysning"
+      },
+      "positionStatus": "provisional-photo-context-and-model-ground-estimate",
+      "positionUncertaintyYardUnits": 3,
+      "photometryStatus": "visual-starting-estimate-shared-pole-profile",
+      "detailReferenceImages": [
+        {
+          "file": "codex-clipboard-50f9ef76-4afc-428f-8062-e2693cdc4acc.jpg",
+          "sha256": "b6a92a913df56d8c2a00dab3e3af32ba7efc5bb47ba9ecd88f6241f97c4e1062"
+        },
+        {
+          "file": "codex-clipboard-8fc26a69-4eb3-44e6-a27b-ffd88cbfd7f3.jpg",
+          "sha256": "26ffd90aa839af17fcbc4abdb1a05bbe376c95ef532cbfec371fa414f841e21c"
+        },
+        {
+          "file": "codex-clipboard-3b7e790c-9f53-4324-ae20-bb04ae9fd9f4.jpg",
+          "sha256": "53f352629470d5f50709f51536ccc90b3d571a81d73fe645e54bb2a390cfdd55"
+        }
+      ],
+      "modelReference": {
+        "version": "v000011",
+        "groundNode": "Fri mark narmast huset - rensad",
+        "groundHit": [
+          -1.451714,
+          -0.68749,
+          23.793157
+        ]
+      },
+      "description": "User identifies second pole. Context places it near road, shrub bed and rear deck behind the sunroom. Approximate location inferred from the model and images, not confirmed or surveyed. Ground raycast supplies base height; head height reuses first pole estimate. Dark head photographed from above supports faceted cap; glare is not a fog-volume reference."
+    },
+    {
+      "id": "patio-wall",
+      "label": "Altan · vägglykta",
+      "kind": "spot",
+      "position": [
+        3.18019,
+        2.15,
+        6.47812
+      ],
+      "target": [
+        4.85,
+        0.05,
+        7.2
+      ],
+      "color": "#fff0dc",
+      "referenceLumens": 500,
+      "range": 7,
+      "beamAngle": 140,
+      "penumbra": 0.95,
+      "fillFraction": 0.2,
+      "enabled": true,
+      "mountStyle": "wall-lantern",
+      "threeDOnly": true,
+      "binding": {
+        "entityId": "switch.aktord1_f_utebelysning1",
+        "status": "user-confirmed-shared-patio-lights-and-strings",
+        "readOnly": true
+      },
+      "positionStatus": "photo-context-and-model-facade-estimate",
+      "positionUncertaintyYardUnits": 1.5,
+      "photometryStatus": "visual-starting-estimate",
+      "referenceImages": [
+        {
+          "file": "codex-clipboard-47428a70-0a6a-4866-8fd1-2718e012596d.jpg",
+          "sha256": "d41257c3cc04461296d18d3120b61685df330c447a1db1a899a59231298ec9e1"
+        },
+        {
+          "file": "codex-clipboard-f5ebcda2-e3c5-4b45-ade3-87c419ab821d.jpg",
+          "sha256": "e564f25fdc7bba45907c78015f9588ed7f8dcbd0a01f3d2e695cde7f479d74d4"
+        },
+        {
+          "file": "codex-clipboard-50b45e19-f07b-4b89-a3b6-60362c690178.jpg",
+          "sha256": "310afc73f017118c75b6f6814eaaa19fc042ede8ea44587868e788e8de6f72dc"
+        },
+        {
+          "file": "codex-clipboard-1cbd8be7-bee0-4dff-a951-d8679391a497.jpg",
+          "sha256": "72a5a7ddb072c18928e07bbbd83765ed0492b1708cc26dca01531afd36973cce"
+        },
+        {
+          "file": "codex-clipboard-fc259095-4e82-431c-85cd-40718fca38ef.jpg",
+          "sha256": "6497de3e3fafefa07afcd523a5ae23b74499afad0c8eb9cb8e94a18091e95705"
+        }
+      ],
+      "modelReference": {
+        "version": "v000011",
+        "node": "Ren panel - main_ypos",
+        "surfaceHit": [
+          3.015039,
+          2.15,
+          6.40652
+        ]
+      },
+      "description": "Separate rear terrace/sunroom wall lantern. Approximate horizontal position and height inferred from photographs and reconstructed facade, not measured."
+    },
+    {
+      "id": "sunroom-wall",
+      "label": "Uterum · vägglykta",
+      "kind": "spot",
+      "position": [
+        -4.50185,
+        2.15,
+        10.10427
+      ],
+      "target": [
+        -5.25,
+        0.12,
+        11.84
+      ],
+      "color": "#fff0dc",
+      "referenceLumens": 500,
+      "range": 7,
+      "beamAngle": 140,
+      "penumbra": 0.95,
+      "fillFraction": 0.2,
+      "enabled": true,
+      "mountStyle": "wall-lantern",
+      "threeDOnly": true,
+      "binding": {
+        "entityId": "switch.aktord1_f_utebelysning1",
+        "status": "user-confirmed-shared-patio-lights-and-strings",
+        "readOnly": true
+      },
+      "positionStatus": "photo-context-and-model-facade-estimate",
+      "positionUncertaintyYardUnits": 1.5,
+      "photometryStatus": "visual-starting-estimate",
+      "referenceImages": [
+        {
+          "file": "codex-clipboard-47428a70-0a6a-4866-8fd1-2718e012596d.jpg",
+          "sha256": "d41257c3cc04461296d18d3120b61685df330c447a1db1a899a59231298ec9e1"
+        },
+        {
+          "file": "codex-clipboard-f5ebcda2-e3c5-4b45-ade3-87c419ab821d.jpg",
+          "sha256": "e564f25fdc7bba45907c78015f9588ed7f8dcbd0a01f3d2e695cde7f479d74d4"
+        },
+        {
+          "file": "codex-clipboard-50b45e19-f07b-4b89-a3b6-60362c690178.jpg",
+          "sha256": "310afc73f017118c75b6f6814eaaa19fc042ede8ea44587868e788e8de6f72dc"
+        },
+        {
+          "file": "codex-clipboard-1cbd8be7-bee0-4dff-a951-d8679391a497.jpg",
+          "sha256": "72a5a7ddb072c18928e07bbbd83765ed0492b1708cc26dca01531afd36973cce"
+        },
+        {
+          "file": "codex-clipboard-fc259095-4e82-431c-85cd-40718fca38ef.jpg",
+          "sha256": "6497de3e3fafefa07afcd523a5ae23b74499afad0c8eb9cb8e94a18091e95705"
+        }
+      ],
+      "modelReference": {
+        "version": "v000011",
+        "node": "Ren panel - main_xpos",
+        "surfaceHit": [
+          -4.430253,
+          2.15,
+          9.939127
+        ]
+      },
+      "description": "Separate rear terrace/sunroom wall lantern. Approximate horizontal position and height inferred from photographs and reconstructed facade, not measured."
+    },
+    {
+      "id": "harbre-door",
+      "label": "Härbret · ytterlampa",
+      "kind": "spot",
+      "position": [
+        23.1946,
+        0.7,
+        -3.31706
+      ],
+      "target": [
+        21.52,
+        -1.18,
+        -3.96
+      ],
+      "color": "#ffedcf",
+      "referenceLumens": 500,
+      "range": 7,
+      "beamAngle": 145,
+      "penumbra": 0.95,
+      "fillFraction": 0.2,
+      "enabled": true,
+      "mountStyle": "rustic-pendant",
+      "threeDOnly": true,
+      "binding": {
+        "entityId": "light.lampa_9",
+        "status": "user-confirmed-harbre-building-and-light-9",
+        "readOnly": true
+      },
+      "positionStatus": "user-confirmed-building-model-surface-estimate",
+      "positionUncertaintyYardUnits": 1.5,
+      "photometryStatus": "visual-starting-estimate",
+      "referenceImages": [
+        {
+          "file": "codex-clipboard-55b93d38-6852-4121-ab9a-b9171311144a.jpg",
+          "sha256": "481a4b037c5e9a6a77c23ea75b13e041446039370368dd42e6565cc769053817"
+        },
+        {
+          "file": "codex-clipboard-c34db9b0-161b-45f1-b08a-9bf104677ff5.jpg",
+          "sha256": "70ff890fd067d8d6c2e8da489aeb5109d1e77cfafdd21375c8a1d0710a9dff39"
+        }
+      ],
+      "modelReference": {
+        "version": "v000011",
+        "node": "Liten bod",
+        "surfaceHit": [
+          23.390694,
+          0.7,
+          -3.241897
+        ]
+      },
+      "description": "Frosted elongated pendant on a bent wooden bracket, beside the door. Building and entity confirmed by user; exact horizontal location and dimensions estimated from rough scan. Upper window lamp has no verified binding and is not added as the same device."
     }
   ],
   "pending": [
@@ -233,7 +600,7 @@
       "id": "additional-poles",
       "description": "Fler stolpar",
       "sourceImage": "DJI_20261103181333_0611_D.JPG",
-      "reason": "Only one foreground pole can be located in these views. Distant streetlights are not assigned to the property.",
+      "reason": "Two property poles now represented, second placement provisional from new photos. Distant lights are not assigned to this property.",
       "enabled": false
     }
   ],
@@ -243,5 +610,109 @@
     "Positions are stored in the model source frame, independent of provisional display translation.",
     "No HA service calls are made by the rendering layer.",
     "This profile does not change or certify the frozen coordinate system."
+  ],
+  "strings": [
+    {
+      "id": "sunroom-colored-string",
+      "points": [
+        [
+          -8.8,
+          2.9,
+          13.1
+        ],
+        [
+          -0.8,
+          2.9,
+          14.7
+        ]
+      ],
+      "sag": 0.23,
+      "bulbs": 14,
+      "colors": [
+        "#ff694b",
+        "#30c6df",
+        "#ffda52",
+        "#4dde9a"
+      ],
+      "binding": {
+        "entityId": "switch.aktord1_f_utebelysning1"
+      },
+      "referenceImages": [
+        {
+          "file": "codex-clipboard-47428a70-0a6a-4866-8fd1-2718e012596d.jpg",
+          "sha256": "d41257c3cc04461296d18d3120b61685df330c447a1db1a899a59231298ec9e1"
+        },
+        {
+          "file": "codex-clipboard-f5ebcda2-e3c5-4b45-ade3-87c419ab821d.jpg",
+          "sha256": "e564f25fdc7bba45907c78015f9588ed7f8dcbd0a01f3d2e695cde7f479d74d4"
+        },
+        {
+          "file": "codex-clipboard-50b45e19-f07b-4b89-a3b6-60362c690178.jpg",
+          "sha256": "310afc73f017118c75b6f6814eaaa19fc042ede8ea44587868e788e8de6f72dc"
+        },
+        {
+          "file": "codex-clipboard-1cbd8be7-bee0-4dff-a951-d8679391a497.jpg",
+          "sha256": "72a5a7ddb072c18928e07bbbd83765ed0492b1708cc26dca01531afd36973cce"
+        },
+        {
+          "file": "codex-clipboard-fc259095-4e82-431c-85cd-40718fca38ef.jpg",
+          "sha256": "6497de3e3fafefa07afcd523a5ae23b74499afad0c8eb9cb8e94a18091e95705"
+        }
+      ],
+      "status": "photo-estimated-cable-and-bulb-count-not-surveyed"
+    },
+    {
+      "id": "patio-colored-string",
+      "points": [
+        [
+          -0.2,
+          2.95,
+          13.7
+        ],
+        [
+          2,
+          2.9,
+          9.0
+        ],
+        [
+          4.7,
+          3.6,
+          2.5
+        ]
+      ],
+      "sag": 0.25,
+      "bulbs": 16,
+      "colors": [
+        "#fff1d9",
+        "#ffb35d",
+        "#ffdcea"
+      ],
+      "binding": {
+        "entityId": "switch.aktord1_f_utebelysning1"
+      },
+      "referenceImages": [
+        {
+          "file": "codex-clipboard-47428a70-0a6a-4866-8fd1-2718e012596d.jpg",
+          "sha256": "d41257c3cc04461296d18d3120b61685df330c447a1db1a899a59231298ec9e1"
+        },
+        {
+          "file": "codex-clipboard-f5ebcda2-e3c5-4b45-ade3-87c419ab821d.jpg",
+          "sha256": "e564f25fdc7bba45907c78015f9588ed7f8dcbd0a01f3d2e695cde7f479d74d4"
+        },
+        {
+          "file": "codex-clipboard-50b45e19-f07b-4b89-a3b6-60362c690178.jpg",
+          "sha256": "310afc73f017118c75b6f6814eaaa19fc042ede8ea44587868e788e8de6f72dc"
+        },
+        {
+          "file": "codex-clipboard-1cbd8be7-bee0-4dff-a951-d8679391a497.jpg",
+          "sha256": "72a5a7ddb072c18928e07bbbd83765ed0492b1708cc26dca01531afd36973cce"
+        },
+        {
+          "file": "codex-clipboard-fc259095-4e82-431c-85cd-40718fca38ef.jpg",
+          "sha256": "6497de3e3fafefa07afcd523a5ae23b74499afad0c8eb9cb8e94a18091e95705"
+        }
+      ],
+      "status": "photo-estimated-cable-and-bulb-count-not-surveyed"
+    }
   ]
 }

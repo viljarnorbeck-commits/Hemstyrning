@@ -29,7 +29,7 @@ export class HomeControls{
   for(const root of [this.menu,this.dashboard,this.right])root.addEventListener('click',event=>this.click(event));
   this.mobile.onclick=e=>{const view=(e.target as HTMLElement).closest<HTMLElement>('[data-view]')?.dataset.view;if(view==='calendar')this.openCalendar();else if(view==='home'){this.setListMode(false);document.getElementById('home-button')?.click();}else if(view==='3d')document.getElementById('open-3d')?.click();else if(view){this.setListMode(true);if(view!=='home')this.dashboard.querySelector(`[data-section="${view}"]`)?.scrollIntoView({block:'start',behavior:'smooth'});}};
   this.calendarPanel.onclick=event=>{if((event.target as HTMLElement).closest('[data-close-calendar]')){this.fullCalendar=false;this.calendarPanel.hidden=true;}};
-  this.cleanButton.onclick=()=>{if(!this.clean)document.getElementById('open-3d')?.click();void this.setClean(!this.clean);};
+  this.cleanButton.onclick=()=>{if(!this.clean&&document.body.classList.contains('hem-start'))document.getElementById('open-3d')?.click();void this.setClean(!this.clean);};
   document.addEventListener('fullscreenchange',this.fullscreenChanged);document.addEventListener('hem-clear-selection',this.resetView);document.addEventListener('hem-route-changed',this.calendarRouteChanged);
  }
  // Shared 3D overview updates must not dismiss a calendar the user just opened.

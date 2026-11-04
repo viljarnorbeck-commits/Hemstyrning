@@ -1,10 +1,8 @@
-import profileText from './calibration/kyrkas-photo-windows.json?raw';
+import {yardWindowProfile as profile,windowLightOutput} from './yard-window-state';
 import {yardPhoto} from './yard-photo-config';
 import type {HassState} from './types';
 
 type Point=[number,number];
-interface WindowResponse{id:string;color:string;bindings:Array<{entityId:string;weight:number}>;panes:Point[][];spill:Point[];center:Point}
-const profile=JSON.parse(profileText) as {sourcePhotoSha256:string;coordinateSize:Point;windows:WindowResponse[]};
 
 /** Visible window emission, not an invented position for a hidden indoor bulb.
  * Pane mullions stay dark; original photographs and the 3D light rig are untouched.
@@ -28,12 +26,7 @@ export function yardPhotoWindows(root:SVGSVGElement,defs:SVGDefsElement){
   const enabled=connected&&compatible&&profile.sourcePhotoSha256===yardPhoto.sourceSha256;
   let active=0;
   for(const {window,group} of entries){
-   let output=0;
-   for(const binding of window.bindings){
-    const state=states.get(binding.entityId);if(!enabled||state?.state!=='on')continue;
-    const b=state.attributes.brightness;
-    output+=binding.weight*(typeof b==='number'&&Number.isFinite(b)?Math.max(0,Math.min(1,b/255)):1);
-   }
+   const output=windowLightOutput(window,states,enabled);
    group.style.setProperty('--lamp-output',String(Math.min(1,output)));group.dataset.on=String(output>0);group.classList.toggle('is-disconnected',!enabled);
    if(output>0)active++;
   }

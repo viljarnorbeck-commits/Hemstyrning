@@ -1,0 +1,26 @@
+{
+  "id": "janne-house-photo-surfaces-v1",
+  "photoId": "janne",
+  "sourceSha256": "c5ce67b3a8c7e175efb0063c2d91b7b3f33e23eaf64adb210cfae22ad71d8fb6",
+  "width": 1672,
+  "height": 941,
+  "status": "photo-traced-approximate",
+  "outline": [[455,405],[535,304],[689,302],[690,291],[700,290],[701,286],[709,286],[710,291],[727,291],[732,301],[1049,298],[1114,401],[1109,412],[1102,414],[1215,445],[1215,452],[1201,448],[1200,580],[1188,584],[1188,589],[1110,589],[1106,584],[558,584],[551,575],[551,420],[456,421]],
+  "surfaces": {
+    "roof": [[455,405],[535,304],[1049,298],[1114,401],[1109,412],[456,421]],
+    "solarPanels": [[469,399],[541,306],[1046,300],[1098,397]],
+    "facade": [[554,420],[1086,418],[1086,580],[558,581]],
+    "entrance": [[1094,430],[1149,436],[1199,449],[1198,581],[1094,581]],
+    "entranceRoof": [[1102,410],[1215,445],[1215,452],[1093,422]]
+  },
+  "windows": [
+    [[620,438],[697,438],[697,522],[620,522]],
+    [[773,438],[850,438],[850,522],[773,522]],
+    [[941,436],[1020,436],[1020,521],[941,521]]
+  ],
+  "notes": [
+    "Photo-space contours for sky exclusion and future facade/roof lighting receivers; not surveyed 3D geometry.",
+    "Includes attached entrance and chimney; excludes the separate barn, garage tent and garden.",
+    "The visible outline is static decoration, with no interaction, hover, fill or lighting effect."
+  ]
+}

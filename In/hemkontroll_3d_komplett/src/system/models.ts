@@ -38,6 +38,7 @@ export class ModelManager {
   private cache = new Map<string, THREE.Group>();
   private serial = 0;
   grading:SceneConfig['appearance'];
+  photographicFloor=0;
   anisotropy=8;detail=false;reference=false;neutral=false;
   private originals=new Map<THREE.Mesh,THREE.Material|THREE.Material[]>();
   setNeutral(value:boolean){this.neutral=value;for(const [mesh,original] of this.originals){for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m.dispose();mesh.material=original;}this.originals.clear();if(value)this.root.traverse(o=>{if(o instanceof THREE.Mesh){this.originals.set(o,o.material);const convert=(m:THREE.Material)=>{const source=m as THREE.MeshStandardMaterial;return new THREE.MeshBasicMaterial({map:source.map??null,color:source.color?.clone()??new THREE.Color('white'),vertexColors:source.vertexColors,side:source.side,transparent:source.transparent,opacity:source.opacity,alphaTest:source.alphaTest});};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);}});}
@@ -78,9 +79,10 @@ export class ModelManager {
               for(const texture of Object.values(material))if(texture instanceof THREE.Texture){texture.anisotropy=this.anisotropy;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;texture.generateMipmaps=true;texture.needsUpdate=true;}
               material.onBeforeCompile=shader=>{
                 shader.uniforms.gardenWarmth={value:this.grading?.warmth??.035};shader.uniforms.gardenSaturation={value:this.grading?.saturation??1.08};shader.uniforms.gardenContrast={value:this.grading?.contrast??1.04};material.userData.grading=[shader.uniforms.gardenWarmth,shader.uniforms.gardenSaturation,shader.uniforms.gardenContrast];
+                shader.uniforms.gardenPhotoFloor={value:this.photographicFloor};material.userData.photoFloor=shader.uniforms.gardenPhotoFloor;
                 shader.uniforms.gardenWetness={value:this.wetness};material.userData.wetUniform=shader.uniforms.gardenWetness;
                 shader.vertexShader='varying float gardenUp;\n'+shader.vertexShader.replace('#include <worldpos_vertex>','#include <worldpos_vertex>\ngardenUp = max(0.,normalize(mat3(modelMatrix)*normal).y);');
-                shader.fragmentShader='uniform float gardenWarmth;uniform float gardenSaturation;uniform float gardenContrast;uniform float gardenWetness;varying float gardenUp;\n'+shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb *= vec3(1.+gardenWarmth,1.,1.-gardenWarmth*.7);float gardenLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));diffuseColor.rgb=mix(vec3(gardenLuma),diffuseColor.rgb,gardenSaturation);diffuseColor.rgb=max(vec3(0.),(diffuseColor.rgb-vec3(.18))*gardenContrast+vec3(.18));diffuseColor.rgb *= mix(1.,.65,gardenWetness*smoothstep(.35,.85,gardenUp));').replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor,.25,gardenWetness*smoothstep(.35,.85,gardenUp));');
+                shader.fragmentShader='uniform float gardenPhotoFloor;uniform float gardenWarmth;uniform float gardenSaturation;uniform float gardenContrast;uniform float gardenWetness;varying float gardenUp;\n'+shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb *= vec3(1.+gardenWarmth,1.,1.-gardenWarmth*.7);float gardenLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));diffuseColor.rgb=mix(vec3(gardenLuma),diffuseColor.rgb,gardenSaturation);diffuseColor.rgb=max(vec3(0.),(diffuseColor.rgb-vec3(.18))*gardenContrast+vec3(.18));diffuseColor.rgb *= mix(1.,.65,gardenWetness*smoothstep(.35,.85,gardenUp));').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * gardenPhotoFloor;').replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor,.25,gardenWetness*smoothstep(.35,.85,gardenUp));');
               };
               material.needsUpdate=true;
             }
@@ -118,6 +120,7 @@ export class ModelManager {
   setWetness(value:number){
     this.wetness+=(value-this.wetness)*.015;
     this.root.traverse(o=>{if(o instanceof THREE.Mesh){for(const m of Array.isArray(o.material)?o.material:[o.material]){
+      if(m.userData.photoFloor)m.userData.photoFloor.value=this.photographicFloor;
       if(m.userData.wetUniform)m.userData.wetUniform.value=this.wetness;
       if(m.userData.grading){m.userData.grading[0].value=this.grading?.warmth??.035;m.userData.grading[1].value=this.grading?.saturation??1.08;m.userData.grading[2].value=this.grading?.contrast??1.04;}
     }}});

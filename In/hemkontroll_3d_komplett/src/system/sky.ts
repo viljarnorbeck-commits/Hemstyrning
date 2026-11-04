@@ -28,6 +28,7 @@ export class Sky {
   const front=moon.clone().negate(),east=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion),up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion),local=(this.moon.material as THREE.ShaderMaterial).uniforms.sunLocal.value as THREE.Vector3;local.set(sun.dot(east),sun.dot(up),sun.dot(front));(this.moon.material as THREE.ShaderMaterial).uniforms.opacity.value=(target.moonAltitude??-90)> -1?(1-(target.cloud??0))*(1-target.daylight*.75):0;
   if(this.stars){const m=this.stars.material as THREE.ShaderMaterial;m.uniforms.opacity.value=damp(m.uniforms.opacity.value,target.starVisibility??0,dt,3);this.stars.visible=m.uniforms.opacity.value>.001;const time=target.skyTime??Date.now();if(config&&Math.abs(time-this.lastStars)>10000){this.lastStars=time;const buffer=this.stars.geometry.attributes.position as THREE.BufferAttribute;this.catalogue.forEach((s,i)=>{const p=starDirection(s[0],s[1],new Date(time),config.location.latitude,config.location.longitude,config.location.northOffset);buffer.setXYZ(i,p[0]*460,p[1]*460,p[2]*460);});buffer.needsUpdate=true;}}
  }
+ syncLighting(){this.initialized=false;}
  status(){return this.panoramas.status;}
  dispose(){this.disposed=true;this.panoramas.dispose();const m=this.moon.material as THREE.ShaderMaterial;m.uniforms.moonMap.value?.dispose();}
 }

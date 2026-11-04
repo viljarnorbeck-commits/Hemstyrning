@@ -1,3 +1,4 @@
+import {yardSceneLighting} from './yard-scene-lighting';
 import {EnergyNetwork} from './energy-network';
 import {YardLightCalibration} from './yard-light-calibration';
 import {visualSignature} from './presentation-state';
@@ -56,10 +57,11 @@ export class GardenScene {
   private occlusionVolumes=new THREE.Group();
   private moon=new THREE.DirectionalLight('#b8cdf3',0);
   private animation:(()=>void)|null=null;
+  private lightingNeedsSync=true;
   private viewPaused=false;private backgroundPaused=false;
   private syncAnimation(){this.renderer.setAnimationLoop(this.viewPaused||this.backgroundPaused?null:this.animation);}
-  pauseRendering(paused:boolean){this.viewPaused=paused;this.syncAnimation();}
-  setBackgroundPaused(paused:boolean){this.backgroundPaused=paused;this.syncAnimation();}
+  pauseRendering(paused:boolean){if(this.viewPaused&&!paused)this.lightingNeedsSync=true;this.viewPaused=paused;this.syncAnimation();}
+  setBackgroundPaused(paused:boolean){if(this.backgroundPaused&&!paused)this.lightingNeedsSync=true;this.backgroundPaused=paused;this.syncAnimation();}
   setAnimationLoop(callback:(()=>void)|null){this.animation=callback;this.syncAnimation();}
   readonly energyNetwork=new EnergyNetwork();private visualStates=new Map<string,HassState>();
   private followId?:string;
@@ -235,25 +237,34 @@ export class GardenScene {
     const now = performance.now();
     if(now-this.lastFrame<1000/(document.body.classList.contains('app-feature')?8:profiles[graphicsProfile()].fps))return;
     const dt = Math.min((now - this.lastFrame) / 1000, 0.1); this.renderer.domElement.dataset.frameMs=String(now-this.lastFrame);this.lastFrame = now;
-    this.yardLights.update(states,connected&&!this.diagnostic,dt,this.models.root.children[0]?.userData.sourceUrl);
+    const lightDt=this.lightingNeedsSync?60:dt;
+    this.yardLights.update(states,connected&&!this.diagnostic,lightDt,this.models.root.children[0]?.userData.sourceUrl);
     this.yardLights.root.visible&&=!this.skyView&&!this.diagnostic;
     this.visualStates=states;this.energyNetwork.update(this.config?.energyRoutes??[],states,connected,dt);
     if(this.diagnostic){this.energyNetwork.root.visible=false;this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.routeOverlay.visible=this.yardOverlay.visible=false;this.controls.update();this.constrainCamera();this.cameraStats();this.renderer.render(this.scene,this.camera);return;}
     this.scene.fog??=new THREE.FogExp2('#8faeb6',.001);this.sky.root.visible=this.environment.visible=true;this.models.root.visible=this.objects.visible=!this.skyView;this.transform.getHelper().visible=this.editing&&!this.skyView;this.surfaceMarkers.visible=this.editing&&!this.skyView;
-    this.daylight = damp(this.daylight, target.daylight, dt);
-    const appearance=this.config?appearanceFor(this.config,target):{warmth:.035,saturation:1.08,contrast:1.04,exposure:1};if(this.models.grading){this.models.grading={...this.models.grading,warmth:damp(this.models.grading.warmth,appearance.warmth,dt),saturation:damp(this.models.grading.saturation,appearance.saturation,dt),contrast:damp(this.models.grading.contrast,appearance.contrast,dt)};}
-    this.renderer.toneMappingExposure=damp(this.renderer.toneMappingExposure,appearance.exposure*((1-target.daylight)*(this.config?.appearance?.nightExposure??2.2)+target.daylight),dt,4);
-    this.moon.intensity=damp(this.moon.intensity,target.moonLight??0,dt);const moonDirection=new THREE.Vector3(...(target.moonDirection??[0,-1,0])).multiplyScalar(100);this.moon.position.lerp(moonDirection,1-Math.exp(-dt/3));
+    const syncLighting=this.lightingNeedsSync;this.lightingNeedsSync=false;
+    if(syncLighting)this.sky.syncLighting();
+    this.daylight = damp(this.daylight, target.daylight, lightDt);
+    const presentation=this.config?yardSceneLighting(this.config,target):null;
+    const appearance=this.config?appearanceFor(this.config,target):{warmth:.035,saturation:1.08,contrast:1.04,exposure:1},grade=presentation?.grade??appearance;
+    if(this.models.grading){this.models.grading={...this.models.grading,warmth:damp(this.models.grading.warmth,grade.warmth,lightDt),saturation:damp(this.models.grading.saturation,grade.saturation,lightDt),contrast:damp(this.models.grading.contrast,grade.contrast,lightDt)};}
+    const exposure=presentation?.exposure??appearance.exposure*((1-target.daylight)*(this.config?.appearance?.nightExposure??2.2)+target.daylight);
+    this.models.photographicFloor=damp(this.models.photographicFloor,presentation?.photographicFloor??0,lightDt);
+    this.renderer.toneMappingExposure=damp(this.renderer.toneMappingExposure,exposure,lightDt,4);
+    this.moon.intensity=damp(this.moon.intensity,target.moonLight??0,lightDt);const moonDirection=new THREE.Vector3(...(target.moonDirection??[0,-1,0])).multiplyScalar(100);this.moon.position.lerp(moonDirection,1-Math.exp(-lightDt/3));
     this.ambient.color.set('#b2c5e1').lerp(new THREE.Color('#dceaff'),this.daylight);
-    this.sun.intensity = damp(this.sun.intensity, target.direct, dt);
-    this.ambient.intensity = damp(this.ambient.intensity, target.ambient, dt);
+    this.sun.intensity = damp(this.sun.intensity,presentation?.direct??target.direct,lightDt);
+    this.ambient.intensity = damp(this.ambient.intensity,presentation?.ambient??target.ambient,lightDt);
     const desired = new THREE.Vector3(...target.sunDirection).multiplyScalar(100);
-    this.sun.position.lerp(desired, 1 - Math.exp(-dt / 3));
-    this.sun.color.setHSL(0.09, 0.2 + 0.5 * (1 - this.daylight), 0.85);
-    const sky = new THREE.Color('#071221').lerp(new THREE.Color('#9fbac4'), this.daylight);
-    (this.scene.background as THREE.Color).lerp(sky, 1 - Math.exp(-dt / 3));
+    this.sun.position.lerp(desired,1-Math.exp(-lightDt/3));
+    this.sun.color.setHSL(0.09,0.2+0.5*(1-this.daylight),0.85);
+    const sky = new THREE.Color('#071221').lerp(new THREE.Color('#9fbac4'),this.daylight);
+    (this.scene.background as THREE.Color).lerp(sky,1-Math.exp(-lightDt/3));
     const fog = this.scene.fog as THREE.FogExp2;
-    fog.color.copy(this.scene.background as THREE.Color); fog.density = damp(fog.density, Math.max(.0015,target.fog), dt, 4);
+    fog.color.copy(this.scene.background as THREE.Color);fog.density=damp(fog.density,Math.max(.0015,target.fog),lightDt,4);
+    this.renderer.domElement.dataset.lightingProfile=presentation?'yard-photograph':'standard';
+    this.renderer.domElement.dataset.sceneExposure=this.renderer.toneMappingExposure.toFixed(3);
     this.sky.update(target,this.camera,this.config,dt);this.surroundings.update(this.models.root.children[0],target.season??'autumn',this.config?.appearance?.terrain??true);
     if(this.skyView)this.surroundings.root.visible=false;this.precipitation.update(target,this.camera,dt,['tv','mobile'].includes(graphicsProfile())?'low':this.config?.quality??'low',(x,z)=>this.groundAt(x,z));
     this.models.setWetness(target.rain);
