@@ -7,6 +7,13 @@ it.each([
 ])('renders %s as %s without inventing a different weather type',(condition,kind)=>{const style=yardWeatherAppearance(condition,20);expect(style.kind).toBe(kind);expect(style.brightness).toBeGreaterThan(.9);expect(style.brightness).toBeLessThan(1.1);if(!['sunny','partlycloudy'].includes(condition))expect(style.sunlight).toBe(0);});
 it('keeps partly cloudy nights cloudy and suppresses sun tint after sunset',()=>{expect(yardWeatherAppearance('partlycloudy',-12)).toMatchObject({kind:'partlycloudy',light:'night',sunlight:0});expect(yardWeatherAppearance('sunny',-12)).toMatchObject({kind:'clear-night',light:'night',sunlight:0});expect(yardWeatherAppearance('clear-night',25).sunlight).toBe(0);expect(yardWeatherAppearance('sunny',20).sunlight).toBe(1);expect(yardWeatherAppearance('partlycloudy',20).sunlight).toBe(.35);});
 it('keeps twilight finite and separate from full day and night',()=>{expect(yardWeatherAppearance('cloudy',0).light).toBe('evening');expect(yardWeatherAppearance('',NaN)).toMatchObject({kind:'neutral',light:'night',sunlight:0});});
+it('makes night visibly darker while retaining a readable facade even without weather data',()=>{
+ for(const condition of ['cloudy','rainy','snowy','fog','']){
+  const night=yardWeatherAppearance(condition,-15),day=yardWeatherAppearance(condition,20);
+  expect(night.brightness).toBeGreaterThan(.65);expect(night.brightness).toBeLessThan(.82);
+  expect(night.brightness).toBeLessThan(day.brightness*.8);expect(night.nightStrength).toBe(1);expect(day.nightStrength).toBe(0);
+ }
+});
 it('rejects unavailable, disconnected, future and stale HA weather while accepting last_reported',()=>{
  const now=Date.now(),view=(age:number,state='rainy',connected=true):WeatherView=>({connected,source:'ha',label:'HA',description:'Regn',state:{entity_id:'weather.home',state,attributes:{},last_updated:new Date(now-age).toISOString()}});
  expect(freshYardWeather(view(0),now)).toBe(true);expect(freshYardWeather(view(91*60000),now)).toBe(false);expect(freshYardWeather(view(-2*60000),now)).toBe(false);expect(freshYardWeather(view(0,'unknown'),now)).toBe(false);expect(freshYardWeather(view(0,'unavailable'),now)).toBe(false);expect(freshYardWeather(view(0,'rainy',false),now)).toBe(false);

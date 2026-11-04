@@ -49,8 +49,8 @@ function cancelPlacement() { delete document.body.dataset.energyDrawing;placing 
 function openPanel(value: typeof panel) { panel = value; renderPanel(); }
 function updateStatus() {
   if (!config.value) return;
-  $('connection-status').textContent = connection.connected ? (connection.source === 'simulator' ? 'Simulator ansluten' : 'Home Assistant ansluten') : 'Frånkopplad · återansluter';
-  $('connection-status').classList.toggle('offline', !connection.connected);
+  $('connection-status').textContent = connection.dataStale ? 'Gammal information · uppdatering saknas' : connection.connected ? (connection.source === 'simulator' ? 'Simulator ansluten' : 'Home Assistant ansluten') : 'Frånkopplad · återansluter';
+  $('connection-status').classList.toggle('offline', !connection.connected||connection.dataStale);
   $('save-status').textContent = config.status;
   $('save-status').classList.toggle('unsaved', config.dirty);
   $('model-status').textContent = garden.models.status;
@@ -231,6 +231,7 @@ async function start() {
       else addObject(object);
     };
     config.addEventListener('status', updateStatus);
+    connection.addEventListener('freshness', updateStatus);
     connection.addEventListener('state', () => { updateStatus(); updateEnvironment(); });
     connection.addEventListener('connection', () => { $('entity-options').innerHTML = entityOptions(connection.states); updateStatus(); updateEnvironment(); });
     $('environment-button').onclick = () => openPanel(panel === 'environment' ? null : 'environment');

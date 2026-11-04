@@ -28,11 +28,12 @@ export function screenHub(role:(req:IncomingMessage)=>string|undefined,validObje
    }
    if(r==='viewer'){error('Läsbehörighet: du kan följa men inte styra gemensam visning');return;}
    if(m.type==='activity'){if(!client.viewer)coordinator.activity();return;}
-   if(m.type!=='view'||!['HOME','FOCUS_OBJECT','FOLLOW_OBJECT','FREE_3D'].includes(String(m.mode))||Object.keys(m).some(k=>!['type','mode','objectId'].includes(k))){error('Ogiltigt visningskommando');return;}
+   if(m.type!=='view'||!['HOME','FOCUS_OBJECT','FOLLOW_OBJECT','FREE_3D','PHOTO_YARD'].includes(String(m.mode))||Object.keys(m).some(k=>!['type','mode','objectId','photoId'].includes(k))){error('Ogiltigt visningskommando');return;}
    if(m.mode==='FOCUS_OBJECT'||m.mode==='FOLLOW_OBJECT'){
     if(typeof m.objectId!=='string'||m.objectId.length>150||!await validObject(m.objectId)){coordinator.set({mode:'HOME'},'invalid');error('Objektet saknas eller saknar verifierad 3D-position');return;}
     coordinator.set({mode:m.mode,objectId:m.objectId});
-   }else coordinator.set({mode:m.mode as 'HOME'|'FREE_3D'});
+   }else if(m.mode==='PHOTO_YARD'){if(m.photoId!=='janne'){error('Fotovyn saknas');return;}coordinator.set({mode:'PHOTO_YARD',photoId:'janne'});}
+   else coordinator.set({mode:m.mode as 'HOME'|'FREE_3D'});
   }).catch(()=>send(ws,{type:'error',message:'Visningen kunde inte uppdateras'}));});
   ws.on('close',()=>{clearTimeout(timeout);clients.delete(ws);});
  });

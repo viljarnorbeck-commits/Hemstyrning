@@ -1,12 +1,17 @@
-.yard-photo-shell{background:#101316;--yard-nav:var(--nav-width,0px)}
-.yard-photo-home:before{content:"";position:fixed;inset:0;background:#101316;z-index:1;pointer-events:none}
+.yard-photo-shell{background:#1d2227;--yard-nav:var(--nav-width,0px)}
+.yard-chimney-smoke{position:absolute;pointer-events:none;overflow:hidden;border-radius:var(--photo-corner-radius);transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1)}
+.yard-smoke-puff{opacity:0;animation:yard-smoke-rise 12s linear infinite;animation-delay:var(--smoke-delay);transform-origin:0 0;will-change:transform,opacity}
+.yard-photograph:not(.is-home) .yard-smoke-puff{animation-play-state:paused}
+@keyframes yard-smoke-rise{0%{opacity:0;transform:translate(0,0) scale(.24)}10%{opacity:.27;transform:translate(-2px,-14px) scale(.48)}32%{opacity:.21;transform:translate(calc(-12px + var(--smoke-drift)),-48px) scale(.95)}65%{opacity:.11;transform:translate(calc(-36px + var(--smoke-drift)),-102px) scale(1.9)}100%{opacity:0;transform:translate(calc(-68px + var(--smoke-drift)),-174px) scale(3)}}
+@media(prefers-reduced-motion:reduce){.yard-chimney-smoke{display:none}.yard-smoke-puff{animation:none;will-change:auto}}
+.yard-photo-home:before{content:"";position:fixed;inset:0;background:#1d2227;z-index:1;pointer-events:none}
 .hem-start.yard-photo-shell .footer{display:none}
 .yard-photo-shell #garden{left:var(--yard-nav,0px);width:calc(100% - var(--yard-nav,0px))}
-.yard-photograph{position:fixed;inset:0 0 0 var(--yard-nav,0px);margin:0;z-index:2;background:#101316;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .85s ease,visibility 0s .85s;--photo-brightness:1;--photo-saturation:1;--photo-night:0;--photo-corner-radius:clamp(38px,4.5vw,80px)}
+.yard-photograph{position:fixed;inset:0 0 0 var(--yard-nav,0px);margin:0;z-index:2;background:#1d2227;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .85s ease,visibility 0s .85s;--photo-brightness:1;--photo-saturation:1;--photo-night:0;--photo-corner-radius:clamp(64px,7vw,120px)}
 .yard-photograph.is-home{opacity:1;visibility:visible;transition:opacity .85s ease,visibility 0s}
 .yard-photograph.is-leaving{opacity:0}
 .yard-photograph img{display:block;position:absolute;width:100%;height:100%;object-fit:fill;object-position:50% 50%;border-radius:var(--photo-corner-radius);transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1),filter 8s ease;filter:brightness(var(--photo-brightness)) contrast(var(--photo-contrast,1.065)) saturate(var(--photo-saturation));mask-image:linear-gradient(to right,transparent 0%,#00000026 1.5%,#00000080 3.5%,#000000d9 6%,#000 9%,#000 93%,#000000d9 96%,#00000080 98%,#00000026 99%,transparent 100%),linear-gradient(to bottom,#000 0%,#000 88%,#000000ed 91%,#000000b3 94%,#00000059 97%,#00000014 99%,transparent 100%);mask-composite:intersect}
-.yard-sky-mask{position:absolute;pointer-events:none;border-radius:var(--photo-corner-radius);background:linear-gradient(to bottom,#101316 0%,#101316 7%,#101316f2 9%,#101316cc 12%,#10131680 15%,#10131626 19%,#10131600 23%)}
+.yard-sky-mask{position:absolute;pointer-events:none;border-radius:var(--photo-corner-radius);background:linear-gradient(to bottom,#1d2227 0%,#1d2227 7%,#1d2227f2 9%,#1d2227cc 12%,#1d222780 15%,#1d222726 19%,#1d222700 23%)}
 .yard-photograph.image-failed{opacity:0!important}
 .yard-atmosphere,.yard-weather-particles,.yard-photo-lights{position:absolute;inset:0;pointer-events:none}
 .yard-atmosphere{background:linear-gradient(180deg,#0001,transparent 30%,#0001),rgba(27,46,69,var(--photo-night));transition:background 8s}
@@ -14,6 +19,7 @@
 .yard-photograph[data-weather=cloudy] .yard-atmosphere{background:radial-gradient(ellipse at 60% 48%,#d1e1ef09,transparent 66%),rgba(31,43,58,var(--photo-night))}
 .yard-photograph[data-weather=clear-night] .yard-atmosphere{background:linear-gradient(155deg,#afbfda05,transparent 65%),rgba(23,35,55,var(--photo-night))}
 .yard-photo-polish{position:absolute;border-radius:var(--photo-corner-radius);pointer-events:none;mix-blend-mode:screen;opacity:.42;background:radial-gradient(ellipse at 65% 48%,#e4eaf019,transparent 47%),linear-gradient(130deg,transparent 28%,#e4eaf008 47%,transparent 68%);mask-image:radial-gradient(ellipse at 60% 53%,#000 10%,transparent 72%);transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1)}
+.yard-night-shade{position:absolute;border-radius:var(--photo-corner-radius);pointer-events:none;overflow:hidden;opacity:var(--photo-night-strength,0);transition:opacity 8s;transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);mask-image:linear-gradient(to right,transparent,#000 9%,#000 93%,transparent),linear-gradient(to bottom,#000 84%,transparent);mask-composite:intersect}
 .yard-photograph[data-weather=fog] .yard-atmosphere{background:radial-gradient(ellipse at 50% 35%,#b6c4d41c,transparent 60%),linear-gradient(0deg,transparent 40%,#a6b8c61a 70%,transparent),rgba(27,46,69,var(--photo-night))}
 .yard-weather-particles{width:100%;height:100%;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 74%)}
 .yard-photo-lights i{position:absolute;width:45px;height:45px;transform:translate(-50%,-50%);border-radius:50%;filter:blur(15px);opacity:.24}
@@ -27,6 +33,16 @@
 .hem-start.yard-photo-shell .overview-left,.hem-start.yard-photo-shell .overview-right{align-self:start}
 .hem-start.yard-photo-shell .overview-bottom{grid-template-columns:1fr 1.5fr}
 .hem-start.yard-photo-shell .overview-calendar{margin-top:8px;padding-top:7px}
+/* Clock/temperature are text actions; only the calendar subsection has a card glow. */
+.home-overview [data-overview-card=weather] .overview-calendar{position:relative;border-radius:7px;transition:translate .18s ease,box-shadow .18s ease,background-color .18s ease}
+.home-overview [data-overview-card=weather] [data-week-forecast]{display:inline-block;width:fit-content;transform-origin:left center;transition:translate .18s ease,scale .18s ease,filter .18s ease}
+@media(hover:hover){
+ .home-overview [data-overview-card=weather] .overview-calendar:hover{translate:0 -2px;background:#e1ebff0b;box-shadow:0 5px 16px #0003,0 0 15px #dcecff26,inset 0 0 0 1px #dcecff33}
+ .home-overview [data-overview-card=weather] [data-week-forecast]:hover{translate:0 -2px;scale:1.025;background:none;box-shadow:none;filter:drop-shadow(0 3px 5px #0006) drop-shadow(0 0 8px #cde5f35c)}
+}
+.home-overview [data-overview-card=weather] .overview-calendar:focus-visible{outline:2px solid #cde5f3;outline-offset:3px}
+.home-overview [data-overview-card=weather] .overview-calendar:active{translate:0 1px}
+@media(prefers-reduced-motion:reduce){.home-overview [data-overview-card=weather] :is(.overview-calendar,[data-week-forecast]){transition:none;translate:none;scale:none}}
 .hem-start.yard-photo-shell .overview-robot{gap:3px;font-size:11px}
 @media(min-width:1800px){.hem-start.yard-photo-shell .home-overview{grid-template-columns:220px 1fr 240px;inset:100px 32px 34px calc(var(--yard-nav,0px) + 32px)}.hem-start.yard-photo-shell .home-overview h2{font-size:11px}.hem-start.yard-photo-shell .home-overview small{font-size:11px}.hem-start.yard-photo-shell .home-overview article{padding:16px 18px}}
 @media(max-width:1100px),(max-height:740px){.hem-start.yard-photo-shell{height:auto!important;min-height:100dvh;overflow-y:auto!important}.hem-start .yard-photograph{position:absolute;inset:0 0 auto var(--yard-nav,0px);height:64dvh}.hem-start.yard-photo-shell .home-overview{position:relative;inset:auto;margin:51dvh 18px 0 calc(var(--yard-nav,0px) + 18px);padding-bottom:35px;grid-template-columns:1fr 1fr;grid-template-rows:auto;gap:12px}.hem-start.yard-photo-shell .overview-left,.hem-start.yard-photo-shell .overview-right{grid-column:auto;grid-row:auto}.hem-start.yard-photo-shell .overview-bottom{grid-template-columns:1fr!important}.hem-start.yard-photo-shell .home-overview .overview-top{grid-template-columns:1fr 1fr}}
@@ -39,7 +55,7 @@
 /* Image anchors from the user's annotated farm photograph; small screens retain the readable list. */
 .hem-start.yard-photo-shell.photo-map-layout .home-overview{position:fixed;inset:0;margin:0;padding:0;width:100%;height:100%;display:block}
 .hem-start.yard-photo-shell.photo-map-layout .home-overview>div{display:contents!important}
-.hem-start.yard-photo-shell.photo-map-layout .home-overview article{position:absolute;left:calc(var(--yard-image-left) + var(--photo-x)*var(--yard-image-width));top:calc(var(--yard-image-top) + var(--photo-y)*var(--yard-image-height));width:calc(var(--photo-width)*var(--yard-image-width)/var(--photo-card-scale,1));min-width:var(--photo-min);padding:9px 11px;box-sizing:border-box;scale:var(--photo-card-scale,1);transform-origin:top left}
+.hem-start.yard-photo-shell.photo-map-layout .home-overview article{position:absolute;left:calc(var(--yard-image-left) + var(--photo-x)*var(--yard-image-width));top:calc(var(--yard-image-top) + var(--photo-y)*var(--yard-image-height));width:calc(var(--photo-width)*var(--photo-card-base-width,1600px));min-width:var(--photo-min);padding:9px 11px;box-sizing:border-box;scale:var(--photo-card-scale,1);transform-origin:top left}
 .hem-start.yard-photo-shell.photo-map-layout .home-overview article[data-overview-card=climate]{padding:8px}
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=climate] h2{font-size:8px;margin-bottom:5px}
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=climate] .overview-line{font-size:9px;gap:3px;margin-top:3px}
@@ -51,10 +67,11 @@
 .hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=kia],[data-overview-card=golf]) p{font-size:11px;margin:6px 0}
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=cost] .overview-split{gap:18px}
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=cost]>small{font-size:8px}
-.hem-start.yard-photo-shell.photo-map-layout [data-overview-card=robots] .overview-split{grid-template-columns:1fr;gap:10px}
-.hem-start.yard-photo-shell.photo-map-layout [data-overview-card=robots] .overview-split:after{display:none}
-.hem-start.yard-photo-shell.photo-map-layout [data-overview-card=robots] .overview-robot{font-size:10px;gap:2px}
-.hem-start.yard-photo-shell.photo-map-layout [data-overview-card=robots] .overview-robot small{font-size:8px;margin-top:2px}
+.hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=mower],[data-overview-card=vacuum]) .overview-split{grid-template-columns:1fr;gap:10px}
+.hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=mower],[data-overview-card=vacuum]) .overview-split:after{display:none}
+.hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=mower],[data-overview-card=vacuum]) .overview-robot{font-size:10px;gap:2px}
+.hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=mower],[data-overview-card=vacuum]) .overview-robot small{font-size:8px;margin-top:2px}
+.home-overview [data-overview-card=vacuum] .overview-robot>b{display:none}
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=locks] .overview-lock{font-size:10px}
 .yard-energy-cables{position:absolute;overflow:hidden;pointer-events:none;mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent),linear-gradient(to bottom,#000 75%,transparent 100%);mask-composite:intersect}
 .yard-cable-note{position:absolute;bottom:16px;left:24px;font-size:8px;letter-spacing:.04em;color:#a6c1d28c}
@@ -75,24 +92,21 @@
  .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=climate] .overview-line .missing{font-size:15px}
  .hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=kia],[data-overview-card=golf]) small{font-size:14px}
  .hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=kia],[data-overview-card=golf]) :is(p,.overview-line){font-size:16px}
- .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=robots] .overview-robot{font-size:16px;gap:5px}
- .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=robots] .overview-robot :is(b,small){font-size:14px}
+ .hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=mower],[data-overview-card=vacuum]) .overview-robot{font-size:16px;gap:5px}
+ .hem-start.yard-photo-shell.photo-map-layout :is([data-overview-card=mower],[data-overview-card=vacuum]) .overview-robot :is(b,small){font-size:14px}
  .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=weather] .overview-calendar{font-size:16px;padding-left:18px}
  .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=cost]>small{font-size:12px}
  .yard-cable-note{font-size:11px}
 }
 
-.hem-start.yard-photo-shell.photo-map-layout.compact-photo-map [data-overview-card=cost]{--photo-x:.51!important;--photo-y:.09!important}
-.hem-start.yard-photo-shell.photo-map-layout.compact-photo-map [data-overview-card=locks]{--photo-x:.71!important}
-.hem-start.yard-photo-shell.photo-map-layout.compact-photo-map [data-overview-card=climate]{--photo-x:.39!important}
-.hem-start.yard-photo-shell.photo-map-layout.compact-photo-map [data-overview-card=golf]{--photo-x:.19!important}
-.hem-start.yard-photo-shell.photo-map-layout.compact-photo-map [data-overview-card=robots]{--photo-x:.83!important}
-/* Translucent cable sheath with a soft, desaturated travelling capsule. */
-.yard-cable-sheath{stroke:#182229;stroke-width:6.5;stroke-opacity:.28;fill:none;stroke-linecap:round}
-.yard-cable-line{stroke:#a0b3bc;stroke-width:4.6;stroke-opacity:.22;fill:none;stroke-linecap:round}
-.yard-cable-highlight{stroke:#d3dfe4;stroke-width:1;stroke-opacity:.2;fill:none;stroke-linecap:round}
-.yard-cable-pulse{filter:drop-shadow(0 0 1.2px #d4e0e333)}
-.yard-cable-pulse rect{x:calc(-16px*var(--cable-unit,1));y:calc(-2px*var(--cable-unit,1));width:calc(32px*var(--cable-unit,1));height:calc(4px*var(--cable-unit,1));rx:calc(2px*var(--cable-unit,1))}
+/* Blue translucent sheath; brighter travelling surges remain tied to measured flow. */
+.yard-cable-sheath{stroke:#152d42;stroke-width:8;stroke-opacity:.4;fill:none;stroke-linecap:round}
+.yard-cable-line{stroke:#58a9e8;stroke-width:5.8;stroke-opacity:.34;fill:none;stroke-linecap:round}
+.yard-cable-highlight{stroke:#b1e1ff;stroke-width:1.4;stroke-opacity:.38;fill:none;stroke-linecap:round}
+.yard-cable-pulse{filter:drop-shadow(0 0 3px #56baffcc) drop-shadow(0 0 8px #278cff88)}
+.yard-cable-pulse rect{x:calc(-24px*var(--cable-unit,1));y:calc(-3px*var(--cable-unit,1));width:calc(48px*var(--cable-unit,1));height:calc(6px*var(--cable-unit,1));rx:calc(3px*var(--cable-unit,1))}
+.yard-cable-pulse .yard-cable-surge-aura{y:calc(-7px*var(--cable-unit,1));height:calc(14px*var(--cable-unit,1));rx:calc(7px*var(--cable-unit,1));filter:blur(3px);opacity:.55}
+.yard-cable-pulse .yard-cable-surge-core{x:calc(8px*var(--cable-unit,1));y:calc(-1.3px*var(--cable-unit,1));width:calc(10px*var(--cable-unit,1));height:calc(2.6px*var(--cable-unit,1));rx:calc(1.3px*var(--cable-unit,1))}
 @media(prefers-reduced-motion:reduce){.yard-cable-pulse{display:none}}
 /* Compact hot-water/room readings, with no visible per-reading status paragraphs. */
 .hem-start.yard-photo-shell .home-overview article[data-overview-card=climate]{padding:7px 8px}
@@ -113,7 +127,7 @@
 .home-overview .overview-vacuum-actions button:active:not(:disabled){transform:translateY(1px) scale(.97);box-shadow:inset 0 2px 8px #0006}
 .home-overview .overview-robot-feedback{overflow-wrap:anywhere}
 @media(hover:hover){
- .hem-start.yard-photo-shell .home-overview article:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--card-accent) 70%,#fff);background-color:#30383bf2;box-shadow:0 12px 26px #0006,0 0 22px color-mix(in srgb,var(--card-accent) 25%,transparent),inset 0 1px #ffffff2b}
+ .hem-start.yard-photo-shell .home-overview article.has-overview-action:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--card-accent) 70%,#fff);background-color:#30383bf2;box-shadow:0 12px 26px #0006,0 0 22px color-mix(in srgb,var(--card-accent) 25%,transparent),inset 0 1px #ffffff2b}
  .home-overview .overview-vacuum-actions button:hover:not(:disabled){transform:translateY(-2px);background:#8ad6ab2c;border-color:#b7eac9;box-shadow:0 4px 12px #0004,0 0 11px #8ad6ab55}
 }
 @media(min-width:2400px){.home-overview .overview-vacuum-actions button{font-size:14px;min-height:52px}.home-overview .overview-vacuum-actions button svg{width:20px;height:20px}}
@@ -145,3 +159,26 @@
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=weather] .overview-weather>div:nth-child(2)>small:nth-of-type(n+4){display:none}
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=weather] small{line-height:1.3;margin-top:3px}
 .hem-start.yard-photo-shell.photo-map-layout [data-overview-card=weather] .overview-calendar{padding-left:8px}
+/* Keep the real forecast source/time visible in the compact weather card. */
+.hem-start.yard-photo-shell.photo-map-layout [data-overview-card=weather] .overview-weather-source{display:block!important;color:#aebfcd;font-size:8px;line-height:1.35}
+@media(min-width:2400px){.hem-start.yard-photo-shell.photo-map-layout [data-overview-card=weather] .overview-weather-source{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.yard-night-shade{transition:none}}
+/* Keep the shared cost/average card legible without squeezing the price unit outside it. */
+.hem-start.yard-photo-shell .home-overview .overview-house-power{margin-top:9px;padding-top:7px;border-top:1px solid #c8d9e42b}
+.hem-start.yard-photo-shell .home-overview .overview-house-power>small:first-child{font-size:8px;letter-spacing:.08em;margin:0 0 4px}
+.hem-start.yard-photo-shell .home-overview .overview-house-power strong{font-size:17px}
+.hem-start.yard-photo-shell .home-overview [data-overview-card=cost] .overview-split{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.hem-start.yard-photo-shell .home-overview [data-overview-card=cost] .overview-split>div{min-width:0}
+.hem-start.yard-photo-shell .home-overview [data-overview-card=cost] strong{display:flex;flex-direction:column;align-items:flex-start;gap:3px;line-height:1.15}
+.hem-start.yard-photo-shell .home-overview [data-overview-card=cost] strong em{margin-left:0;font-size:10px;white-space:nowrap;line-height:1.3}
+@media(min-width:2400px){.hem-start.yard-photo-shell .home-overview [data-overview-card=cost] strong em{font-size:14px}}
+
+/* The secondary view shares the image frame, but never inherits main-house overlays. */
+.yard-dynamic-sky{position:absolute;pointer-events:none;border-radius:var(--photo-corner-radius);transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1);mask-image:linear-gradient(to right,transparent,#000 9%,#000 93%,transparent),linear-gradient(to bottom,#000 84%,transparent);mask-composite:intersect}
+.yard-dynamic-sky[hidden]{display:none}
+.yard-photograph[data-photo-view=janne] :is(.yard-sky-mask,.yard-night-shade,.yard-chimney-smoke,.yard-house-hotspot,.yard-energy-cables,.yard-cable-note,.yard-photo-lights,.yard-calibrated-photo-lights,.yard-photo-fixtures){display:none!important}
+.yard-photograph[data-photo-view=janne] .yard-photo-polish{opacity:.2}
+body[data-yard-photo-view=janne] .home-overview{display:none!important}
+@media(prefers-reduced-motion:reduce){.yard-dynamic-sky{transition:none}}
+
+@media(max-width:600px){.hem-start .yard-photograph[data-photo-view=janne]{height:100dvh}}

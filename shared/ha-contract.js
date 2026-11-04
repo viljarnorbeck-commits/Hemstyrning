@@ -21,5 +21,9 @@ export function isLightingEntity(entityId,attributes={}){
  if(!entityId.startsWith('switch.'))return false;
  const name=(entityId+' '+String(attributes.friendly_name??'')).toLowerCase();
  if(/motor|varmare|värmare|ladd|kyl|micro|vatten|matning|konstant|bastu|_nil/.test(name))return false;
- return attributes.device_class==='light'||/belysning|lampa|lamptuttag|takspot/.test(name)||['switch.aktorb1_b3_port8_sovrum1_fonster','switch.aktorb1_b3_port9_sovrum1_tak'].includes(entityId);
+ // Skymning is the outdoor lighting group verified against the user's night photographs.
+ return attributes.device_class==='light'||/belysning|lampa|lamptuttag|takspot/.test(name)||['switch.skymning','switch.aktorb1_b3_port8_sovrum1_fonster','switch.aktorb1_b3_port9_sovrum1_tak'].includes(entityId);
 }
+
+/** This installation exposes its hot-water equipment for observation only. */
+export function isReadOnlyWaterHeater(entityId){return typeof entityId==='string'&&/^[^.]+\.(?:vvb(?:_|$)|varmvattenberedare(?:_|$))/.test(entityId);}

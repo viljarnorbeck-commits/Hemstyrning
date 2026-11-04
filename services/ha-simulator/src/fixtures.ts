@@ -1,4 +1,5 @@
 import {demoScenes} from './demo-presets.js';
+import {houseControls} from '../../../shared/house-controls.js';
 import {demoTracks,simulatedSpotifyId,simulatedFeatures} from './music.js';
 import type { HassState } from "./types.js";
 
@@ -93,6 +94,9 @@ export function createInitialStates(): HassState[] {
       supported_features: 8192|4|16|8|32|512|1024,
       fan_speed_list:["Silent","Standard","Medium","Turbo","Gentle","Auto"],fan_speed:"Standard",
     }),
+    ...[houseControls.up,houseControls.down,houseControls.stop,houseControls.projector,houseControls.shutdown].map(id=>state(id,'off',{friendly_name:id,simulated:true})),
+    state(houseControls.sound,'on',{friendly_name:'Sony HT-A9 · simulator',supported_features:128|256|1024,volume_level:.3,simulated:true}),
+    state(houseControls.hdmi,'Google TV Streamer',{friendly_name:'HDMI-källor · simulator',options:['Google TV Streamer','RetroPi','Nintendo Switch','Framsidan'],simulated:true}),
     state("sensor.car_one_battery", "72", {
       friendly_name: "Bil 1 batteri",
       device_class: "battery",

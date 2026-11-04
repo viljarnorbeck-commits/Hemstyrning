@@ -1,3 +1,4 @@
+import {isReadOnlyWaterHeater} from '../../../../shared/ha-contract.js';
 import{shortKnxName,roomDisplayName}from'./control-presentation';
 import{resolveEntity}from'./entity-bindings';
 import{deviceRegistry,discoveredLight}from'./device-registry';import{vehicles}from'./function-data';import type{SceneConfig,SceneObject,HassState}from'./types';
@@ -15,5 +16,5 @@ export function controlDevices(config:SceneConfig,states:Map<string,HassState>,s
  for(const entry of catalog){if(entry.platform!=='knx'||known.has(entry.entityId))continue;const state=states.get(entry.entityId)??{entity_id:entry.entityId,state:'unavailable',attributes:{friendly_name:entry.name},last_updated:new Date(0).toISOString()};list.push({...discoveredLight(state),type:entry.entityId.startsWith('light.')?'light':'device'});known.add(entry.entityId);}
  const rank=(o:SceneObject)=>o.type==='light'?0:o.type==='car'?1:o.entityId.includes('easee_')?2:o.entityId.includes('vvb_')?3:o.type==='mower'?4:o.type==='vacuum'?5:6;
  for(const o of list){const entry=catalog.find(e=>e.entityId===o.entityId&&e.platform==='knx');if(entry||/^aktor/i.test(o.name))o.name=shortKnxName(o.name===o.entityId&&entry?entry.name:o.name);o.name=roomDisplayName(o.name);}
- return list.filter(o=>!config.entityPreferences?.[o.entityId]?.hidden&&(['car','mower'].includes(o.type)||!config.entityPreferences?.[o.entityId]?.hiddenOnDetails||!!states.get(o.entityId)&&!['unknown','unavailable'].includes(states.get(o.entityId)!.state))).sort((a,b)=>rank(a)-rank(b));
+ return list.filter(o=>!isReadOnlyWaterHeater(o.entityId)&&!config.entityPreferences?.[o.entityId]?.hidden&&(['car','mower'].includes(o.type)||!config.entityPreferences?.[o.entityId]?.hiddenOnDetails||!!states.get(o.entityId)&&!['unknown','unavailable'].includes(states.get(o.entityId)!.state))).sort((a,b)=>rank(a)-rank(b));
 }

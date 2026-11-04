@@ -7,6 +7,10 @@ export const sensorSlots = [
   ['sensor.ferroamp_solar_power','Solpaneler · effekt','W eller kW'],
   ['sensor.ferroamp_total_solar_energy','Solpaneler · total energi','kWh'],
   ['sensor.elmatare_hus2_effekt_summa','Hus 2 · effekt','W eller kW'],
+  ['sensor.elmatare_varme_effekt_2','Värme · total effekt i Sankey','W eller kW'],
+  ['sensor.elmatare_bostad_effekt_summa','Bostad · effekt i Sankey','W eller kW'],
+  ['sensor.elmatare_verkstad_effekt_summa','Verkstad · effekt i Sankey','W eller kW'],
+  ...[1,2,3,4].map(n=>['sensor.motorvarmare'+n+'_kw','Motorvärmare '+n+' · effekt i Sankey','W eller kW'] as const),
   ['sensor.electricity_price_bringasen_380','Elpris · aktuellt','SEK/kWh'],
   ['$costToday','Elkostnad · idag','SEK · endast verifierad dagskostnad'],
   ['$averageToday','Snittpris · idag','kr/kWh · endast verifierat dagsmedel'],
@@ -49,3 +53,11 @@ export function resolveEntity(slot: string) { return Object.hasOwn(bindings,slot
 export function readState(states: Map<string,HassState>, slot: string) { return states.get(resolveEntity(slot)); }
 
 export function temperatureOffsetC(entityId:string){return preferences?.[entityId]?.temperatureOffsetC??0;}
+
+/** Owner confirmed on 2026-11-03: these Node-RED power totals contain watts despite a kW label.
+ * Correct display/history only; leave HA configuration and simulator units untouched.
+ */
+const wattLabelCorrections=new Set(['sensor.elmatare_bostad_effekt_summa','sensor.elmatare_verkstad_effekt_summa','sensor.elmatare_hus2_effekt_summa']);
+export function measurementSourceUnit(entityId:string,reported:unknown,simulated:unknown=false){
+ return simulated!==true&&reported==='kW'&&wattLabelCorrections.has(entityId)?'W':reported;
+}

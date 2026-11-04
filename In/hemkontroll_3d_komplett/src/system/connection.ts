@@ -1,4 +1,5 @@
 import type { HassState } from './types';
+import {rememberEntity,setDisplayConnectionStale} from './entity-display-data';
 
 /** One HA-shaped state stream, shared by local simulator and the server-side live gateway. */
 export class Connection extends EventTarget {
@@ -14,9 +15,24 @@ export class Connection extends EventTarget {
   private serial = 0;
   private heartbeat?:ReturnType<typeof setInterval>;
   private lastPong=0;
+  private startedAt=0;
+  private freshnessTimer?:ReturnType<typeof setInterval>;
+  private staleState=false;
+  get dataStale(){return this.staleState;}
+  get lastVerifiedAt(){return this.lastPong;}
+  private publishConnection(){
+    if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source,commandsEnabled:this.commandsEnabled,dataStale:this.dataStale,lastVerifiedAt:this.lastVerifiedAt}}));
+  }
+  private updateFreshness(){
+    const stale=!this.stopped&&Date.now()-(this.lastPong||this.startedAt)>=10000;
+    setDisplayConnectionStale(this.states,stale);
+    if(stale!==this.staleState){this.staleState=stale;this.dispatchEvent(new Event('freshness'));this.publishConnection();}
+  }
   private pending = new Map<string, { resolve: () => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; expected: string }>();
   async start() {
     this.stopped = false;
+    if(!this.startedAt)this.startedAt=Date.now();
+    if(!this.freshnessTimer)this.freshnessTimer=setInterval(()=>this.updateFreshness(),1000);
     const serial = ++this.serial;
     this.socket?.close();this.connected=false;clearInterval(this.heartbeat);
     try {
@@ -26,11 +42,12 @@ export class Connection extends EventTarget {
       this.source = info.mode;this.commandsEnabled=info.commandsEnabled===true;this.controlBlockReason=info.controlBlockReason??null;
       const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}${this.socketPath}`);
       this.socket = ws;
+      let heartbeatId=99; // HA requires strictly increasing command identifiers per socket.
       ws.onmessage = event => {
         if (this.stopped || serial !== this.serial) return;
         let msg;
         try { msg = JSON.parse(event.data); } catch { ws.close(); return; }
-        if (msg.type === 'pong')this.lastPong=Date.now();
+        if (msg.type === 'pong'){this.lastPong=Date.now();this.updateFreshness();}
         if (msg.type === 'auth_required') ws.send(JSON.stringify({ type: 'auth', access_token: 'local-bridge' }));
         if (msg.type === 'auth_ok') ws.send(JSON.stringify({ id: 1, type: 'subscribe_events', event_type: 'state_changed' }));
         // Subscribe before snapshot. WS ordering prevents losing a state change between REST and subscription.
@@ -41,10 +58,10 @@ export class Connection extends EventTarget {
         if (msg.type === 'result' && msg.id === 2 && msg.success) {
           this.states.clear();
           for (const state of msg.result as HassState[]) this.accept(state,false);
-          this.connected = true;this.lastPong=Date.now();
+          this.connected = true;this.lastPong=Date.now();this.updateFreshness();
           this.dispatchEvent(new Event('state'));
-          clearInterval(this.heartbeat);this.heartbeat=setInterval(()=>{if(Date.now()-this.lastPong>30000){ws.close();return;}ws.send(JSON.stringify({id:99,type:'ping'}));},15000);
-          this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source,commandsEnabled:this.commandsEnabled}}));
+          clearInterval(this.heartbeat);this.heartbeat=setInterval(()=>{if(Date.now()-this.lastPong>10000){ws.close();return;}if(ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({id:++heartbeatId,type:'ping'}));},3000);
+          this.dispatchEvent(new Event('connection'));this.publishConnection();
         }
         if (msg.type === 'event' && msg.event?.event_type === 'state_changed') {
           const data = msg.event.data;
@@ -59,6 +76,7 @@ export class Connection extends EventTarget {
     } catch { if (serial === this.serial) this.offline(); }
   }
   private accept(state: HassState,notify=true) {
+    rememberEntity(this.states,state);
     this.states.set(state.entity_id, state);
     const command = this.pending.get(state.entity_id);
     if (command && command.expected === state.state) { clearTimeout(command.timer); this.pending.delete(state.entity_id); command.resolve(); }
@@ -69,7 +87,7 @@ export class Connection extends EventTarget {
     this.connected = false;
     for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(new Error('Anslutningen bröts')); }
     this.pending.clear();
-    this.dispatchEvent(new Event('connection'));if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('hem-connection',{detail:{connected:this.connected,source:this.source,commandsEnabled:this.commandsEnabled}}));
+    this.dispatchEvent(new Event('connection'));this.publishConnection();
     clearTimeout(this.retry);
     if (!this.stopped) this.retry = setTimeout(() => void this.start(), 1500);
   }
@@ -97,6 +115,12 @@ export class Connection extends EventTarget {
     await Promise.all([request, confirmed]);
   }
   async calendar(entityId:string,start:string,end:string){return fetch(`${this.base}/calendars/${encodeURIComponent(entityId)}?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,{signal:AbortSignal.timeout(10000)}).then(check).then(r=>r.json());}
+  async entityAction(entityId:string,action:string,value?:string){
+    if(!this.connected||!this.commandsEnabled||this.dataStale)throw Error('Aktuell kontakt och behörighet till Home Assistant krävs.');
+    const response=await fetch(this.base+'/entity-action',{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify({entity_id:entityId,action,...(value!==undefined?{value}:{})}),signal:AbortSignal.timeout(10000)});
+    if(!response.ok){const body=await response.json().catch(()=>({}));throw Error(body.message??'Home Assistant avvisade kommandot.');}
+    return response.json();
+  }
   async lock(entityId:string,action:'lock'|'unlock',confirmed=false){
     if(!['lock.entredorr_2','lock.verkstadsentre_2'].includes(entityId))throw Error('Låset saknar verifierad styrkoppling');
     if(action==='unlock'&&!confirmed)throw Error('Upplåsningen måste bekräftas');
@@ -144,6 +168,6 @@ export class Connection extends EventTarget {
     const confirmed=new Promise<void>((resolve,reject)=>{const finish=()=>{if(matches()){cleanup();resolve();}};confirmState=finish;const connection=()=>{if(!this.connected){cleanup();reject(new Error('Anslutningen bröts'));}};const timer=setTimeout(()=>{cleanup();reject(new Error('Ingen bekräftelse inom 10 sekunder'));},10000);cleanup=()=>{clearTimeout(timer);this.removeEventListener('state',finish);this.removeEventListener('connection',connection);};this.addEventListener('state',finish);this.addEventListener('connection',connection);});
     try{await Promise.all([confirmed,fetch(this.base+'/commands',{method:'POST',headers:{'Content-Type':'application/json','X-Hemkontroll-Mode':'live'},body:JSON.stringify({object_id:object.id,action,...(value!==undefined?{value}:{})}),signal:AbortSignal.timeout(10000)}).then(check).then(()=>confirmState())]);}finally{cleanup();}
   }
-  stop() { this.stopped = true; ++this.serial; clearTimeout(this.retry); this.socket?.close(); this.offline(); }
+  stop() { this.stopped = true; ++this.serial; clearTimeout(this.retry); clearInterval(this.freshnessTimer);this.freshnessTimer=undefined;this.socket?.close(); this.offline();this.updateFreshness(); }
 }
 async function check(response: Response) { if (!response.ok) throw new Error(`Anslutningsfel (${response.status})`); return response; }

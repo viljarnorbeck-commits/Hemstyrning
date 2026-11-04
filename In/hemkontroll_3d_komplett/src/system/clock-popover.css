@@ -1,6 +1,9 @@
 .hem-start.yard-photo-shell .home-overview button.home-clock-trigger{display:inline-block;min-height:0;min-width:0;background:transparent;border:0;border-radius:7px;padding:0;box-shadow:none;text-align:left;color:inherit;cursor:pointer;transition:filter .18s ease,transform .18s ease}
-.home-overview .home-clock-trigger:hover{filter:drop-shadow(0 0 8px #e9d5b681)}
+.hem-start.yard-photo-shell .home-overview button.home-clock-trigger{backdrop-filter:none;border-radius:0}
+.hem-start.yard-photo-shell .home-overview button.home-clock-trigger::after{display:none}
+.hem-start.yard-photo-shell .home-overview button.home-clock-trigger:is(:hover,:focus-visible){background:transparent;border:0;box-shadow:none;translate:0 -2px;scale:1.025;filter:drop-shadow(0 3px 5px #0006) drop-shadow(0 0 8px #e9d5b65c)}
 .home-overview .home-clock-trigger:active{transform:translateY(1px) scale(.98)}
+.hem-start.yard-photo-shell .home-overview button.home-clock-trigger:active{box-shadow:none;background:transparent}
 .home-overview .home-clock-trigger:focus-visible{outline:2px solid #ddc29c;outline-offset:4px}
 .home-overview .home-timer-badge{display:block;font-size:9px!important;font-variant-numeric:tabular-nums;color:#e4c69d;margin-top:5px!important;white-space:nowrap}
 .home-overview .home-timer-badge[hidden]{display:none}

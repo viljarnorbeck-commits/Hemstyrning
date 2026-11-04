@@ -1,0 +1,7 @@
+.yard-calibrated-photo-lights{position:absolute;pointer-events:none;overflow:hidden;border-radius:var(--photo-corner-radius);mix-blend-mode:screen;transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1);mask-image:linear-gradient(to right,transparent,#000 5%,#000 96%,transparent),linear-gradient(to bottom,#000 84%,transparent);mask-composite:intersect}
+.yard-photo-lamp{opacity:calc(var(--lamp-output,0) * (.18 + .82 * var(--photo-night-strength,0)));transition:opacity .7s ease}
+.yard-photo-lamp.is-disconnected{opacity:0;transition:none}
+.yard-photo-fixtures{position:absolute;pointer-events:none;overflow:hidden;border-radius:var(--photo-corner-radius);transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1);opacity:calc(1 - .22 * var(--photo-night-strength,0));mask-image:linear-gradient(to right,transparent,#000 5%,#000 96%,transparent),linear-gradient(to bottom,#000 84%,transparent);mask-composite:intersect}
+/* Retain the earlier restrained lustre, with warm highlights supplied by actual lamp status. */
+.yard-photograph[data-light=night] .yard-photo-polish{opacity:.64}
+@media(prefers-reduced-motion:reduce){.yard-calibrated-photo-lights,.yard-photo-fixtures,.yard-photo-lamp{transition:none}}

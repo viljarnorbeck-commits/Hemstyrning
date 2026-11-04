@@ -9,7 +9,9 @@ test('yard photo follows simulator weather types including sleet and missing dat
  try{for(const [state,kind]of [['sunny',/^(sunny|clear-night)$/],['partlycloudy','partlycloudy'],['cloudy','cloudy'],['rainy','rain'],['pouring','rain'],['snowy','snow'],['snowy-rainy','sleet'],['fog','fog'],['unknown','neutral'],['unavailable','neutral']] as const){
   expect((await request.post('/dev-api/states/weather.home',{data:{state,attributes:{simulated:true,temperature:4}}})).ok()).toBe(true);
   await expect(stage).toHaveAttribute('data-weather',kind);await expect(stage).toHaveAttribute('data-weather-source',['unknown','unavailable'].includes(state)?'unavailable':'simulator');
-  expect(await stage.evaluate(el=>Number((el as HTMLElement).style.getPropertyValue('--photo-brightness')))).toBeGreaterThan(.9);
+  const brightness=await stage.evaluate(el=>Number((el as HTMLElement).style.getPropertyValue('--photo-brightness')));
+  expect(brightness).toBeGreaterThan(.65);expect(brightness).toBeLessThan(1.1);
+  if(await stage.getAttribute('data-light')==='night')expect(brightness).toBeLessThan(.82);
   await page.screenshot({path:'.build-tools/weather-'+state+'.png',animations:'disabled'});
  }}finally{await request.delete('/dev-api/states/weather.home');}expect(writes).toBe(0);
 });

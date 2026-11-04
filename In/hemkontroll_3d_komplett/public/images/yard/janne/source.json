@@ -1,0 +1,15 @@
+{
+  "sourceName": "Janne.png",
+  "sha256": "c5ce67b3a8c7e175efb0063c2d91b7b3f33e23eaf64adb210cfae22ad71d8fb6",
+  "width": 1672,
+  "height": 941,
+  "widths": [
+    640,
+    960,
+    1280,
+    1672
+  ],
+  "skyMatte": "photo-space skyline plus conservative color matting for treeline; visually approximate",
+  "sourcePreserved": true,
+  "nativeResolutionLimit": true
+}

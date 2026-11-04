@@ -10,5 +10,6 @@ export function yardWeatherAppearance(condition:string,elevation:number){
  const rain=['rainy','pouring','lightning-rainy','snowy-rainy'].includes(condition),snow=['snowy','snowy-rainy'].includes(condition),clear=['sunny','clear-night'].includes(condition);
  const sunlight=['sunny','partlycloudy'].includes(condition)&&day>.5?(condition==='partlycloudy'?.35:1):0;
  const kind=rain&&snow?'sleet':snow?'snow':rain?'rain':condition==='fog'?'fog':condition==='cloudy'?'cloudy':condition==='partlycloudy'?'partlycloudy':sunlight>0?'sunny':clear?'clear-night':condition==='windy'?'windy':'neutral';
- return{day,kind,light:day<.3?'night':day<.75?'evening':'day',sunlight,brightness:(.97+.07*day)*(rain?.99:condition==='cloudy'?1.015:1)+sunlight*.02,saturation:1.09+day*.05,contrast:1.065+day*.02,night:(1-day)*.07};
+ // Keep the white facade readable while fields and the horizon settle into night.
+ return{day,kind,light:day<.3?'night':day<.75?'evening':'day',sunlight,brightness:(.73+.31*day)*(rain?.99:condition==='cloudy'?1.015:1)+sunlight*.02,saturation:.84+day*.30,contrast:1.10-day*.015,night:(1-day)*.17,nightStrength:1-day};
 }

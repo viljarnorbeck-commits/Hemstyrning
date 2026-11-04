@@ -7,3 +7,15 @@ it('stop waits for an in-flight blink and prevents late commands or overlapping 
 it('reports failed restoration instead of claiming lights were restored',async()=>{vi.useFakeTimers();const effect=new HalloweenEffect(async()=>{throw Error('offline');});await effect.start('h',['light.one'],[state('light.one')]);await vi.advanceTimersByTimeAsync(1);expect(effect.status('h')).toMatchObject({running:false,message:'Effekten stoppad. Vissa lampor kunde inte återställas.'});expect(vi.getTimerCount()).toBe(0);});
 it('does not start without available lighting or activate an unsupported vacuum',async()=>{vi.useFakeTimers();const send=vi.fn(async()=>{}),effect=new HalloweenEffect(send);await expect(effect.start('h',['switch.kok_uttag'],[state('switch.kok_uttag')])).rejects.toThrow('Ingen vald');await effect.start('h',['light.one'],[state('light.one'),state('vacuum.max','docked',{supported_features:4})],'vacuum.max');await effect.stop();expect(send.mock.calls.some((args:any)=>args[0]==='vacuum')).toBe(false);});
 it('persists explicit effect bindings in the existing scene schema and rejects non-light domains',()=>{const c=defaultScene();c.presets=[{id:'h',name:'Halloween',icon:'🎃',color:'#ff8400',description:'',entityId:'script.halloween',canStop:true,hidden:false,effect:'halloween',effectTargets:['light.one','switch.actor_belysning'],effectVacuum:'vacuum.max'}];expect(sceneSchema.parse(c).presets[0]!.effectTargets).toHaveLength(2);c.presets[0]!.effectTargets=['lock.front'];expect(()=>sceneSchema.parse(c)).toThrow();});
+it('keeps darkness active without blinking and restores original lighting on stop',async()=>{
+ vi.useFakeTimers();const send=vi.fn(async(_domain:string,_service:string,_data:Record<string,unknown>)=>{}),effect=new HalloweenEffect(send);
+ await effect.start('norrsken',['light.one','light.two'],[state('light.one','on',{brightness:92}),state('light.two')],undefined,'darkness');
+ expect(effect.status('norrsken')).toMatchObject({running:true,targetCount:2});expect(send).toHaveBeenCalledTimes(1);expect(send.mock.calls[0]).toEqual(['light','turn_off',{entity_id:['light.one','light.two']}]);expect(vi.getTimerCount()).toBe(0);
+ await vi.advanceTimersByTimeAsync(120000);expect(effect.status('norrsken').running).toBe(true);expect(send).toHaveBeenCalledTimes(1);
+ await effect.stop('norrsken');expect(send).toHaveBeenCalledWith('light','turn_on',{entity_id:'light.one',brightness:92});expect(send).toHaveBeenCalledWith('light','turn_off',{entity_id:'light.two'});expect(effect.status('norrsken').running).toBe(false);
+});
+it('restores coupled master actors before individual lighting outputs',async()=>{
+ const calls:string[]=[],effect=new HalloweenEffect(async(_domain,_service,data)=>{calls.push(String(data.entity_id));});
+ await effect.start('norrsken',['light.one','switch.master_belysning'],[state('light.one'),state('switch.master_belysning','on')],undefined,'darkness',['switch.master_belysning']);calls.length=0;
+ await effect.stop('norrsken');expect(calls).toEqual(['switch.master_belysning','light.one']);
+});

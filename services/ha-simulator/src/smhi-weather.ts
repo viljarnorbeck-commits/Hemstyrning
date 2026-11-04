@@ -51,7 +51,7 @@ export function smhiWeatherApi(load:()=>Promise<SceneConfig>,realMode:boolean){
   if(!realMode||place?.provider!=='smhi'){res.status(503).json({source:'smhi',available:false,placeName:place?.placeName??'',message:!realMode?'Simulatorns väder används':'SMHI är inte valt som väderkälla'});return;}
   const key=JSON.stringify([place.latitude,place.longitude,place.placeName]);let value=cache.get(key);
   if(!value||value.until<Date.now()){
-   if(!pending.has(key))pending.set(key,readForecast(place).then(data=>{if(cache.size>=4)cache.delete(cache.keys().next().value!);cache.set(key,{value:data,until:Date.now()+(data.available?600000:60000)});return data;}).finally(()=>pending.delete(key)));
+   if(!pending.has(key))pending.set(key,readForecast(place).then(data=>{if(cache.size>=4)cache.delete(cache.keys().next().value!);cache.set(key,{value:data,until:Date.now()+(data.available?300000:60000)});return data;}).finally(()=>pending.delete(key)));
    const data=await pending.get(key)!;value={value:data,until:0};
   }
   res.set('Cache-Control','no-store').status(value.value.available?200:503).json(value.value);

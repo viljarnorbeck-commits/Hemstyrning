@@ -7,3 +7,5 @@ export function canonicalJamUrl(input:unknown):string|null;
 export function spotifyShortUrl(input:unknown):string|null;
 
 export function isLightingEntity(entityId:string,attributes?:Record<string,unknown>):boolean;
+
+export function isReadOnlyWaterHeater(entityId:unknown):boolean;

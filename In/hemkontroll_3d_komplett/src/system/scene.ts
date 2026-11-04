@@ -1,4 +1,5 @@
 import {EnergyNetwork} from './energy-network';
+import {YardLightCalibration} from './yard-light-calibration';
 import {visualSignature} from './presentation-state';
 import{graphicsProfile,profiles}from'./client-platform';
 import {cameraFloor,constrainGroundCamera,gridGround} from './ground-model';
@@ -31,10 +32,10 @@ export class GardenScene {
   private photographGround?:number;
   setHomeCamera(view:import('./types').CameraView){this.homeCamera=view;}
   /** Match the photograph's contain/cover crop to the actual canvas, including sidebar offset. */
-  photographCamera(view:import('./types').CameraView,crop:{x:number;y:number;width:number;height:number},groundY:number){
+  photographCamera(view:import('./types').CameraView,crop:{x:number;y:number;width:number;height:number},groundY:number,sourceSize={width:8192,height:4608}){
     this.photographGround=groundY;
     this.cancelFollow();this.skyView=false;this.camera.position.fromArray(view.position);this.controls.target.fromArray(view.target);this.camera.fov=view.fov;this.camera.zoom=view.zoom;
-    this.camera.setViewOffset(8192,4608,crop.x,crop.y,crop.width,crop.height);this.camera.updateProjectionMatrix();this.controls.update();
+    this.camera.setViewOffset(sourceSize.width,sourceSize.height,crop.x,crop.y,crop.width,crop.height);this.camera.updateProjectionMatrix();this.controls.update();
   }
   /** Future photo markers use the same camera and are always hidden behind the actual mesh. */
   photographObject(id:string){const item=this.config?.objects.find(o=>o.id===id),object=this.renderObjects.get(id);if(!item||item.placementConfirmed!==true||!object)return null;const physical=object.getWorldPosition(new THREE.Vector3());if(isOccluded(this.camera,physical,[this.models.root,this.occlusionVolumes],this.markerRay))return null;const p=physical.project(this.camera);if(p.z< -1||p.z>1||Math.abs(p.x)>1||Math.abs(p.y)>1)return null;const r=this.renderer.domElement.getBoundingClientRect();return{x:r.left+(p.x*.5+.5)*r.width,y:r.top+(-p.y*.5+.5)*r.height};}
@@ -48,6 +49,7 @@ export class GardenScene {
   readonly transform: TransformControls;
   readonly models = new ModelManager();
   readonly objects = new THREE.Group();
+  private yardLights=new YardLightCalibration();
   private environment = new THREE.Group();
   private sky=new Sky();
   private surroundings=new Surroundings();
@@ -99,7 +101,7 @@ export class GardenScene {
   editing = false;
   private dragging = false;
   private input:SurfaceInput;
-  private focusGoal?:THREE.Vector3;private cameraMotion?:{fromFov:number;toFov:number;fromZoom:number;toZoom:number;at:number;fromP:THREE.Vector3;fromT:THREE.Vector3;toP:THREE.Vector3;toT:THREE.Vector3;done:()=>void};
+  private focusGoal?:THREE.Vector3;private cameraMotion?:{duration?:number;arc?:THREE.CubicBezierCurve3;fromFov:number;toFov:number;fromZoom:number;toZoom:number;at:number;fromP:THREE.Vector3;fromT:THREE.Vector3;toP:THREE.Vector3;toT:THREE.Vector3;done:()=>void};
   private navigationMode:'rotate'|'pan'='rotate';
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -124,7 +126,7 @@ export class GardenScene {
     this.sun.shadow.camera.far = 220;
     this.sun.shadow.normalBias = 0.08;
     this.moon.shadow.mapSize.set(512,512);this.moon.shadow.camera.left=-40;this.moon.shadow.camera.right=40;this.moon.shadow.camera.top=40;this.moon.shadow.camera.bottom=-40;this.moon.shadow.camera.far=220;this.moon.shadow.normalBias=.08;this.environment.add(this.sun, this.sun.target, this.ambient,this.moon,this.moon.target);
-    this.scene.add(this.models.root, this.objects, this.environment, this.surfaceMarkers,this.sky.root,this.surroundings.root,this.occlusionVolumes);
+    this.scene.add(this.models.root, this.objects, this.environment, this.surfaceMarkers,this.sky.root,this.surroundings.root,this.occlusionVolumes,this.yardLights.root);
     this.scene.background = new THREE.Color('#8faeb6');
     this.scene.fog = new THREE.FogExp2('#8faeb6', 0.001);
     this.transform = new TransformControls(this.camera, canvas);
@@ -169,6 +171,7 @@ export class GardenScene {
   private cameraStats(){const canvas=this.renderer.domElement;canvas.dataset.cameraPosition=JSON.stringify(this.camera.position.toArray());canvas.dataset.cameraTarget=JSON.stringify(this.controls.target.toArray());canvas.dataset.cameraDistance=String(this.camera.position.distanceTo(this.controls.target));canvas.dataset.navigationMode=this.navigationMode;canvas.dataset.following=this.followId??'';}
   private resize() { const { width, height } = this.renderer.domElement.getBoundingClientRect(); if(width<=0||height<=0)return; if(this.config?.quality==='auto'){this.models.detail=width>=900;this.renderer.setPixelRatio(Math.min(devicePixelRatio,profiles[graphicsProfile()].dpr));} this.renderer.setSize(width, height, false); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); }
   setConfig(config: SceneConfig) {
+    this.yardLights.configure(config);
     this.zoneIndex=undefined;
     const model=config.models[config.activeModel],signature=JSON.stringify([model.url,model.position,model.rotation,model.scale]);if(signature!==this.yardSignature){this.yardSignature=signature;this.yard=undefined;this.yardModel=undefined;this.yardRequest++;}this.config = config;this.renderer.toneMapping=config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;
     this.models.grading=config.appearance;
@@ -232,6 +235,8 @@ export class GardenScene {
     const now = performance.now();
     if(now-this.lastFrame<1000/(document.body.classList.contains('app-feature')?8:profiles[graphicsProfile()].fps))return;
     const dt = Math.min((now - this.lastFrame) / 1000, 0.1); this.renderer.domElement.dataset.frameMs=String(now-this.lastFrame);this.lastFrame = now;
+    this.yardLights.update(states,connected&&!this.diagnostic,dt,this.models.root.children[0]?.userData.sourceUrl);
+    this.yardLights.root.visible&&=!this.skyView&&!this.diagnostic;
     this.visualStates=states;this.energyNetwork.update(this.config?.energyRoutes??[],states,connected,dt);
     if(this.diagnostic){this.energyNetwork.root.visible=false;this.models.root.visible=true;this.renderer.toneMapping=THREE.NoToneMapping;this.renderer.toneMappingExposure=1;this.scene.fog=null;this.scene.background=new THREE.Color('#777777');this.sky.root.visible=this.environment.visible=this.objects.visible=this.surroundings.root.visible=this.occlusionVolumes.visible=this.surfaceMarkers.visible=false;this.transform.detach();this.routeOverlay.visible=this.yardOverlay.visible=false;this.controls.update();this.constrainCamera();this.cameraStats();this.renderer.render(this.scene,this.camera);return;}
     this.scene.fog??=new THREE.FogExp2('#8faeb6',.001);this.sky.root.visible=this.environment.visible=true;this.models.root.visible=this.objects.visible=!this.skyView;this.transform.getHelper().visible=this.editing&&!this.skyView;this.surfaceMarkers.visible=this.editing&&!this.skyView;
@@ -292,7 +297,7 @@ export class GardenScene {
     }
     if(this.followId){const followed=this.renderObjects.get(this.followId);if(followed){const offset=followed.position.clone().sub(this.controls.target).multiplyScalar(1-Math.exp(-dt*2));this.controls.target.add(offset);this.camera.position.add(offset);}}
     if(this.focusGoal){const delta=this.focusGoal.clone().sub(this.controls.target);if(delta.length()<.015){this.focusGoal=undefined;}else{delta.multiplyScalar(1-Math.exp(-dt*10));this.controls.target.add(delta);this.camera.position.add(delta);}}
-    if(this.cameraMotion){const m=this.cameraMotion,t=Math.min(1,(performance.now()-m.at)/1400),f=t*t*(3-2*t);this.camera.fov=THREE.MathUtils.lerp(m.fromFov,m.toFov,f);this.camera.zoom=THREE.MathUtils.lerp(m.fromZoom,m.toZoom,f);this.camera.updateProjectionMatrix();this.camera.position.lerpVectors(m.fromP,m.toP,f);this.controls.target.lerpVectors(m.fromT,m.toT,f);if(t===1){this.cameraMotion=undefined;m.done();}}this.updateReplay();this.controls.update();this.constrainCamera();this.cameraStats();
+    if(this.cameraMotion){const m=this.cameraMotion,t=Math.min(1,(performance.now()-m.at)/(m.duration??1400)),f=t*t*(3-2*t);this.camera.fov=THREE.MathUtils.lerp(m.fromFov,m.toFov,f);this.camera.zoom=THREE.MathUtils.lerp(m.fromZoom,m.toZoom,f);this.camera.updateProjectionMatrix();if(m.arc)this.camera.position.copy(m.arc.getPoint(f));else this.camera.position.lerpVectors(m.fromP,m.toP,f);this.controls.target.lerpVectors(m.fromT,m.toT,f);if(t===1){this.cameraMotion=undefined;m.done();}}this.updateReplay();this.controls.update();this.constrainCamera();this.cameraStats();
     this.renderer.render(this.scene, this.camera);
   }
   setDiagnostics(profile:'mobile'|'detail'|'reference',neutral:boolean){this.diagnostic=neutral;this.models.reference=profile==='reference';this.models.detail=profile!=='mobile';this.models.setNeutral(neutral);this.transform.enabled=this.editing&&!neutral;this.transform.getHelper().visible=this.editing&&!neutral;if(!neutral&&this.config)this.renderer.toneMapping=this.config.appearance?.toneMapping==='agx'?THREE.AgXToneMapping:this.config.appearance?.toneMapping==='neutral'?THREE.NeutralToneMapping:THREE.ACESFilmicToneMapping;const season=this.models.active??this.config?.activeModel;if(season&&this.config)void this.models.select(season,this.config.models[season]);}
@@ -339,6 +344,12 @@ export class GardenScene {
     }
     this.transition(view);
   }
+  /** Conservative overflight above the loaded model's full height; no second model load. */
+  photoTransition(view:import('./types').CameraView,done:()=>void=()=>{}){
+    this.transition(view,done);
+    const motion=this.cameraMotion!,bounds=new THREE.Box3().setFromObject(this.models.root),ceiling=Math.max(motion.fromP.y,motion.toP.y,bounds.isEmpty()?0:bounds.max.y)*1.5+12;
+    motion.duration=4200;motion.arc=new THREE.CubicBezierCurve3(motion.fromP.clone(),new THREE.Vector3(motion.fromP.x,ceiling,motion.fromP.z),new THREE.Vector3(motion.toP.x,ceiling,motion.toP.z),motion.toP.clone());
+  }
   overview(done=()=>{}){this.transition(this.homeCamera??this.config?.startView??{position:[55,32,55],target:[0,1,0],zoom:1,fov:48},done);}
   cancelFollow(){this.followId=undefined;this.cameraMotion=undefined;}
   focusObject(id:string,follow=false,done=()=>{}){const o=this.config?.objects.find(o=>o.id===id),model=this.renderObjects.get(id);if(!model||!o)throw new Error('Objektet saknas');if(o.type==='mower'&&!this.tracking.get(id)?.safePosition)throw new Error('Ingen verifierad robotposition att följa');const target=o.type==='building'?new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()):model.position.clone(),offset=o.type==='mower'?new THREE.Vector3(3,2.4,4):o.type==='car'?new THREE.Vector3(6,3.7,7):new THREE.Vector3(10,8,12),position=target.clone().add(offset);if(o.type==='building'){const size=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).length();offset.normalize().multiplyScalar(Math.max(18,size*1.1));position.copy(target).add(offset);}const ray=new THREE.Raycaster(target,offset.clone().normalize(),.5,offset.length());const hit=ray.intersectObject(this.models.root,true)[0];if(hit&&o.type!=='building')position.copy(target).addScaledVector(offset.normalize(),Math.max(2,hit.distance-1));this.select(id);this.transition({position:position.toArray() as Vec3,target:target.toArray() as Vec3,zoom:1,fov:48},()=>{if(follow)this.followId=id;done();});}
@@ -348,7 +359,7 @@ export class GardenScene {
   private activeZones(x?:number,z?:number){this.zoneIndex??=new ZoneIndex((this.config?.objects??[]).filter(o=>!o.classification||o.classification.origin==='manual'||o.classification.analysisKey===this.yard?.key));return x===undefined||z===undefined?this.zoneIndex.all:this.zoneIndex.region(x,z);}
   private safeMowerSegment(from:{x:number;z:number},to:{x:number;z:number},radius:number){this.activeZones();const zones=this.zoneIndex!.region(Math.min(from.x,to.x)-radius,Math.min(from.z,to.z)-radius,Math.max(from.x,to.x)+radius,Math.max(from.z,to.z)+radius);if(!supportedGroundSegment(from,to,zones))return false;return traversableSegment(from,to,zones,radius);}
   private groundAt(x:number,z:number){return groundSurface(x,z,this.activeZones(x,z))?.height??null;}
-  dispose(){this.energyNetwork.dispose();this.input.dispose();this.assets.reset();this.setAnimationLoop(null);this.observer.disconnect();this.controls.dispose();this.transform.dispose();this.models.dispose();this.sky.dispose();disposeTree(this.sky.root);disposeTree(this.surroundings.root);disposeTree(this.occlusionVolumes);disposeTree(this.objects);disposeTree(this.environment);disposeTree(this.surfaceMarkers);disposeTree(this.yardOverlay);disposeTree(this.routeOverlay);this.renderer.dispose();}
+  dispose(){this.yardLights.dispose();this.energyNetwork.dispose();this.input.dispose();this.assets.reset();this.setAnimationLoop(null);this.observer.disconnect();this.controls.dispose();this.transform.dispose();this.models.dispose();this.sky.dispose();disposeTree(this.sky.root);disposeTree(this.surroundings.root);disposeTree(this.occlusionVolumes);disposeTree(this.objects);disposeTree(this.environment);disposeTree(this.surfaceMarkers);disposeTree(this.yardOverlay);disposeTree(this.routeOverlay);this.renderer.dispose();}
   reset() { this.cameraMotion=undefined;this.focusGoal=undefined;this.skyView=false;this.followId=undefined;this.controls.enabled=true;this.controls.enableDamping=true;this.controls.maxPolarAngle=Math.PI*.49;this.controls.enableZoom=this.controls.enablePan=true;this.camera.position.set(55, 32, 55); this.controls.target.set(0, 1, 0);this.cameraStats(); }
 }
 function kelvinRGB(value: number): Vec3 {

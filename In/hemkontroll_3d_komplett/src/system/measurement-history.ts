@@ -1,12 +1,10 @@
 import {appConnection} from './app-session';
 import {temperatureOffsetC} from './entity-bindings';
 import {measurementHistoryPoints} from './measurement-history-data';
-import type {HistoryPoint} from './function-data';
+import {measurementHistoryCache as cache,type HistorySnapshot as Snapshot} from './measurement-history-cache';
 import {escapeHtml as esc} from './panels';
 import './measurement-history.css';
 
-type Snapshot={rows:HistoryPoint[];start:number;end:number};
-const cache=new Map<string,Snapshot>();
 /** One read-only history dialog shared by all measurement cards. */
 export function setupMeasurementHistory(){
  const dialog=document.createElement('dialog');dialog.className='measurement-history-dialog';
@@ -23,7 +21,7 @@ export function setupMeasurementHistory(){
  window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{if(dialog.open)redraw?.();});});
  function render(label:string,unit:string,entity:string,snapshot?:Snapshot,message=''){
   redraw=()=>render(label,unit,entity,snapshot,message);
-  const points=snapshot?measurementHistoryPoints(snapshot.rows,unit,snapshot.start,snapshot.end,temperatureOffsetC(entity)):[];
+  const points=snapshot?measurementHistoryPoints(snapshot.rows,unit,snapshot.start,snapshot.end,temperatureOffsetC(entity),entity):[];
   const finite=points.filter((p):p is {t:number;value:number}=>p.value!==null);
   const low=finite.length?finite.reduce((v,p)=>Math.min(v,p.value),Infinity):0,high=finite.length?finite.reduce((v,p)=>Math.max(v,p.value),-Infinity):1;
   const pad=Math.max((high-low)*.12,Math.abs(high)*.02,.1),min=low-pad,max=high+pad;
@@ -64,17 +62,24 @@ export function setupMeasurementHistory(){
  }
  function prefetch(){
   if(document.hidden||!appConnection.connected)return;
-  const entities=new Set([...document.querySelectorAll<HTMLElement>('[data-measurement-history]')].filter(el=>el.getClientRects().length>0).map(el=>el.dataset.measurementHistory??''));
+  const entities=new Set([...document.querySelectorAll<HTMLElement>('[data-measurement-history],[data-history-probe]')].filter(el=>el.getClientRects().length>0).map(el=>el.dataset.measurementHistory??el.dataset.historyProbe??''));
   for(const entity of entities)if(/^[a-z_]+\.[a-z0-9_]+$/.test(entity))void load(entity).catch(()=>{});
  }
- function schedulePrefetch(){clearTimeout(prefetchTimer);prefetchTimer=setTimeout(prefetch,150);}
- const observer=new MutationObserver(schedulePrefetch);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-measurement-history','hidden']});
+ // Throttle rather than debounce: continuously changing live DOM must not keep
+ // postponing history discovery, leaving real series permanently unclickable.
+ function schedulePrefetch(){if(prefetchTimer!==undefined)return;prefetchTimer=setTimeout(()=>{prefetchTimer=undefined;prefetch();},150);}
+ const observer=new MutationObserver(schedulePrefetch);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-measurement-history','data-history-probe','hidden']});
  appConnection.addEventListener('connection',schedulePrefetch);document.addEventListener('visibilitychange',schedulePrefetch);setInterval(prefetch,60000);schedulePrefetch();
  for(const event of ['pointerover','focusin'])document.addEventListener(event,e=>{const entity=(e.target as Element).closest<HTMLElement>('[data-measurement-history]')?.dataset.measurementHistory;if(entity&&appConnection.connected)void load(entity,true).catch(()=>{});});
  async function open(target:HTMLElement){
   const current=++serial,source=appConnection.source;invoker=target;
   const entity=target.dataset.measurementHistory??'',unit=target.dataset.historyUnit??'',label=target.dataset.historyLabel??'Mätning',cached=cache.get(historyKey(entity));
-  const show=(snapshot?:Snapshot,message='')=>{if(current!==serial||appConnection.source!==source)return;render(label,unit,entity,snapshot,message);if(!dialog.open)dialog.showModal();dialog.focus({preventScroll:true});};
+  const home=!!target.closest('.home-overview');
+  const show=(snapshot?:Snapshot,message='')=>{if(current!==serial||appConnection.source!==source)return;
+   // Background availability may change between render and click. Never open an
+   // empty home popup even when a refresh just removed the last usable point.
+   if(home&&(!snapshot||!measurementHistoryPoints(snapshot.rows,unit,Math.max(snapshot.start,Date.now()-86400000),Date.now(),0,entity).some(point=>point.value!==null)))return;
+   render(label,unit,entity,snapshot,message);if(!dialog.open)dialog.showModal();dialog.focus({preventScroll:true});};
   if(!entity){show(undefined,'Ingen historikkälla är kopplad till den här mätningen.');return;}
   if(cached)show(cached);
   try{show(await load(entity,true));}

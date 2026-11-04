@@ -15,5 +15,5 @@ export function startNavigation(){
  new MutationObserver(mount).observe(document.body,{childList:true});mount();window.addEventListener('resize',mount);
  document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();trigger.focus();}});
  document.addEventListener('click',e=>{if(document.body.classList.contains('nav-open')&&!nav.contains(e.target as Node)&&!trigger.contains(e.target as Node))close();});
- window.addEventListener('hem-connection',e=>{const {connected,source,commandsEnabled}=(e as CustomEvent).detail;nav.querySelector('.nav-ha')!.classList.toggle('connected',connected);nav.querySelector('.nav-ha span')!.textContent=connected?(source==='simulator'?'Simulator · ansluten':'Home Assistant · ansluten'+(commandsEnabled?'':' · skrivskyddad')):'Home Assistant · återansluter';});
+ window.addEventListener('hem-connection',e=>{const {connected,source,commandsEnabled,dataStale}=(e as CustomEvent).detail;nav.querySelector('.nav-ha')!.classList.toggle('connected',connected&&!dataStale);nav.querySelector('.nav-ha span')!.textContent=dataStale?'Gammal information · återansluter':connected?(source==='simulator'?'Simulator · ansluten':'Home Assistant · ansluten'+(commandsEnabled?'':' · skrivskyddad')):'Home Assistant · återansluter';});
 }

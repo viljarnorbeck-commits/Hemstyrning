@@ -92,6 +92,7 @@ export class ModelManager {
       this.cache.delete(config.url); this.cache.set(config.url, model);
       const neutral=this.neutral;this.setNeutral(false);this.root.clear();
       const calibrated = new THREE.Group();
+      calibrated.userData.sourceUrl=config.url;
       calibrated.add(model); applyCalibration(calibrated, config);
       this.root.add(calibrated);this.setNeutral(neutral);
       this.active = season;

@@ -1,0 +1,634 @@
+{
+  "id": "janne",
+  "status": "preliminary-roof-landmark-fit",
+  "physicalAlignmentVerified": false,
+  "modelVersion": "v000011",
+  "sourceFrame": "yard380-gltf-v1",
+  "modelSha256": "286831ead1676dd4c8d642fb201f5f5e7ad0c1229f97a784f6a90d3bd276271c",
+  "sourceSha256": "c5ce67b3a8c7e175efb0063c2d91b7b3f33e23eaf64adb210cfae22ad71d8fb6",
+  "width": 1672,
+  "height": 941,
+  "sourceView": {
+    "position": [
+      -20.40487731345831,
+      3.9672608375664735,
+      -15.05095312732953
+    ],
+    "target": [
+      -42.8456804065849,
+      1.9673856944462,
+      -25.88658213295028
+    ],
+    "fov": 53.1155767535948,
+    "zoom": 1
+  },
+  "rotationRadians": {
+    "yaw": -2.020633197487594,
+    "pitch": -0.08008056970067319,
+    "roll": 0
+  },
+  "roofFitRmsPixels": 2.5102936570989867,
+  "sourcePhoto": "DJI_20261102140830_0383_D.JPG",
+  "landmarks": [
+    {
+      "name": "roof sample 1-1",
+      "source": [
+        519.2708129882812,
+        589.7916870117188
+      ],
+      "image": [
+        590.4548451419317,
+        315.3361949586463
+      ],
+      "world": [
+        -40.44972263354821,
+        5.660453932454363,
+        -19.029186902907597
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.3689394425342236
+    },
+    {
+      "name": "roof sample 2-1",
+      "source": [
+        595.875,
+        598.25
+      ],
+      "image": [
+        655.2269762629754,
+        314.6344689709164
+      ],
+      "world": [
+        -39.84733796130258,
+        5.658085047198881,
+        -20.27911845204859
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.4075033635787042
+    },
+    {
+      "name": "roof sample 3-1",
+      "source": [
+        672.4791259765625,
+        606.7083740234375
+      ],
+      "image": [
+        720.6022050964385,
+        313.92623021727957
+      ],
+      "world": [
+        -39.245168533631436,
+        5.6437628674407065,
+        -21.524169883209808
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.8328338808589637
+    },
+    {
+      "name": "roof sample 4-1",
+      "source": [
+        749.0833129882812,
+        615.1666870117188
+      ],
+      "image": [
+        786.5891126082031,
+        313.2113437271966
+      ],
+      "world": [
+        -38.65885516016887,
+        5.751360307168714,
+        -22.78148867309174
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 4.940974250212952
+    },
+    {
+      "name": "roof sample 5-1",
+      "source": [
+        825.6875,
+        623.625
+      ],
+      "image": [
+        853.1962610776983,
+        312.4897376938286
+      ],
+      "world": [
+        -38.051239190755695,
+        5.670443735305522,
+        -24.013169557972116
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.947217298331693
+    },
+    {
+      "name": "roof sample 6-1",
+      "source": [
+        902.2916259765625,
+        632.0833740234375
+      ],
+      "image": [
+        920.432397830955,
+        311.76133870137784
+      ],
+      "world": [
+        -37.449642464495696,
+        5.640706114377483,
+        -25.251318212543808
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.652022750916591
+    },
+    {
+      "name": "roof sample 7-1",
+      "source": [
+        978.8958129882812,
+        640.5416870117188
+      ],
+      "image": [
+        988.3065593163208,
+        311.0260062510908
+      ],
+      "world": [
+        -36.84833932364291,
+        5.614086482525693,
+        -26.490015689496165
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 4.61590231241065
+    },
+    {
+      "name": "roof sample 1-2",
+      "source": [
+        520.4166870117188,
+        630.9583740234375
+      ],
+      "image": [
+        581.9060556923291,
+        328.7848537445614
+      ],
+      "world": [
+        -39.723756084101794,
+        5.324898953234072,
+        -18.694179563202805
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.863688735595139
+    },
+    {
+      "name": "roof sample 2-2",
+      "source": [
+        595.5,
+        639.25
+      ],
+      "image": [
+        649.0092498479312,
+        328.12246703194387
+      ],
+      "world": [
+        -39.124792060430245,
+        5.333598834207255,
+        -19.943909669219888
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.7519761663772009
+    },
+    {
+      "name": "roof sample 3-2",
+      "source": [
+        670.5833740234375,
+        647.5416870117188
+      ],
+      "image": [
+        716.7605901132035,
+        327.45370123878985
+      ],
+      "world": [
+        -38.526809322266104,
+        5.334528648104158,
+        -21.188027260318314
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.8862320186634913
+    },
+    {
+      "name": "roof sample 4-2",
+      "source": [
+        745.6666870117188,
+        655.8333740234375
+      ],
+      "image": [
+        785.1694148785269,
+        326.7784478455081
+      ],
+      "world": [
+        -37.928716956424694,
+        5.3253858258566105,
+        -22.427745487367442
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.9738258208721757
+    },
+    {
+      "name": "roof sample 5-2",
+      "source": [
+        820.75,
+        664.125
+      ],
+      "image": [
+        854.2453905666587,
+        326.0965876770167
+      ],
+      "world": [
+        -37.330922180651775,
+        5.313187274312845,
+        -23.665443615234512
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.115819799958157
+    },
+    {
+      "name": "roof sample 6-2",
+      "source": [
+        895.8333740234375,
+        672.4166870117188
+      ],
+      "image": [
+        923.9983908514392,
+        325.4080636430988
+      ],
+      "world": [
+        -36.736137526048296,
+        5.311476414569768,
+        -24.901696746444106
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.167320216443613
+    },
+    {
+      "name": "roof sample 7-2",
+      "source": [
+        970.9166870117188,
+        680.7083740234375
+      ],
+      "image": [
+        994.438303189957,
+        324.71276156699014
+      ],
+      "world": [
+        -36.134730841112976,
+        5.27821192251567,
+        -26.137227308435836
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 4.624416631730162
+    },
+    {
+      "name": "roof sample 1-3",
+      "source": [
+        521.5625,
+        672.125
+      ],
+      "image": [
+        572.3151997404661,
+        343.8727675730627
+      ],
+      "world": [
+        -38.96975905196317,
+        4.957606552057587,
+        -18.34066377164437
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 3.4733819358279305
+    },
+    {
+      "name": "roof sample 2-3",
+      "source": [
+        595.125,
+        680.25
+      ],
+      "image": [
+        642.0311090331801,
+        343.26001788191485
+      ],
+      "world": [
+        -38.37745122216658,
+        4.999496324731613,
+        -19.59752940802872
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.420830535172067
+    },
+    {
+      "name": "roof sample 3-3",
+      "source": [
+        668.6875,
+        688.375
+      ],
+      "image": [
+        712.4474586598706,
+        342.6411118542483
+      ],
+      "world": [
+        -37.781753447577145,
+        4.9969121625729365,
+        -20.837069729234056
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.948298037627252
+    },
+    {
+      "name": "roof sample 4-3",
+      "source": [
+        742.25,
+        696.5
+      ],
+      "image": [
+        783.5748579722424,
+        342.0159562419502
+      ],
+      "world": [
+        -37.18735443523208,
+        4.994555391911209,
+        -22.07402915944355
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.8409260206510762
+    },
+    {
+      "name": "roof sample 5-3",
+      "source": [
+        815.8125,
+        704.625
+      ],
+      "image": [
+        855.4241316713409,
+        341.38445590415114
+      ],
+      "world": [
+        -36.5938675596,
+        4.990636621864073,
+        -23.308231905733088
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.2805833782097809
+    },
+    {
+      "name": "roof sample 6-3",
+      "source": [
+        889.375,
+        712.75
+      ],
+      "image": [
+        928.0063252993893,
+        340.74651375895616
+      ],
+      "world": [
+        -36.00041650417679,
+        4.98228677545093,
+        -24.53993025418755
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.0543520199117686
+    },
+    {
+      "name": "roof sample 7-3",
+      "source": [
+        962.9375,
+        720.875
+      ],
+      "image": [
+        1001.332710900551,
+        340.1020307336907
+      ],
+      "world": [
+        -35.405911146571576,
+        4.967087401463807,
+        -25.770068991506292
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 3.1568512977781156
+    },
+    {
+      "name": "roof sample 2-4",
+      "source": [
+        594.75,
+        721.25
+      ],
+      "image": [
+        634.1439727079886,
+        360.36943575592227
+      ],
+      "world": [
+        -37.59976259603016,
+        4.629406969768059,
+        -19.232188964024477
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.2175124470550447
+    },
+    {
+      "name": "roof sample 3-4",
+      "source": [
+        666.7916870117188,
+        729.2083740234375
+      ],
+      "image": [
+        707.5705335378125,
+        359.8139830756551
+      ],
+      "world": [
+        -37.003725448686545,
+        4.614720873998749,
+        -20.466511129492545
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 0.5074299739114793
+    },
+    {
+      "name": "roof sample 4-4",
+      "source": [
+        738.8333740234375,
+        737.1666870117188
+      ],
+      "image": [
+        781.7711607447461,
+        359.2526474943297
+      ],
+      "world": [
+        -36.41461047777237,
+        4.627917716631718,
+        -21.704169611023104
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.2798319497267716
+    },
+    {
+      "name": "roof sample 5-4",
+      "source": [
+        810.875,
+        745.125
+      ],
+      "image": [
+        856.7580844630212,
+        358.6853665277123
+      ],
+      "world": [
+        -35.81544496109491,
+        4.594061333545895,
+        -22.932799298345856
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.0948017078264956
+    },
+    {
+      "name": "roof sample 6-4",
+      "source": [
+        882.9166870117188,
+        753.0833740234375
+      ],
+      "image": [
+        932.5440148074733,
+        358.1120655595194
+      ],
+      "world": [
+        -35.23627634096909,
+        4.631655800557887,
+        -24.165256426110343
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 0.5307817826317406
+    },
+    {
+      "name": "roof sample 7-4",
+      "source": [
+        954.9583740234375,
+        761.0416870117188
+      ],
+      "image": [
+        1009.1416981246574,
+        357.5325961596023
+      ],
+      "world": [
+        -34.6377351958434,
+        4.597071139350323,
+        -25.39211926244748
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 3.6526363358291207
+    },
+    {
+      "name": "roof sample 2-5",
+      "source": [
+        594.375,
+        762.25
+      ],
+      "image": [
+        625.157853583706,
+        379.8628565393167
+      ],
+      "world": [
+        -36.794807115847775,
+        4.257070253370916,
+        -18.856381323526016
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.8443960389603986
+    },
+    {
+      "name": "roof sample 3-5",
+      "source": [
+        664.8958129882812,
+        770.0416259765625
+      ],
+      "image": [
+        702.0114071158441,
+        379.38879982081943
+      ],
+      "world": [
+        -36.19785364960064,
+        4.229815029288421,
+        -20.08419577340564
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 0.6554914772845538
+    },
+    {
+      "name": "roof sample 4-5",
+      "source": [
+        735.4166870117188,
+        777.8333129882812
+      ],
+      "image": [
+        779.7141348140524,
+        378.90953293971523
+      ],
+      "world": [
+        -35.603445904035965,
+        4.213038989821008,
+        -21.314306129670175
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 1.908252517273275
+    },
+    {
+      "name": "roof sample 5-5",
+      "source": [
+        805.9375,
+        785.625
+      ],
+      "image": [
+        858.2800659832972,
+        378.424945332327
+      ],
+      "world": [
+        -35.03736145836952,
+        4.291500316297981,
+        -22.55446267708035
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 2.2210605714613503
+    },
+    {
+      "name": "roof sample 6-5",
+      "source": [
+        876.4583740234375,
+        793.4166259765625
+      ],
+      "image": [
+        937.7237827240223,
+        377.93490851734845
+      ],
+      "world": [
+        -34.4394799686759,
+        4.253142530420888,
+        -23.776144901540583
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 0.9081200365111903
+    },
+    {
+      "name": "roof sample 7-5",
+      "source": [
+        946.9791870117188,
+        801.2083129882812
+      ],
+      "image": [
+        1018.0599721225063,
+        377.43940191899264
+      ],
+      "world": [
+        -33.85867893514845,
+        4.265967723457518,
+        -24.99933849969298
+      ],
+      "mesh": "Roda huset med solpaneler",
+      "residualPixels": 3.255912866781702
+    }
+  ],
+  "notes": [
+    "Manual roof-edge correspondence to calibrated source photo 0383; retained ray hits on actual Roda huset med solpaneler mesh only.",
+    "Automatic feature matching did not yield reliable matches. Roof-plane correspondences are correlated, not independent surveyed control points.",
+    "Doors, windows and ground-level facade lack independently verified cross-view landmarks. Calibration remains preliminary; do not reuse for device placements or navigation.",
+    "North heading follows existing local source frame and northOffset; geographic heading not independently surveyed."
+  ]
+}

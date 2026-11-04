@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "sourcePhotoSha256": "72ea379572171e9f6df0d5d05b4d64fc75ebc1d3b1fa5a9bb42997c63a462c70",
+  "coordinateSize": [1920, 1080],
+  "status": "photo-window-response-estimate-not-interior-fixture-positions",
+  "windows": [
+    {
+      "id": "hall-stairs",
+      "sourceImage": "DJI_20261103181301_0609_D.JPG",
+      "color": "#fff0d2",
+      "bindings": [{"entityId": "switch.aktora1_b1_port2_taklampa_trapp_hall", "weight": 1}],
+      "panes": [
+        [[1025,535],[1048,537],[1047,557],[1024,555]],
+        [[1053,538],[1077,540],[1075,559],[1052,557]],
+        [[1024,560],[1047,562],[1046,583],[1023,580]],
+        [[1052,562],[1075,564],[1073,585],[1051,583]]
+      ],
+      "spill": [[1018,590],[1080,596],[1099,691],[954,669]],
+      "center": [1050,560]
+    },
+    {
+      "id": "kitchen-both",
+      "sourceImage": "DJI_20261103181153_0608_D.JPG",
+      "color": "#ffe0a0",
+      "bindings": [
+        {"entityId": "switch.aktora1_b2_port4_kok_koksbord_belysning", "weight": 0.6},
+        {"entityId": "light.bankbelysning_kok", "weight": 0.4}
+      ],
+      "panes": [
+        [[1354,575],[1382,578],[1379,600],[1351,597]],
+        [[1388,578],[1414,581],[1411,603],[1385,600]],
+        [[1351,602],[1379,605],[1376,629],[1349,626]],
+        [[1385,605],[1411,608],[1408,632],[1382,629]]
+      ],
+      "spill": [[1341,640],[1417,650],[1456,753],[1292,726]],
+      "center": [1382,604]
+    }
+  ]
+}

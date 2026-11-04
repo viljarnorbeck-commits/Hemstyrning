@@ -34,3 +34,6 @@ body.function-mode{background:var(--app-bg);color:var(--technical-ink)}
 .home-overview .overview-line:has(.measurement-age){flex-wrap:wrap}
 .home-overview .overview-line .measurement-age{flex-basis:100%;text-align:right;margin-top:2px}
 .history-update-note{font-size:12px;color:var(--text-muted);line-height:1.5}
+
+/* A stale value stays visible and is qualified locally, never by a page overlay. */
+.measurement-age{color:#edc58b;font-weight:500}

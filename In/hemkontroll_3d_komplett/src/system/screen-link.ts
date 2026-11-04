@@ -24,6 +24,7 @@ export class ScreenLink extends EventTarget {
  private accept(state:ViewState){if(!state||typeof state.version!=='number'||typeof state.epoch!=='string')return;if(this.state&&(state.epoch!==this.state.epoch||state.version<=this.state.version))return;this.state=state;this.emit({type:'ViewState',state});}
  private write(m:unknown){if(this.socket?.readyState===WebSocket.OPEN)this.socket.send(JSON.stringify(m));}
  send(type:CameraCommand,objectId?:string){if(!this.connected)throw Error('Gemensam visning återansluter');if(!this.canControl)throw Error('Läsbehörighet: gemensam visning kan inte styras');this.error='';const mode=type==='FocusObject'||type==='SelectObject'?'FOCUS_OBJECT':type==='FollowObject'?'FOLLOW_OBJECT':type==='EnterFree3D'?'FREE_3D':'HOME';this.write({type:'view',mode,...(objectId?{objectId}:{})});}
+ showPhoto(photoId:'janne'){if(!this.connected)throw Error('Gemensam visning återansluter');if(!this.canControl)throw Error('Läsbehörighet: gemensam visning kan inte styras');this.write({type:'view',mode:'PHOTO_YARD',photoId});}
  activity(){if(!this.connected||!this.canControl||this.viewer||Date.now()-this.lastActivity<1000)return;this.lastActivity=Date.now();this.write({type:'activity'});}
  openViewer(view:ViewerView){if(!this.connected)throw Error('Gemensam visning återansluter');this.write({type:'viewer',...view});}
  leaveViewer(){this.viewer=null;this.write({type:'leaveViewer'});this.emit({type:'ViewerState',view:null,state:this.state});}

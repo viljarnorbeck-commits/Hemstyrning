@@ -16,7 +16,7 @@ export function weatherSnapshot(config:SceneConfig,states:Map<string,HassState>,
  const wanted=JSON.stringify(config.weather);if(wanted!==key){key=wanted;data=undefined;nextFetch=0;pending=false;}
  if(!pending&&now>=nextFetch&&typeof window!=='undefined'){
   pending=true;nextFetch=now+60000;const requested=key;
-  void fetch('/connection-api/weather',{signal:AbortSignal.timeout(15000)}).then(async r=>{const result=await r.json() as SmhiForecast;if(requested!==key)return;data=result;nextFetch=Date.now()+(r.ok&&result.available?600000:60000);if(typeof window.dispatchEvent==='function')window.dispatchEvent(new Event('hem-weather-updated'));}).catch(()=>{if(requested===key)data={available:false,source:'smhi',placeName:config.weather!.placeName,message:'SMHI kunde inte nås'};if(requested===key)if(typeof window.dispatchEvent==='function')window.dispatchEvent(new Event('hem-weather-updated'));}).finally(()=>{if(requested===key)pending=false;});
+  void fetch('/connection-api/weather',{signal:AbortSignal.timeout(15000)}).then(async r=>{const result=await r.json() as SmhiForecast;if(requested!==key)return;data=result;nextFetch=Date.now()+(r.ok&&result.available?300000:60000);if(typeof window.dispatchEvent==='function')window.dispatchEvent(new Event('hem-weather-updated'));}).catch(()=>{if(requested===key)data={available:false,source:'smhi',placeName:config.weather!.placeName,message:'SMHI kunde inte nås'};if(requested===key)if(typeof window.dispatchEvent==='function')window.dispatchEvent(new Event('hem-weather-updated'));}).finally(()=>{if(requested===key)pending=false;});
  }
  const label='SMHI · '+config.weather.placeName;
  const d=data,received=Date.parse(data?.fetchedAt??''),valid=Date.parse(data?.validTime??'');

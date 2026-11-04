@@ -1,7 +1,7 @@
 .yard-house-hotspot{position:absolute;pointer-events:none;overflow:visible;transform:translate3d(var(--photo-dx,0px),var(--photo-dy,0px),0);transition:transform 1.4s cubic-bezier(.2,.7,.2,1)}
-.yard-house-hotspot polygon{pointer-events:all;cursor:pointer;fill:#fff6cb;fill-opacity:0;stroke:#fff7dc;stroke-width:1.7;stroke-opacity:0;stroke-linejoin:round;transition:fill-opacity .22s ease,stroke-opacity .22s ease,filter .22s ease;outline:none}
-.yard-house-hotspot polygon:focus-visible,.yard-house-hotspot.is-open polygon{fill-opacity:.08;stroke-opacity:.95;filter:drop-shadow(0 0 4px #fff4cfb0) drop-shadow(0 0 11px #ffe7b666)}
-@media(hover:hover){.yard-house-hotspot polygon:hover{fill-opacity:.085;stroke-opacity:1;filter:drop-shadow(0 0 4px #fff4cfb0) drop-shadow(0 0 12px #ffe7b666)}}
+.yard-house-hotspot polygon{pointer-events:all;cursor:pointer;fill:#fff6cb;fill-opacity:0;stroke:#fff9e9;stroke-width:2;stroke-opacity:0;stroke-linejoin:round;transition:fill-opacity .22s ease,stroke-opacity .22s ease,filter .22s ease;outline:none}
+.yard-house-hotspot polygon:focus-visible,.yard-house-hotspot.is-open polygon{fill-opacity:.055;stroke-opacity:1;filter:drop-shadow(0 0 2px #fff4cfd9) drop-shadow(0 0 8px #ffe7b666)}
+@media(hover:hover){.yard-house-hotspot polygon:hover{fill-opacity:.055;stroke-opacity:1;filter:drop-shadow(0 0 2px #fff4cfd9) drop-shadow(0 0 8px #ffe7b666)}}
 .yard-house-hotspot polygon:active{fill-opacity:.14}
 .yard-house-hotspot.is-inactive polygon{pointer-events:none}
 .yard-house-dialog{width:min(720px,calc(100vw - 32px));pointer-events:auto;background:radial-gradient(ellipse at 10% 0,#edcb8f18,transparent 60%),linear-gradient(145deg,#2b3239fa,#171d24fc)}
@@ -17,3 +17,26 @@
 .house-reading-old:after{content:'';display:inline-block;vertical-align:middle;width:4px;height:4px;background:#e0b779;border-radius:50%;margin-left:6px;box-shadow:0 0 5px #e0b77944}
 @media(max-width:540px){.house-dialog-heading{gap:10px}.house-dialog-icon{width:38px;height:38px;border-radius:12px}.house-source{max-width:72px;font-size:9px}.house-dialog-sections{grid-template-columns:1fr;gap:25px}.house-dialog-heading h2{font-size:22px}}
 @media(prefers-reduced-motion:reduce){.yard-house-hotspot,.yard-house-hotspot polygon{transition:none!important}}
+/* The house hotspot opens the same glass dialog, now with verified HA cinema functions. */
+.house-cinema{display:grid;gap:16px;margin-top:22px}
+.house-screen-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.house-control-button{display:flex;align-items:center;justify-content:center;gap:9px;min-width:0;min-height:52px;padding:13px;border:1px solid #b2c6d239;border-radius:12px;background:linear-gradient(145deg,#ffffff09,#ffffff03);box-shadow:inset 0 1px #ffffff0b;color:#dde8ed;font:inherit;font-size:13px;font-weight:550;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s}
+.house-control-button svg{width:24px;height:24px;flex-shrink:0}
+.house-control-button:hover:not(:disabled){border-color:#efd1a382;background:#e4bd7b12;box-shadow:0 5px 20px #0003,0 0 18px #e9c89220}
+.house-control-button:disabled{opacity:.45;cursor:default}
+.house-control-button:focus-visible,.house-hdmi select:focus-visible{outline:2px solid #f1d2a0;outline-offset:3px}
+.house-cinema-power{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.house-cinema-device{position:relative}.house-cinema-device .house-control-button{width:100%;min-height:125px;flex-direction:column;padding-bottom:36px;font-size:17px}
+.house-cinema-device .house-control-button svg{width:36px;height:36px}
+.house-cinema-device>small{position:absolute;bottom:13px;left:0;right:0;text-align:center;color:#b1c0c9;font-size:11px;pointer-events:none}
+.house-control-button.is-on{border-color:#e8b36b77;background:radial-gradient(ellipse at 50% 0,#e5a45125,transparent 85%);color:#ffe1af}
+.house-volume{display:grid;grid-template-columns:64px minmax(0,1fr) 64px;align-items:center;gap:12px;padding:11px;border:1px solid #b2c6d224;border-radius:13px;background:#ffffff04}
+.house-volume .house-control-button span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.house-volume>div{display:flex;align-items:center;justify-content:center;gap:9px;font-size:12px;color:#c4d0d9}.house-volume>div svg{width:22px;height:22px}.house-volume strong{font-size:16px;font-variant-numeric:tabular-nums}
+.house-hdmi{display:grid;gap:8px;color:#adc1ce;font-size:11px;letter-spacing:.03em}
+.house-hdmi select{width:100%;min-width:0;min-height:48px;padding:11px 13px;border:1px solid #b2c6d23b;border-radius:10px;background:#29323a;color:#edf2f5;font:inherit;font-size:14px;color-scheme:dark}
+.house-cinema-shutdown{border-color:#e8ad744c;background:#d9955010;color:#f2cba4}
+.house-cinema-shutdown.is-ready{border-color:#78d8a180;background:linear-gradient(135deg,#53b98024,#397d5a18);color:#b4f1ca;box-shadow:inset 0 1px #c3ffda1a,0 0 20px #68d69a15}
+.house-cinema-shutdown.is-ready:hover:not(:disabled){border-color:#a2f4c4;background:#63cd9329;box-shadow:0 5px 20px #0003,0 0 22px #78e7a838}
+.house-control-feedback{margin:0;min-height:18px;font-size:11px;line-height:1.5;color:#c7bcac}
+@media(max-width:540px){.house-screen-controls{gap:6px}.house-screen-controls .house-control-button{padding:10px 4px;gap:5px;font-size:11px}.house-cinema-device .house-control-button{min-height:112px;font-size:15px}.house-volume{grid-template-columns:50px minmax(0,1fr) 50px;gap:6px}}

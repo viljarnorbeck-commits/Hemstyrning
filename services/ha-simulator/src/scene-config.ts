@@ -1,4 +1,5 @@
 import {canonicalJamUrl} from '../../../shared/ha-contract.js';
+import {houseControls} from '../../../shared/house-controls.js';
 import { z } from 'zod';
 import {modelExchangeSchema,exchangeModelSchema} from './model-exchange-contract.js';
 
@@ -84,6 +85,7 @@ export function defaultScene(): SceneConfig {
     bindings: { weather: 'weather.home', cloud: '', lux: 'sensor.outdoor_illuminance', cloudAttribute: 'cloud_coverage', cloudMax: 100, weatherMaxAge: 7200, luxMaxAge: 900 },
     luxCalibration: { gain: 1, weight: 0.2, artificialLux: 50, affectedByLights: true, placement: 'Ej kalibrerad. Ange placering och jämför mot dagsljus utan gårdsbelysning.' }, quality: 'auto',
     objects: initialObjects(),
+    entityPreferences:Object.fromEntries(Object.values(houseControls).map(id=>[id,{allowCommands:true,control:false,details:false,hidden:false}])),
   });
 }
 function initialObjects() {

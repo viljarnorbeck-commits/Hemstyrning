@@ -74,3 +74,11 @@ it('keeps commands disabled unless the server explicitly grants control',async()
  const c=new Connection();await c.start();const ws=Socket.instances[0];ws.emit({type:'auth_ok'});ws.emit({type:'result',id:1,success:true});ws.emit({type:'result',id:2,success:true,result:[state('off')]});
  expect(c.commandsEnabled).toBe(false);fetchMock.mockClear();await expect(c.toggle('light.test','live')).rejects.toThrow('skrivskyddad');expect(fetchMock).not.toHaveBeenCalled();c.stop();
 });
+it('marks cached live information stale after ten seconds without HA confirmation and clears on pong',async()=>{
+ vi.useFakeTimers();vi.setSystemTime(new Date('2026-11-03T18:00:00Z'));const {connection,socket}=await connected();
+ try{await vi.advanceTimersByTimeAsync(9000);expect(connection.dataStale).toBe(false);await vi.advanceTimersByTimeAsync(1000);expect(connection.dataStale).toBe(true);expect(connection.states.size).toBeGreaterThan(0);socket.emit({type:'pong',id:99});expect(connection.dataStale).toBe(false);}finally{connection.stop();vi.useRealTimers();}
+});
+it('does not age unchanged sensor values while HA heartbeat remains healthy',async()=>{
+ vi.useFakeTimers();vi.setSystemTime(new Date('2026-11-03T18:00:00Z'));const {connection,socket}=await connected();
+ try{for(let i=0;i<5;i++){await vi.advanceTimersByTimeAsync(3000);socket.emit({type:'pong',id:99});}expect(connection.dataStale).toBe(false);}finally{connection.stop();vi.useRealTimers();}
+});

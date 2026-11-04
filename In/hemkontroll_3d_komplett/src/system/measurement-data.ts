@@ -1,3 +1,4 @@
+import {setEntityRefreshFailed} from './entity-display-data';
 import type {Connection} from './connection';
 import type {HassState} from './types';
 import {hasSensorBinding,readState,resolveEntity} from './entity-bindings';
@@ -14,17 +15,17 @@ export function startMeasurementData(connection:Connection){
  const attempted=new Map<string,number>(),pending=new Set<string>();let scheduled:ReturnType<typeof setTimeout>|undefined;
  async function history(entity:string,start:number,end:number){
   const query=new URLSearchParams({entity_id:entity,start:new Date(start).toISOString(),end:new Date(end).toISOString()});
-  const response=await fetch('/connection-api/history?'+query,{signal:AbortSignal.timeout(20000)});
+  const response=await fetch('/connection-api/history?'+query,{signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw Error('Historik saknas');
   const data=await response.json();return (Array.isArray(data?.[0])?data[0]:[])as HassState[];
  }
  async function refresh(){
   if(!connection.connected||connection.source!=='home-assistant')return;
   const states=connection.states,source=connection.source,now=Date.now(),valid=()=>connection.states===states&&connection.source===source;
-  const run=async(key:string,work:()=>Promise<void>)=>{
+  const run=async(key:string,work:()=>Promise<void>,affected:string[]=[])=>{
    if(pending.has(key)||now-(attempted.get(key)??0)<300000)return;
    pending.add(key);attempted.set(key,now);
-   try{await work();}catch{/* Keep the last verified display data; never invent a replacement. */}
+   try{await work();}catch{if(valid()){for(const id of affected)setEntityRefreshFailed(states,id,true);connection.dispatchEvent(new Event('measurement'));}}
    finally{pending.delete(key);}
   };
   const slots=[...waterSlots,...overviewBindings.rooms,overviewBindings.house2,'sensor.elmatare_hus2_energy'];
@@ -56,12 +57,14 @@ export function startMeasurementData(connection:Connection){
    };
    const cost=delta(costRows,costCounter,'SEK','total'),energy=delta(energyRows,energyCounter,'kWh','total_increasing'),average=averagePrice(cost,energy);
    for(const [slot,value,unit]of [['$costToday',cost,'SEK'],['$averageToday',average,'SEK/kWh']]as const){
-    if(value===null||hasSensorBinding(slot))continue;
+    if(hasSensorBinding(slot))continue;
+    setEntityRefreshFailed(states,slot,value===null);
+    if(value===null)continue;
     const stamp=new Date(now).toISOString();
     rememberMeasurement(states,slot,{entity_id:slot,state:String(value),last_updated:stamp,attributes:{unit_of_measurement:unit,period_start:new Date(start).toISOString(),period_end:stamp,derived:true,cost_source:costCounter,energy_source:energyCounter}});
    }
    connection.dispatchEvent(new Event('measurement'));
-  });
+  },['$costToday','$averageToday']);
   await backfills;
  }
  const schedule=()=>{clearTimeout(scheduled);scheduled=setTimeout(()=>void refresh(),250);};

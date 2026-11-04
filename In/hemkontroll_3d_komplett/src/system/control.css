@@ -46,3 +46,6 @@ body[data-app-route="/control"] #control-search-toggle:focus-visible,body[data-a
 #control-lights [data-device-group="heaters"].heater-active .device-select>span{color:#8ed0ff;filter:drop-shadow(0 0 5px #6abbff66)}
 
 .device-control .device-category-label{display:block;font-size:10px;font-weight:450;line-height:1.35;color:#ffffffd6;white-space:normal;overflow-wrap:anywhere}
+/* Quiet room separators inside the existing floor/function sections. */
+body[data-app-route="/control"] .control-room-heading{margin:11px 5px 5px;font-size:10px;font-weight:500;line-height:1.4;letter-spacing:.025em;color:#c3d0d5;text-transform:none}
+body[data-app-route="/control"] .light-location-heading+.control-room-heading{margin-top:3px}

@@ -13,7 +13,7 @@ export function yardEnergyCables(connection:Connection){
  const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.classList.add('yard-energy-cables');svg.setAttribute('viewBox','0 0 1000 562.5');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('role','img');svg.setAttribute('aria-label','Schematiska energivägar; pulser visar aktuella verifierade effektmätningar');
  const title=document.createElementNS(ns,'title');title.textContent='Energiflöde · pulstäthet efter uppmätt effekt';svg.append(title);
  const defs=document.createElementNS(ns,'defs'),gradient=document.createElementNS(ns,'linearGradient');gradient.id='yard-cable-travelling-bar';gradient.setAttribute('x1','0');gradient.setAttribute('x2','1');
- for(const [offset,color,opacity]of [['0%','#aabec7','0'],['20%','#b8c9d1','.18'],['55%','#dbe4e7','.68'],['82%','#f2f5f6','.92'],['100%','#d6e1e5','0']]){const stop=document.createElementNS(ns,'stop');stop.setAttribute('offset',offset!);stop.setAttribute('stop-color',color!);stop.setAttribute('stop-opacity',opacity!);gradient.append(stop);}defs.append(gradient);
+ for(const [offset,color,opacity]of [['0%','#308de8','0'],['20%','#4baeff','.24'],['55%','#77ceff','.8'],['82%','#e4f7ff','1'],['100%','#99ddff','0']]){const stop=document.createElementNS(ns,'stop');stop.setAttribute('offset',offset!);stop.setAttribute('stop-color',color!);stop.setAttribute('stop-opacity',opacity!);gradient.append(stop);}defs.append(gradient);
  const marker=document.createElementNS(ns,'marker'),arrow=document.createElementNS(ns,'path');marker.id='yard-cable-direction';marker.setAttribute('viewBox','0 0 6 6');marker.setAttribute('refX','5');marker.setAttribute('refY','3');marker.setAttribute('markerWidth','3');marker.setAttribute('markerHeight','3');marker.setAttribute('markerUnits','userSpaceOnUse');marker.setAttribute('orient','auto');arrow.setAttribute('d','M0 0 L6 3 L0 6');arrow.setAttribute('fill','none');arrow.setAttribute('stroke','#b2c5cf');arrow.setAttribute('stroke-opacity','.4');arrow.setAttribute('stroke-width','1');marker.append(arrow);defs.append(marker);svg.append(defs);
  const controllers:Array<()=>void>=[];
  for(const cable of photoEnergyCables){
@@ -37,7 +37,9 @@ export function yardEnergyCables(connection:Connection){
    if(count)lines[1]!.setAttribute('marker-end','url(#yard-cable-direction)');
    pulses.replaceChildren();const seconds=cable.id==='garage'?5.5:8;
    for(let i=0;i<count;i++){
-    const pulse=document.createElementNS(ns,'g'),bar=document.createElementNS(ns,'rect'),motion=document.createElementNS(ns,'animateMotion'),fade=document.createElementNS(ns,'animate');pulse.classList.add('yard-cable-pulse');bar.setAttribute('fill','url(#yard-cable-travelling-bar)');pulse.append(bar);
+    const pulse=document.createElementNS(ns,'g'),motion=document.createElementNS(ns,'animateMotion'),fade=document.createElementNS(ns,'animate');pulse.classList.add('yard-cable-pulse');
+    // A blue wake and a short near-white core make the travelling surge read clearly.
+    for(const kind of ['aura','wake','core']){const bar=document.createElementNS(ns,'rect');bar.classList.add('yard-cable-surge-'+kind);bar.setAttribute('fill',kind==='core'?'#effbff':'url(#yard-cable-travelling-bar)');pulse.append(bar);}
     motion.setAttribute('path','M '+ax+' '+ay+' L '+bx+' '+by);motion.setAttribute('rotate','auto');
     for(const animation of [motion,fade]){animation.setAttribute('dur',seconds+'s');animation.setAttribute('begin',String(-seconds*i/count)+'s');animation.setAttribute('repeatCount','indefinite');}
     fade.setAttribute('attributeName','opacity');fade.setAttribute('values','0;1;1;0');fade.setAttribute('keyTimes','0;.08;.9;1');pulse.append(motion,fade);pulses.append(pulse);

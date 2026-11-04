@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "sourceFrameId": "yard380-gltf-v1",
+  "modelSha256": "286831ead1676dd4c8d642fb201f5f5e7ad0c1229f97a784f6a90d3bd276271c",
+  "sourcePhotoSha256": "72ea379572171e9f6df0d5d05b4d64fc75ebc1d3b1fa5a9bb42997c63a462c70",
+  "camera": {
+    "position": [
+      -39.980577257120665,
+      15.709546304829878,
+      -5.353473373810179
+    ],
+    "target": [
+      -11.885783898055791,
+      5.3135984815778485,
+      -3.738897588142165
+    ],
+    "fov": 35.59504671851385,
+    "zoom": 1
+  },
+  "width": 960,
+  "height": 540,
+  "method": "model-raycast-lambert-area-shadow-surface-denoise",
+  "status": "approximate-model-and-photo-alignment",
+  "surfaceMeshes": [
+    "Hustak - bevarade ursprungliga ytor",
+    "Ren panel - main_xneg",
+    "Ren panel - main_ypos",
+    "Ren panel - main_yneg",
+    "Kompletterad ovre verandagavel - bevarad nedre dekor",
+    "Kompletterad garagegavel - fotostodd takanslutning",
+    "Ren panel - garage_ypos",
+    "Timmerbod med grastak",
+    "Uppskattat - ombyggda verandastolpar och racken",
+    "Ren panel - garage_yneg",
+    "Balkongracken - tre halrader och spetsig underkant",
+    "Garden porch roof - left plane",
+    "Porch roof ridge cap",
+    "Uppskattat - Verandans ovre tragolv",
+    "Ren panel - observerad gavel 415",
+    "Ren panel - main_xpos",
+    "Uppskattat - verandans golvunderlag",
+    "Uppskattat - lagt entresteg"
+  ],
+  "fixtures": [
+    {
+      "id": "garage-wall",
+      "position": [
+        -1.65246,
+        2.75262,
+        -8.03882
+      ],
+      "target": [
+        -4.34102,
+        0.15262,
+        -9.36985
+      ],
+      "url": "/images/yard/lighting/surface-garage-wall-v1.png?v=77dfb0808509",
+      "illuminatedPixels": 21869
+    },
+    {
+      "id": "workshop-wall",
+      "position": [
+        -4.12452,
+        2.74992,
+        -4.032
+      ],
+      "target": [
+        -6.81967,
+        0.14992,
+        -5.34963
+      ],
+      "url": "/images/yard/lighting/surface-workshop-wall-v1.png?v=323e2e9e3b03",
+      "illuminatedPixels": 15439
+    },
+    {
+      "id": "porch",
+      "position": [
+        -9.0736,
+        3.27273,
+        2.37342
+      ],
+      "target": [
+        -11.83102,
+        0.67273,
+        1.19163
+      ],
+      "url": "/images/yard/lighting/surface-porch-v1.png?v=8880463208db",
+      "illuminatedPixels": 41177
+    }
+  ]
+}

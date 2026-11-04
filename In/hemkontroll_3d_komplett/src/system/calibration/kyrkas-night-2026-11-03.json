@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "id": "kyrkas-night-2026-11-03-v2",
+  "status": "provisional-photo-calibration",
+  "sourceFrameId": "yard380-gltf-v1",
+  "coordinateUnits": "existing-yard-unit-not-surveyed",
+  "sourceModelVersion": "v000011",
+  "sourceModelSha256": "286831ead1676dd4c8d642fb201f5f5e7ad0c1229f97a784f6a90d3bd276271c",
+  "physicalAlignmentVerified": false,
+  "absolutePhotometryVerified": false,
+  "originals": [
+    {
+      "image": "DJI_20261103181153_0608_D.JPG",
+      "sha256": "2e7b8dfcdf1fa8df6d261fd781e10fa5f7d3d890acbc914fa1900bd4300bb28c",
+      "width": 8192,
+      "height": 4608,
+      "exposureTime": "0.4",
+      "iso": "3200",
+      "whiteBalance": "automatic"
+    },
+    {
+      "image": "DJI_20261103181301_0609_D.JPG",
+      "sha256": "571f00fd709aaf13c582d958ed062785679fdbd7406e0ac26ca4c384314c23db",
+      "width": 8192,
+      "height": 4608,
+      "exposureTime": "0.4",
+      "iso": "2810",
+      "whiteBalance": "automatic"
+    },
+    {
+      "image": "DJI_20261103181333_0611_D.JPG",
+      "sha256": "14840816fdd0cd5c2b4291b95c98f9e9fa53354c8ffe909858b2fc3bf580e57c",
+      "width": 8192,
+      "height": 4608,
+      "exposureTime": "0.4",
+      "iso": "2690",
+      "whiteBalance": "automatic"
+    },
+    {
+      "image": "DJI_20261103181421_0612_D.JPG",
+      "sha256": "8fd7b3c76474b74c2b0591fa916fd5f45da895645c16cb5e6c9bfd357249f7eb",
+      "width": 8192,
+      "height": 4608,
+      "exposureTime": "0.3333333333333333",
+      "iso": "2310",
+      "whiteBalance": "automatic"
+    }
+  ],
+  "captureNotes": {
+    "previousTestLightsTurnedOff": true,
+    "lastPhotoGroup": "Skymning",
+    "fixedBackgroundLightsMayRemain": true
+  },
+  "fixtures": [
+    {
+      "id": "garage-wall",
+      "label": "Skymning · garagevägg",
+      "kind": "spot",
+      "position": [
+        -1.65246,
+        2.75262,
+        -8.03882
+      ],
+      "target": [
+        -4.34102,
+        0.15262,
+        -9.36985
+      ],
+      "color": "#ffedda",
+      "referenceLumens": 750,
+      "range": 12,
+      "beamAngle": 135,
+      "penumbra": 0.85,
+      "sourceImage": "DJI_20261103181421_0612_D.JPG",
+      "imagePoint": [
+        0.390625,
+        0.4904513888888889
+      ],
+      "positionStatus": "user-corrected-wall-plane-estimate",
+      "positionUncertaintyYardUnits": 0.8,
+      "photometryStatus": "visual-starting-estimate",
+      "binding": {
+        "entityId": "switch.skymning",
+        "status": "user-described-group",
+        "readOnly": true
+      },
+      "enabled": true,
+      "fillFraction": 0.25,
+      "mountStyle": "wall-lantern",
+      "photoAnchor": {
+        "imageId": "kyrkas-2-0",
+        "sourceImageSha256": "72ea379572171e9f6df0d5d05b4d64fc75ebc1d3b1fa5a9bb42997c63a462c70",
+        "point": [
+          0.39375,
+          0.45925925925925926
+        ]
+      },
+      "correctionNote": "Moved from the narrow red door to the white wall immediately right, following user screenshot and close-up of fixture behind tree. Approximate hidden mounting point."
+    },
+    {
+      "id": "workshop-wall",
+      "label": "Skymning · dörr vid garagedel",
+      "kind": "spot",
+      "position": [
+        -4.12452,
+        2.74992,
+        -4.032
+      ],
+      "target": [
+        -6.81967,
+        0.14992,
+        -5.34963
+      ],
+      "color": "#ffedda",
+      "referenceLumens": 650,
+      "range": 10,
+      "beamAngle": 120,
+      "penumbra": 0.85,
+      "sourceImage": "DJI_20261103181421_0612_D.JPG",
+      "imagePoint": [
+        0.5,
+        0.5130208333333334
+      ],
+      "positionStatus": "image-ray-estimate",
+      "positionUncertaintyYardUnits": 0.8,
+      "photometryStatus": "visual-starting-estimate",
+      "binding": {
+        "entityId": "switch.skymning",
+        "status": "user-described-group",
+        "readOnly": true
+      },
+      "enabled": true,
+      "fillFraction": 0.25
+    },
+    {
+      "id": "porch",
+      "label": "Skymning · entré",
+      "kind": "spot",
+      "position": [
+        -9.0736,
+        3.27273,
+        2.37342
+      ],
+      "target": [
+        -11.83102,
+        0.67273,
+        1.19163
+      ],
+      "color": "#ffedda",
+      "referenceLumens": 700,
+      "range": 11,
+      "beamAngle": 125,
+      "penumbra": 0.85,
+      "sourceImage": "DJI_20261103181421_0612_D.JPG",
+      "imagePoint": [
+        0.66796875,
+        0.5555555555555556
+      ],
+      "positionStatus": "image-ray-estimate",
+      "positionUncertaintyYardUnits": 0.8,
+      "photometryStatus": "visual-starting-estimate",
+      "binding": {
+        "entityId": "switch.skymning",
+        "status": "user-described-group",
+        "readOnly": true
+      },
+      "enabled": true,
+      "fillFraction": 0.25
+    },
+    {
+      "id": "pole-front-right",
+      "label": "Stolpe · höger om huset",
+      "kind": "point",
+      "position": [
+        -13.97515,
+        2.07373,
+        9.36096
+      ],
+      "target": [
+        -13.97515,
+        0.29335,
+        9.36096
+      ],
+      "color": "#f3f4ff",
+      "referenceLumens": 850,
+      "range": 14,
+      "beamAngle": 150,
+      "penumbra": 0.85,
+      "sourceImage": "DJI_20261103181333_0611_D.JPG",
+      "positionReferenceImage": "DJI_20261103181421_0612_D.JPG",
+      "imagePoint": [
+        0.9013671875,
+        0.6927083333333334
+      ],
+      "positionStatus": "image-ray-and-plumb-estimate",
+      "positionUncertaintyYardUnits": 1.2,
+      "photometryStatus": "visual-starting-estimate",
+      "binding": {
+        "entityId": "switch.aktora1_b1_port10_ute_stolpar_belysning",
+        "status": "verified-entity-and-user-group",
+        "readOnly": true,
+        "sceneObjectId": "ha-switch.aktora1_b1_port10_ute_stolpar_belysning"
+      },
+      "enabled": true,
+      "fillFraction": 0,
+      "mountStyle": "post-lantern"
+    }
+  ],
+  "pending": [
+    {
+      "id": "kitchen-both",
+      "description": "Båda kökslamporna",
+      "sourceImage": "DJI_20261103181153_0608_D.JPG",
+      "candidateEntities": [
+        "light.koksbord",
+        "light.bankbelysning_kok",
+        "switch.aktora1_b2_port4_kok_koksbord_belysning"
+      ],
+      "reason": "Window spill does not establish two physical interior fixture positions or unambiguous entity pairing.",
+      "enabled": false
+    },
+    {
+      "id": "hall-stairs",
+      "description": "Trappen i hallen",
+      "sourceImage": "DJI_20261103181301_0609_D.JPG",
+      "candidateEntities": [
+        "switch.aktora1_b1_port2_taklampa_trapp_hall"
+      ],
+      "reason": "Entity name matches; physical fixture is hidden inside an opaque reconstructed building. No invented interior position.",
+      "enabled": false
+    },
+    {
+      "id": "additional-poles",
+      "description": "Fler stolpar",
+      "sourceImage": "DJI_20261103181333_0611_D.JPG",
+      "reason": "Only one foreground pole can be located in these views. Distant streetlights are not assigned to the property.",
+      "enabled": false
+    }
+  ],
+  "notes": [
+    "All light outputs, colors and positions are estimates; saturated JPEG cores and automatic camera settings prevent absolute lumen/Kelvin calibration.",
+    "No photograph, original model or texture has been edited.",
+    "Positions are stored in the model source frame, independent of provisional display translation.",
+    "No HA service calls are made by the rendering layer.",
+    "This profile does not change or certify the frozen coordinate system."
+  ]
+}
